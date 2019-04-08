@@ -6,6 +6,13 @@ jdk:
   - openjdk8
   - openjdk11
 
+# Install AWS CLI to get the credentials file
+before_install:
+  - mkdir ~/.aws
+  - printf "[vertx-s3] \n" >> ~/.aws/credentials
+  - printf "aws_secret_access_key = $VERTX_S3_SECRET_KEY \n" >> ~/.aws/credentials
+  - printf "aws_access_key_id = $VERTX_S3_ACCESS_KEY \n" >> ~/.aws/credentials
+
 # Overridden because parent project uses maven.test.skip instead of skipTests
 install: mvn install -Dmaven.test.skip=true -Dmaven.javadoc.skip=true -B -V
 
