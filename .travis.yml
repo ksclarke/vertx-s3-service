@@ -1,0 +1,40 @@
+language: java
+
+jdk:
+  - oraclejdk8
+  - oraclejdk11
+  - openjdk8
+  - openjdk11
+
+env:
+  global:
+    - secure: "nhLgAmHT1HyZXoCvVvn5p2dcgFY2KGEBcXAbH+X/DlhzWdB+bU9MYNmkl9va9B0uIIJBylsTUkEZTpUtB6fzIt6y5C/y9sSkBmT4Xwbmubu68bFDsn9WtVpkND9DbobhODFIOHb9diRnRwpbhyv+RHfyCbxM4UfyueID5ekIHS/lDnNHU6o1d8DIDl8RumkSitusAn265FJ2JsWJd4leysCk4/dz6IDH8cc+r3YHHEKy87gVivxR1tGKzWf468bhM8xWDyKd5s+YDqC+TgLWb9XP3LuwYht1jCtFcXplp3+Z946phLySraS4Bjt/0U+SOja1A+3vSh7bdaHXx6hf9UhH6kxIIlJqd9PRpmCEhy0t8hnYk12/fUSypnivWhoQhSQ0ngNqys8jfXMhYroyatnEDnoyZ+xY8i/f5TbjBEyHa+3yrbxtWmc6GU4MrV+bErQY39E0Iw5C4TmOwJNkpfdzU7N+rIvSomuiIh+/GIvzfaDUzP7X55ZcTbukFvMYmAxST+ufvGoZKpDNKa2fj/TjwURrTatY8aDgh+3mxTCwZ1/ojfCWh4CkSamifQLjkl42Aae4WhkEGfRz3151RutXZP2EUspwxzViM9qOnO18wYACWPNO/2oFqdku5eylAlHZLPtMJIodr92upVYuyLAVSLiRzXvEo5vab53qS8w="
+    - secure: "jHddY6dT617Z6DEjxxzcQuUxbQ+htfFwUowYbQvODaMW5KCYyRLD6A6A+h936A+Yvr+FuYfIjfXHuGKqk1RMRBqpykjkNX+/cGjueWed+OVEruYlhp53hKdXNJa84P+kWXtCX9IZcRqzKKyjeWSo3/bHs+2Er9cutMsr03IbgkpAH+51YMTdfcfyTCFZzGPzygH6oQ2CZihjjmLohYGZgyEXDcVPyiJvsRavvijdsFacihG6pOLJK3Ynhv3fyS7SwJKUySvTygRBTlyFmWTMpPh8PjaAQo5lbrA2tH50dsulsYBeKvQ8seDCUF1OUfHTSy7RS+fl31tnhNuMw5NGujOjVDMRrtKTCWjKwGFxYipAwsytuKY6nPolRqk/SXuNnFBikFbqZOHIqFxLm0Q3RkB4kQ9aLI5yOTqYsUNb8o7NdGXsjyXzgVqGCTnhDfCNg0bfDXQkI9Fv0ciLK5hDorB+sZjrtYUQIWTBwoQuTZRfB1jZWo/7wVyRMG/SZY+sDWE4GBXilxWjuayEwM1UrqnmXGdXKaRkGOBPruestbyq2LakP13LozRoQqRdO2Yo0CnDfmzpTF2Q/ru4Tr9dCKNx2tYg23d5TY2wU32Zgx0vCe4f58vIADcOL8lucwACYPCZWgQRkrw106q0//BIocYvdOTrF45zTX8YcCzGV6U="
+    - secure: "PJq+QT2J8CpN9WBC2XBcZ+Bn03Omb26m6dYu2K29neArx+1CcNZ/A0z7mhA97wLpOeBmpjMDJs0W1grEJLquqcuflxPW0k0x87cSURoKS0mk7ZlHmjIUD+Y7QSEQpwwyEuHPtQnaYogZIjbWyqjMeF7MV4B534oLLqLN30QZSO5AuY9zSAU24N2KBkmEQeilbGQ/6RLZAsCDqLZvIwshf7Bd1B4M+JebQbXF3jxTTTmrH23KLsU3Y8ZWwUYiIIbeuWRpgSLESPYweXOi9EgMpfMSdwH4MWRBbwQKNHTLVVdaBSAh2D60lVb73lHs/TlUZZ0Gg83kvkDrJ9+juFHym6Q6yaJVoMoupAQeY7IlP1Hd4N2KsB1Qa2PSnGvJoWwFvgLL27pzPq8KnxVl3BPzykZUqc4KY3h/Q7YYNL84ymnXuIXWYg694nZsqYzJ7RrNYllEaHtbbNtgHnwvszcwJl3uLmQqH3sFG2gG0UdPgKqq6cI1FZgWI5304MgfIR2iFMYR7FybabzpRJ/B6H4/vUyz/yGAhyRQzFY8KkBrBDtI8bWeYArbM7TmdbYgb8yAXQH4lOli/gf2bY/HT0DRiWqI5FNkPwd5kNvcWRbh5wIK9rowMRW+4MxxjM4iwiTOReI/lsIjzpTJVRAf55/WKUX+tq47xtaeiN0y/aHD5vA="
+    - secure: "ssYHf8fr4OTDii/VjCn1ji4hlIdwxxTGFr8kDnO6TdgG2wA6xTGZA+w+yr20hlK8KANU3381wkL0vtzxZJ+egsZkQA4ohy2Sntz3egx5dDL/OhvqaP7QtXaW3T+OP9KHvOCWzFKF0XZrlvp7XIf89ox8z/m3blElnU0mfYu6rQF0F+Ye2L9hhQOLEl/6X84rqnT2ez94me9l8dsdgOr2f5MBV0JhlFPhgGZvWZp1kZC+Pze55eIboKhUcK64B1PpPHeldzUsDcLaCATu3PAekJK/Vndmd4M5iank6fOiYw24uGY5mmCG92c1L0zUNjhg2uFxMvzlbxph89GWM8Yyu8kavk/btEp6GTM7Nl0e48/4jxXAydBLsrtKLak5xIihY2nkoH9mrQpUtZmjIe+9Kvt7yNW4SbwsTjTfIwIkeDGpzwvSTdpMrkHYbD9FGz/6fIKHY0+d6u8DPdl7QjRBe0pvVk2e/Y5jvB/OTP7ETHKetPT+B1yQX5Zp/X/xMKiZv4nVR9smB2Nd0+y6OVnc0l3FtS78Mnq7xYItpo6t2IvMsBxpzWdS9MkAJZJ5DvT6NPvS6CWSugHytL9pZQFZKEtb5gJeFc4hm2O5w/W6uk5f6HuwzS4zLZnqUB4UUt/MVE9vdZSAsEbo/em2VLXgTIcnVnf9maXjJ+sRvKGS9AY="
+    - secure: "WLNW2qzMGV10vHzZOrxeHmTkWE6bb0VgSVG6HUxaqDlJ947OzHL0eCc7De4anhsZrGY9217eex0VK2N6YpFul2O8Ohx/2x3cq5byJOkJn/AhLAvWaua8ed9xLLjDs2NjDdy6vt+i7UJLlhwc64saZ9dk8bf7TJaeAu4B3/NBFofTYIbs3KXSVzJhTGRDzkdJquIMA5CqI04lPNkGgYZI6gFqUjiOE5mwD/Z/nzQbQ9dxhbMSaRCiNwUvpM622KxrY7MD2hXQ0Cyfgs0EUXQneZuKEt0TWQHtucXdCiy7JMH/Cgt/f5c/rCQEqfl1zz4vECZe3CP7RDpvwRiHGsKI71t8LqO4Bm/GPK912z5AgHo6R8HFCq2Hi9JpRwKRL/Hd+dgirhXaO507ErEzIK14kGywzYcvFBbOeK+GKiV4rSiNwot7ttnAWwNm++0iROvdMD/1tK23QnI7H/9WPkut3tQW2OLoXvwwD20r5o5WWflet9EMn8jl4shXvo4TXFhfTEu1+n97X/pViRZ5BtYGdcTj8cFCXOHGbobj/9+PdJw5zlIXxAU8Id2opty3VQYv3wf4711bqADzoXjJx9lRtZSCrR8GSB18bZoNIKclsSuonmb85OAQ1HWVYQUro258O8ES0jMKKXvak6UqE4Nw7ZLSv0XYVhpRH0ATmpL3QAs="
+
+# Overridden because parent project uses maven.test.skip instead of skipTests
+install: mvn install -Dmaven.test.skip=true -Dmaven.javadoc.skip=true -B -V
+
+script: mvn -Ps3it install -Dvertx.s3.bucket="${VERTX_PAIRTREE_BUCKET}-${TRAVIS_JDK_VERSION}" -Dvertx.s3.access_key="${VERTX_PAIRTREE_ACCESS_KEY}" -Dvertx.s3.secret_key="${VERTX_PAIRTREE_SECRET_KEY}" pmd:pmd pmd:check
+
+after_success: mvn com.gavinmogan:codacy-maven-plugin:coverage -DcoverageReportFile=target/site/jacoco/jacoco.xml -DprojectToken="${PROJECT_TOKEN}" -DapiToken="${API_TOKEN}"
+
+cache:
+  directories:
+  - $HOME/.m2
+
+notifications:
+  email:
+    recipients:
+    - ksclarke@ksclarke.io
+    on_failure: change
+    on_success: change
+  irc:
+    channels:
+    - irc.freenode.org#freelibrary
+    on_failure: always
+    on_success: always
+
+sudo: false

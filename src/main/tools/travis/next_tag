@@ -1,0 +1,10 @@
+#! /bin/bash
+
+#
+# Gets the next stable version from a Maven snapshot project.
+#
+
+VERSION=$(mvn -q -Dexec.executable="echo" -Dexec.args='1.0.0-SNAPSHOT' --non-recursive exec:exec)
+PROJECT=$(mvn -q -Dexec.executable="echo" -Dexec.args='vertx-super-s3' --non-recursive exec:exec)
+
+echo $PROJECT-${VERSION%"-SNAPSHOT"}

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+
+<!--
+  To process this file outside of a full build, run:
+    mvn info.freelibrary:freelib-utils:generate-codes -DmessageFiles=src/main/resources/vertx-s3_messages.xml
+-->
+
+<properties>
+  <entry key="message-class-name">info.freelibrary.vertx.s3.MessageCodes</entry>
+
+  <!-- Messages to be stored in the MessageCodes class -->
+  <entry key="SS3-000">{}</entry>
+  <entry key="SS3-001">{} request for '{}' returned '{}': {}</entry>
+  <entry key="SS3-002">Please supply your own S3 access and secret keys for testing</entry>
+
+</properties>
