@@ -7,7 +7,7 @@
 
 # We can supply a settings.xml file for custom settings
 if [ -z "$1" ]; then
-  mvn -Dmaven.test.skip=true clean deploy -P release
+  mvn -U -Dmaven.test.skip=true clean deploy -P release
 else
-  mvn -Dmaven.test.skip=true clean deploy -P release -s "$1"
+  mvn -U -Dmaven.test.skip=true clean deploy -P release -s "$1"
 fi

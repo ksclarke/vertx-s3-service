@@ -5,12 +5,17 @@
 # Publishes snapshots or, if our version isn't a snapshot, stable artifacts.
 #
 
+DEPLOYMENT_JDK="openjdk11"
+
 # Get the directory from which this script is running
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 TAG="$($DIR/next_tag)"
 
-# If we're building a stable release, check that next tag matches requested tag
-if [[ "$TRAVIS_PULL_REQUEST" == "false" && ("$TAG" == "$TRAVIS_TAG" || "$TRAVIS_BRANCH" == "master") ]]; then
+# If we're building a stable release, check that next tag matches requested tag;
+# also, since we could be testing against multiple JDKs, only deploy on OpenJDK 11
+if [[ "$TRAVIS_PULL_REQUEST" == "false"
+    && ("$TAG" == "$TRAVIS_TAG" || "$TRAVIS_BRANCH" == "master")
+    && "$TRAVIS_JDK_VERSION" == "$DEPLOYMENT_JDK"  ]]; then
   # Find the settings file that we'll use to release
   SETTINGS_FILE=$(find . -name settings.xml | grep -v target)
 
@@ -22,6 +27,14 @@ if [[ "$TRAVIS_PULL_REQUEST" == "false" && ("$TAG" == "$TRAVIS_TAG" || "$TRAVIS_
     mvn -q versions:set -DnewVersion="$($DIR/next_version)"
   fi
 
+  OUTPUT="$($DIR/release $SETTINGS_FILE)"
+
   # Do a release and note which jar files are uploaded
-  "$DIR/release" "$SETTINGS_FILE" | grep 'Uploaded.*\.\(pom\|jar\) '
+  if [[ $(echo "$OUTPUT" | grep -c 'ERROR') == "0" ]]; then
+    echo -e "$OUTPUT" | grep 'Uploaded.*\.\(pom\|jar\) '
+  else
+    echo -e "$OUTPUT"
+    exit 1
+  fi
+
 fi

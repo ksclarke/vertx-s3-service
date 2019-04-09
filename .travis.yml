@@ -1,5 +1,6 @@
 language: java
 
+# Deployment happens on openjdk11
 jdk:
   - oraclejdk8
   - oraclejdk11
