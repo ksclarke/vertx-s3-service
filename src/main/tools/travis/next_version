@@ -4,6 +4,6 @@
 # A simple script to return the next version of a Maven snapshot project.
 #
 
-VERSION=$(mvn -q -Dexec.executable="echo" -Dexec.args='1.0.0-SNAPSHOT' --non-recursive exec:exec)
+VERSION=$(mvn -q -Dexec.executable="echo" -Dexec.args='1.0.0' --non-recursive exec:exec)
 
 echo ${VERSION%"-SNAPSHOT"}
