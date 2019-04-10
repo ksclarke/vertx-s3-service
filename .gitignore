@@ -3,3 +3,9 @@ src/main/generated
 
 # Build artifacts in case someone doesn't use a global .gitignore
 target
+
+# We encode this for deploys but we NEVER want to check it in
+src/main/resources/build-key.gpg
+
+# We don't need to check tools in; they're generated on each build
+src/main/tools
