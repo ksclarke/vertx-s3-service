@@ -2,8 +2,6 @@ language: java
 
 # Deployment happens on openjdk11
 jdk:
-  - oraclejdk8
-  - oraclejdk11
   - openjdk8
   - openjdk11
 
@@ -24,7 +22,9 @@ install: mvn install -Dmaven.test.skip=true -Dmaven.javadoc.skip=true -B -V
 script:
   - >
     mvn -Ps3it install -Dvertx.s3.bucket="${VERTX_S3_BUCKET}-${TRAVIS_JDK_VERSION}" \
-      -Dvertx.s3.access_key="${VERTX_S3_ACCESS_KEY}" -Dvertx.s3.secret_key="${VERTX_S3_SECRET_KEY}" pmd:pmd pmd:check
+      -Dvertx.s3.access_key="${VERTX_S3_ACCESS_KEY}" -Dvertx.s3.secret_key="${VERTX_S3_SECRET_KEY}"
+  - >
+    mvn pmd:pmd pmd:check
 
 after_success:
   - >
