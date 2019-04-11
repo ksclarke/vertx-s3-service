@@ -17,18 +17,18 @@ before_install:
 
 
 # Overridden because parent project uses maven.test.skip instead of skipTests
-install: mvn install -Dmaven.test.skip=true -Dmaven.javadoc.skip=true -B -V
+install: mvn -q install -Dmaven.test.skip=true -Dmaven.javadoc.skip=true -B -V
 
 script:
   - >
     mvn -Ps3it install -Dvertx.s3.bucket="${VERTX_S3_BUCKET}-${TRAVIS_JDK_VERSION}" \
       -Dvertx.s3.access_key="${VERTX_S3_ACCESS_KEY}" -Dvertx.s3.secret_key="${VERTX_S3_SECRET_KEY}"
   - >
-    mvn pmd:pmd pmd:check
+    mvn -q pmd:pmd pmd:check
 
 after_success:
   - >
-    mvn com.gavinmogan:codacy-maven-plugin:coverage -DcoverageReportFile=target/site/jacoco/jacoco.xml \
+    mvn -q com.gavinmogan:codacy-maven-plugin:coverage -DcoverageReportFile=target/site/jacoco/jacoco.xml \
       -DprojectToken="${PROJECT_TOKEN}" -DapiToken="${API_TOKEN}"
   - >
     chmod 755 src/main/tools/travis/*
