@@ -231,7 +231,7 @@
   <parent>
     <artifactId>freelib-parent</artifactId>
     <groupId>info.freelibrary</groupId>
-    <version>3.6.3</version>
+    <version>3.6.4</version>
   </parent>
 
 </project>
