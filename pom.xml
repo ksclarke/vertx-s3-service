@@ -44,7 +44,7 @@
     <freelib.utils.version>0.8.9</freelib.utils.version>
     <aws.sdk.version>1.11.527</aws.sdk.version>
     <vertx.version>3.6.3</vertx.version>
-    <jackson.version>2.9.8</jackson.version>
+    <jackson.version>2.9.9</jackson.version>
 
     <!-- Plugin versions -->
     <codacy.plugin.version>1.0.2</codacy.plugin.version>
