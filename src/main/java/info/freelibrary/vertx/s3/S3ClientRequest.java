@@ -18,6 +18,7 @@ import info.freelibrary.util.Logger;
 import info.freelibrary.util.LoggerFactory;
 import info.freelibrary.util.StringUtils;
 
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
@@ -489,6 +490,42 @@ public class S3ClientRequest implements HttpClientRequest {
     @Override
     public StreamPriority getStreamPriority() {
         return myRequest.getStreamPriority();
+    }
+
+    @Override
+    public HttpClientRequest write(final Buffer aBuffer, final Handler<AsyncResult<Void>> aHandler) {
+        return myRequest.write(aBuffer, aHandler);
+    }
+
+    @Override
+    public HttpClientRequest write(final String aChunk, final Handler<AsyncResult<Void>> aHandler) {
+        return myRequest.write(aChunk, aHandler);
+    }
+
+    @Override
+    public HttpClientRequest write(final String aChunk, final String aEncoding,
+            final Handler<AsyncResult<Void>> aHandler) {
+        return myRequest.write(aChunk, aEncoding, aHandler);
+    }
+
+    @Override
+    public void end(final String aChunk, final Handler<AsyncResult<Void>> aHandler) {
+        myRequest.end(aChunk, aHandler);
+    }
+
+    @Override
+    public void end(final String aChunk, final String aEncoding, final Handler<AsyncResult<Void>> aHandler) {
+        myRequest.end(aChunk, aEncoding, aHandler);
+    }
+
+    @Override
+    public void end(final Buffer aBuffer, final Handler<AsyncResult<Void>> aHandler) {
+        myRequest.end(aBuffer, aHandler);
+    }
+
+    @Override
+    public void end(final Handler<AsyncResult<Void>> aHandler) {
+        myRequest.end(aHandler);
     }
 
 }

@@ -41,12 +41,14 @@
 
   <properties>
     <!-- Dependency versions -->
-    <freelib.utils.version>0.8.9</freelib.utils.version>
-    <aws.sdk.version>1.11.527</aws.sdk.version>
-    <vertx.version>3.6.3</vertx.version>
+    <freelib.utils.version>0.8.10</freelib.utils.version>
+    <aws.sdk.version>1.11.572</aws.sdk.version>
+    <vertx.version>3.7.1</vertx.version>
     <jackson.version>2.9.9</jackson.version>
+    <jaxb.version>2.3.0.1</jaxb.version>
+    <jaxb.runtime.version>2.4.0-b180830.0438</jaxb.runtime.version>
 
-    <!-- Plugin versions -->
+    <!-- Plug-in versions -->
     <codacy.plugin.version>1.0.2</codacy.plugin.version>
   </properties>
 
@@ -87,6 +89,18 @@
       <groupId>io.vertx</groupId>
       <artifactId>vertx-unit</artifactId>
       <version>${vertx.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.sun.xml.bind</groupId>
+      <artifactId>jaxb-core</artifactId>
+      <version>${jaxb.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.glassfish.jaxb</groupId>
+      <artifactId>jaxb-runtime</artifactId>
+      <version>${jaxb.runtime.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -135,7 +149,7 @@
           <detectLinks>false</detectLinks>
           <additionalJOptions>
             <additionalJOption>-J-Dhttp.agent=maven-javadoc-plugin-${project.name}</additionalJOption>
-            <!--<additionalJOption>-html5</additionalJOption>-->
+            <!--<additionalJOption>-html5</additionalJOption> -->
           </additionalJOptions>
           <links>
             <link>https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/</link>
