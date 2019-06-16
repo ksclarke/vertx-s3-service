@@ -3,9 +3,7 @@ language: java
 # https://stackoverflow.com/questions/55878548/travis-ci-couldnt-install-openjdk11
 dist: xenial
 
-# Deployment happens on openjdk11
 jdk:
-  - openjdk8
   - openjdk11
 
 # Install AWS CLI to get the credentials file
