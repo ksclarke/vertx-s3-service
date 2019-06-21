@@ -16,9 +16,10 @@ before_install:
     openssl aes-256-cbc -K $encrypted_f9b802c36f4f_key -iv $encrypted_f9b802c36f4f_iv \
       -in src/main/resources/build-key.gpg.enc -out src/main/resources/build-key.gpg -d
 
-
 # Overridden because parent project uses maven.test.skip instead of skipTests
-install: mvn -q install -Dmaven.test.skip=true -Dmaven.javadoc.skip=true -B -V
+install:
+  - >
+    mvn -q install -Dmaven.test.skip=true -Dmaven.javadoc.skip=true -B -V
 
 script:
   - >
