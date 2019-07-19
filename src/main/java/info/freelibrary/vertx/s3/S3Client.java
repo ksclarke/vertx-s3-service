@@ -312,6 +312,7 @@ public class S3Client {
      */
     protected S3ClientRequest createPutRequest(final String aBucket, final String aKey,
             final Handler<HttpClientResponse> aHandler) {
+        @SuppressWarnings("deprecation")
         final HttpClientRequest httpRequest = myHttpClient.put(PATH_SEP + aBucket + PATH_SEP + aKey, aHandler);
         return new S3ClientRequest("PUT", aBucket, aKey, httpRequest, myAccessKey, mySecretKey, mySessionToken);
     }
@@ -326,6 +327,7 @@ public class S3Client {
      */
     protected S3ClientRequest createHeadRequest(final String aBucket, final String aKey,
             final Handler<HttpClientResponse> aHandler) {
+        @SuppressWarnings("deprecation")
         final HttpClientRequest httpRequest = myHttpClient.head(PATH_SEP + aBucket + PATH_SEP + aKey, aHandler);
         return new S3ClientRequest("HEAD", aBucket, aKey, httpRequest, myAccessKey, mySecretKey, mySessionToken);
     }
@@ -340,6 +342,7 @@ public class S3Client {
      */
     protected S3ClientRequest createGetRequest(final String aBucket, final String aKey,
             final Handler<HttpClientResponse> aHandler) {
+        @SuppressWarnings("deprecation")
         final HttpClientRequest httpRequest = myHttpClient.get(PATH_SEP + aBucket + PATH_SEP + aKey, aHandler);
         return new S3ClientRequest("GET", aBucket, aKey, httpRequest, myAccessKey, mySecretKey, mySessionToken);
     }
@@ -354,6 +357,7 @@ public class S3Client {
      */
     protected S3ClientRequest createDeleteRequest(final String aBucket, final String aKey,
             final Handler<HttpClientResponse> aHandler) {
+        @SuppressWarnings("deprecation")
         final HttpClientRequest httpRequest = myHttpClient.delete(PATH_SEP + aBucket + PATH_SEP + aKey, aHandler);
         return new S3ClientRequest("DELETE", aBucket, aKey, httpRequest, myAccessKey, mySecretKey, mySessionToken);
     }

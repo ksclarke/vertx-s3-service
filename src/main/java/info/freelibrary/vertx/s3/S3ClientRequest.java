@@ -132,13 +132,15 @@ public class S3ClientRequest implements HttpClientRequest {
     }
 
     @Override
-    public HttpClientRequest setFollowRedirects(final boolean aBool) {
-        return myRequest.setFollowRedirects(aBool);
+    public S3ClientRequest setFollowRedirects(final boolean aBool) {
+        myRequest.setFollowRedirects(aBool);
+        return this;
     }
 
     @Override
-    public HttpClientRequest setWriteQueueMaxSize(final int aMaxSize) {
-        return myRequest.setWriteQueueMaxSize(aMaxSize);
+    public S3ClientRequest setWriteQueueMaxSize(final int aMaxSize) {
+        myRequest.setWriteQueueMaxSize(aMaxSize);
+        return this;
     }
 
     @Override
@@ -149,8 +151,9 @@ public class S3ClientRequest implements HttpClientRequest {
     @Override
     @Deprecated
     @SuppressWarnings("MissingDeprecated")
-    public HttpClientRequest handler(final Handler<HttpClientResponse> aHandler) {
-        return myRequest.handler(aHandler);
+    public S3ClientRequest handler(final Handler<HttpClientResponse> aHandler) {
+        myRequest.handler(aHandler);
+        return this;
     }
 
     @Override
@@ -159,18 +162,21 @@ public class S3ClientRequest implements HttpClientRequest {
     }
 
     @Override
-    public HttpClientRequest drainHandler(final Handler<Void> aHandler) {
-        return myRequest.drainHandler(aHandler);
+    public S3ClientRequest drainHandler(final Handler<Void> aHandler) {
+        myRequest.drainHandler(aHandler);
+        return this;
     }
 
     @Override
-    public HttpClientRequest exceptionHandler(final Handler<Throwable> aHandler) {
-        return myRequest.exceptionHandler(aHandler);
+    public S3ClientRequest exceptionHandler(final Handler<Throwable> aHandler) {
+        myRequest.exceptionHandler(aHandler);
+        return this;
     }
 
     @Override
-    public HttpClientRequest setChunked(final boolean aChunked) {
-        return myRequest.setChunked(aChunked);
+    public S3ClientRequest setChunked(final boolean aChunked) {
+        myRequest.setChunked(aChunked);
+        return this;
     }
 
     @Override
@@ -181,22 +187,25 @@ public class S3ClientRequest implements HttpClientRequest {
     @Override
     @Deprecated
     @SuppressWarnings("MissingDeprecated")
-    public HttpClientRequest pause() {
-        return myRequest.pause();
+    public S3ClientRequest pause() {
+        myRequest.pause();
+        return this;
     }
 
     @Override
     @Deprecated
     @SuppressWarnings("MissingDeprecated")
-    public HttpClientRequest resume() {
-        return myRequest.resume();
+    public S3ClientRequest resume() {
+        myRequest.resume();
+        return this;
     }
 
     @Override
     @Deprecated
     @SuppressWarnings("MissingDeprecated")
-    public HttpClientRequest endHandler(final Handler<Void> aEndHandler) {
-        return myRequest.endHandler(aEndHandler);
+    public S3ClientRequest endHandler(final Handler<Void> aEndHandler) {
+        myRequest.endHandler(aEndHandler);
+        return this;
     }
 
     @Override
@@ -215,48 +224,57 @@ public class S3ClientRequest implements HttpClientRequest {
     }
 
     @Override
-    public HttpClientRequest putHeader(final String aName, final String aValue) {
-        return myRequest.putHeader(aName, aValue);
+    public S3ClientRequest putHeader(final String aName, final String aValue) {
+        myRequest.putHeader(aName, aValue);
+        return this;
     }
 
     @Override
-    public HttpClientRequest putHeader(final CharSequence aName, final CharSequence aValue) {
-        return myRequest.putHeader(aName, aValue);
+    public S3ClientRequest putHeader(final CharSequence aName, final CharSequence aValue) {
+        myRequest.putHeader(aName, aValue);
+        return this;
     }
 
     @Override
-    public HttpClientRequest putHeader(final String aName, final Iterable<String> aValues) {
-        return myRequest.putHeader(aName, aValues);
+    public S3ClientRequest putHeader(final String aName, final Iterable<String> aValues) {
+        myRequest.putHeader(aName, aValues);
+        return this;
     }
 
     @Override
-    public HttpClientRequest putHeader(final CharSequence aName, final Iterable<CharSequence> aValues) {
-        return myRequest.putHeader(aName, aValues);
+    public S3ClientRequest putHeader(final CharSequence aName, final Iterable<CharSequence> aValues) {
+        myRequest.putHeader(aName, aValues);
+        return this;
     }
 
     @Override
-    public HttpClientRequest setTimeout(final long aTimeoutMs) {
-        return myRequest.setTimeout(aTimeoutMs);
+    public S3ClientRequest setTimeout(final long aTimeoutMs) {
+        myRequest.setTimeout(aTimeoutMs);
+        return this;
     }
 
     @Override
-    public HttpClientRequest write(final Buffer aChunk) {
-        return myRequest.write(aChunk);
+    public S3ClientRequest write(final Buffer aChunk) {
+        myRequest.write(aChunk);
+        return this;
     }
 
     @Override
-    public HttpClientRequest write(final String aChunk) {
-        return myRequest.write(aChunk);
+    public S3ClientRequest write(final String aChunk) {
+        myRequest.write(aChunk);
+        return this;
     }
 
     @Override
-    public HttpClientRequest write(final String aChunk, final String aEncoding) {
-        return myRequest.write(aChunk, aEncoding);
+    public S3ClientRequest write(final String aChunk, final String aEncoding) {
+        myRequest.write(aChunk, aEncoding);
+        return this;
     }
 
     @Override
-    public HttpClientRequest continueHandler(final Handler<Void> aHandler) {
-        return myRequest.continueHandler(aHandler);
+    public S3ClientRequest continueHandler(final Handler<Void> aHandler) {
+        myRequest.continueHandler(aHandler);
+        return this;
     }
 
     @Override
@@ -420,8 +438,9 @@ public class S3ClientRequest implements HttpClientRequest {
     }
 
     @Override
-    public HttpClientRequest connectionHandler(final Handler<HttpConnection> aHandler) {
-        return myRequest.connectionHandler(aHandler);
+    public S3ClientRequest connectionHandler(final Handler<HttpConnection> aHandler) {
+        myRequest.connectionHandler(aHandler);
+        return this;
     }
 
     @Override
@@ -440,8 +459,9 @@ public class S3ClientRequest implements HttpClientRequest {
     }
 
     @Override
-    public HttpClientRequest pushHandler(final Handler<HttpClientRequest> aHandler) {
-        return myRequest.pushHandler(aHandler);
+    public S3ClientRequest pushHandler(final Handler<HttpClientRequest> aHandler) {
+        myRequest.pushHandler(aHandler);
+        return this;
     }
 
     @Override
@@ -455,36 +475,42 @@ public class S3ClientRequest implements HttpClientRequest {
     }
 
     @Override
-    public HttpClientRequest sendHead(final Handler<HttpVersion> aHandler) {
-        return myRequest.sendHead(aHandler);
+    public S3ClientRequest sendHead(final Handler<HttpVersion> aHandler) {
+        myRequest.sendHead(aHandler);
+        return this;
     }
 
     @Override
-    public HttpClientRequest sendHead() {
+    public S3ClientRequest sendHead() {
         initAuthenticationHeader();
-        return myRequest.sendHead();
+        myRequest.sendHead();
+        return this;
     }
 
     @Override
-    public HttpClientRequest setHost(final String aHost) {
-        return myRequest.setHost(aHost);
+    public S3ClientRequest setHost(final String aHost) {
+        myRequest.setHost(aHost);
+        return this;
     }
 
     @Override
-    public HttpClientRequest setRawMethod(final String aMethod) {
-        return myRequest.setRawMethod(aMethod);
+    public S3ClientRequest setRawMethod(final String aMethod) {
+        myRequest.setRawMethod(aMethod);
+        return this;
     }
 
     @Override
-    public HttpClientRequest writeCustomFrame(final int aType, final int aFlagsInt, final Buffer aPayload) {
-        return myRequest.writeCustomFrame(aType, aFlagsInt, aPayload);
+    public S3ClientRequest writeCustomFrame(final int aType, final int aFlagsInt, final Buffer aPayload) {
+        myRequest.writeCustomFrame(aType, aFlagsInt, aPayload);
+        return this;
     }
 
     @Override
     @Deprecated
     @SuppressWarnings("MissingDeprecated")
-    public HttpClientRequest fetch(final long aAmount) {
-        return myRequest.fetch(aAmount);
+    public S3ClientRequest fetch(final long aAmount) {
+        myRequest.fetch(aAmount);
+        return this;
     }
 
     @Override
@@ -493,19 +519,22 @@ public class S3ClientRequest implements HttpClientRequest {
     }
 
     @Override
-    public HttpClientRequest write(final Buffer aBuffer, final Handler<AsyncResult<Void>> aHandler) {
-        return myRequest.write(aBuffer, aHandler);
+    public S3ClientRequest write(final Buffer aBuffer, final Handler<AsyncResult<Void>> aHandler) {
+        myRequest.write(aBuffer, aHandler);
+        return this;
     }
 
     @Override
-    public HttpClientRequest write(final String aChunk, final Handler<AsyncResult<Void>> aHandler) {
-        return myRequest.write(aChunk, aHandler);
+    public S3ClientRequest write(final String aChunk, final Handler<AsyncResult<Void>> aHandler) {
+        myRequest.write(aChunk, aHandler);
+        return this;
     }
 
     @Override
-    public HttpClientRequest write(final String aChunk, final String aEncoding,
+    public S3ClientRequest write(final String aChunk, final String aEncoding,
             final Handler<AsyncResult<Void>> aHandler) {
-        return myRequest.write(aChunk, aEncoding, aHandler);
+        myRequest.write(aChunk, aEncoding, aHandler);
+        return this;
     }
 
     @Override
