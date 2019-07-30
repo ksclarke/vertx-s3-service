@@ -44,7 +44,7 @@
     <freelib.utils.version>0.8.10</freelib.utils.version>
     <aws.sdk.version>1.11.586</aws.sdk.version>
     <vertx.version>3.7.1</vertx.version>
-    <jackson.databind.version>2.9.9.1</jackson.databind.version>
+    <jackson.databind.version>2.9.9.2</jackson.databind.version>
     <jaxb.version>2.3.0.1</jaxb.version>
     <jaxb.runtime.version>2.4.0-b180830.0438</jaxb.runtime.version>
 
