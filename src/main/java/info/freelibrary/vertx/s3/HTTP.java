@@ -1,3 +1,4 @@
+
 package info.freelibrary.vertx.s3;
 
 /**
@@ -19,6 +20,24 @@ public final class HTTP {
 
     /** Content-Length HTTP header */
     public static final String CONTENT_LENGTH = "Content-Length";
+
+    /** HTTP GET request */
+    public static final String GET = "GET";
+
+    /** HTTP LIST request */
+    public static final String LIST = "LIST";
+
+    /** HTTP PUT request */
+    public static final String PUT = "PUT";
+
+    /** HTTP DELETE request */
+    public static final String DELETE = "DELETE";
+
+    /** HTTP POST request */
+    public static final String POST = "POST";
+
+    /** HTTP HEAD request */
+    public static final String HEAD = "HEAD";
 
     /** An empty private constructor for this utility class */
     private HTTP() {

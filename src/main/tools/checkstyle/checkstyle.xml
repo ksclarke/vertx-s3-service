@@ -97,5 +97,7 @@
     <property name="fileExtensions" value="java,css,js,xml" />
   </module>
   <module name="SuppressWarningsFilter" />
-  <module name="NewlineAtEndOfFile" />
+  <module name="NewlineAtEndOfFile">
+    <property name="fileExtensions" value="java,css,js,xml" />
+  </module>
 </module>
