@@ -18,9 +18,12 @@ install:
 
 script:
   - >
-    mvn -Ps3it install -Dvertx.s3.bucket="${VERTX_S3_BUCKET}-${TRAVIS_JDK_VERSION}" \
+    mvn -Ps3it package \
+      -Dvertx.s3.bucket="${VERTX_S3_BUCKET}-${TRAVIS_JDK_VERSION}" \
       -Dorg.slf4j.simpleLogger.log.net.sourceforge.pmd=error \
       -Dvertx.s3.access_key="${VERTX_S3_ACCESS_KEY}" -Dvertx.s3.secret_key="${VERTX_S3_SECRET_KEY}"
+  - mvn org.jacoco:jacoco-maven-plugin:prepare-agent org.jacoco:jacoco-maven-plugin:report
+
 
 after_success:
   - mvn com.gavinmogan:codacy-maven-plugin:coverage -DcoverageReportFile=target/site/jacoco/jacoco.xml
