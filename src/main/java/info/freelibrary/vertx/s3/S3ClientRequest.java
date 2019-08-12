@@ -35,11 +35,17 @@ import io.vertx.core.http.StreamPriority;
 @SuppressWarnings({ "PMD.ExcessivePublicCount", "PMD.TooManyMethods", "PMD.AvoidDuplicateLiterals" })
 public class S3ClientRequest implements HttpClientRequest {
 
+    /** Prefix for the AWS user metadata keys */
+    private static final String AWS_NAME_PREFIX = "x-amz-meta-";
+
     /** Hash-based message authentication code used for signing AWS requests */
     private static final String HASH_CODE = "HmacSHA1";
 
     /** System-independent end of line */
     private static final String EOL = "\n";
+
+    /** Colon, which is used as a header delimiter **/
+    private static final String COLON = ":";
 
     /** The date format used for timestamping S3 requests */
     private static final String DATE_FORMAT = "EEE, dd MMM yyyy HH:mm:ss zzz";
@@ -303,8 +309,10 @@ public class S3ClientRequest implements HttpClientRequest {
 
     /**
      * Adds the authentication header.
+     *
+     * @return The S3 client request
      */
-    protected void initAuthenticationHeader() {
+    protected S3ClientRequest initAuthenticationHeader() {
         if (isAuthenticated()) {
             // Calculate the v2 signature
             // http://docs.amazonwebservices.com/AmazonS3/latest/dev/RESTAuthentication.html
@@ -327,18 +335,29 @@ public class S3ClientRequest implements HttpClientRequest {
                 signedHeaders.add("x-amz-security-token:" + mySessionToken);
             }
 
+            /* If we have any user metadata set, add them to the signed headers */
+            headers().forEach(header -> {
+                final String userMetadataKey = header.getKey();
+
+                if (header.getKey().startsWith(AWS_NAME_PREFIX)) {
+                    signedHeaders.add(userMetadataKey + COLON + header.getValue());
+                }
+            });
+
             toSign.append(myMethod).append(EOL).append(myContentMd5).append(EOL).append(myContentType).append(EOL)
                     .append(EOL).append(signedHeaders).append(PATH_SEP).append(myBucket).append(PATH_SEP).append(key);
 
             try {
                 final String signature = b64SignHmacSha1(mySecretKey, toSign.toString());
-                final String authorization = "AWS" + " " + myAccessKey + ":" + signature;
+                final String authorization = "AWS" + " " + myAccessKey + COLON + signature;
 
                 headers().add("Authorization", authorization);
             } catch (InvalidKeyException | NoSuchAlgorithmException details) {
                 LOGGER.error("Failed to sign S3 request due to {}", details);
             }
         }
+
+        return this;
     }
 
     /**
@@ -354,18 +373,22 @@ public class S3ClientRequest implements HttpClientRequest {
      * Sets an access key for the request.
      *
      * @param aAccessKey An S3 access key
+     * @return The S3 client request
      */
-    public void setAccessKey(final String aAccessKey) {
+    public S3ClientRequest setAccessKey(final String aAccessKey) {
         myAccessKey = aAccessKey;
+        return this;
     }
 
     /**
      * Sets a secret key for the request.
      *
      * @param aSecretKey An S3 secret key
+     * @return The S3 client request
      */
-    public void setSecretKey(final String aSecretKey) {
+    public S3ClientRequest setSecretKey(final String aSecretKey) {
         mySecretKey = aSecretKey;
+        return this;
     }
 
     /**
@@ -390,9 +413,11 @@ public class S3ClientRequest implements HttpClientRequest {
      * Sets the content MD5.
      *
      * @param aContentMd5 An MD5 value for the content
+     * @return The S3 client request
      */
-    public void setContentMd5(final String aContentMd5) {
+    public S3ClientRequest setContentMd5(final String aContentMd5) {
         myContentMd5 = aContentMd5;
+        return this;
     }
 
     /**
@@ -408,9 +433,25 @@ public class S3ClientRequest implements HttpClientRequest {
      * Sets the content type for the request
      *
      * @param aContentType The content type for the request
+     * @return The S3 client request
      */
-    public void setContentType(final String aContentType) {
+    public S3ClientRequest setContentType(final String aContentType) {
         myContentType = aContentType;
+        return this;
+    }
+
+    /**
+     * Sets the user metadata for a PUT upload.
+     *
+     * @param aUserMetadata User metadata to set on an uploaded S3 object
+     * @return The S3 client request
+     */
+    public S3ClientRequest setUserMetadata(final UserMetadata aUserMetadata) {
+        for (int index = 0; index < aUserMetadata.count(); index++) {
+            myRequest.putHeader(AWS_NAME_PREFIX + aUserMetadata.getName(index), aUserMetadata.getValue(index));
+        }
+
+        return this;
     }
 
     /**
