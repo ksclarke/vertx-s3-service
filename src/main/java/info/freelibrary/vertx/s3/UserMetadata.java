@@ -3,10 +3,12 @@ package info.freelibrary.vertx.s3;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 import info.freelibrary.util.Logger;
 import info.freelibrary.util.LoggerFactory;
+import info.freelibrary.util.StringUtils;
 
 /**
  * S3 user metadata.
@@ -16,6 +18,8 @@ public class UserMetadata {
     private static final Logger LOGGER = LoggerFactory.getLogger(UserMetadata.class, Constants.BUNDLE_NAME);
 
     private static final String AWS_VALUE_DELIMITER = ",";
+
+    private static final Locale DEFAULT_LOCALE = Locale.getDefault();
 
     private final List<NameValuePair> myMetadata;
 
@@ -27,7 +31,8 @@ public class UserMetadata {
     }
 
     /**
-     * Creates new user metadata using the supplied metadata name and value.
+     * Creates new user metadata using the supplied metadata name and value. AWS canonical metadata rules requires
+     * that the supplied name is lower-cased (so this is done automatically).
      *
      * @param aName
      * @param aValue
@@ -55,9 +60,9 @@ public class UserMetadata {
 
         // Check to make sure we don't already have metadata with the same name
         for (int index = 0; index < myMetadata.size(); index++) {
-            if (myMetadata.get(index).myName.equals(aName)) {
+            if (myMetadata.get(index).myName.equals(aName.toLowerCase(DEFAULT_LOCALE))) {
                 final String oldValue = myMetadata.get(index).getValue();
-                final String newValue = aValue != null ? aValue : "";
+                final String newValue = aValue != null ? StringUtils.trimTo(aValue, "") : "";
 
                 if (!"".equals(newValue)) {
                     myMetadata.get(index).setValue(oldValue + AWS_VALUE_DELIMITER + newValue);
@@ -152,8 +157,10 @@ public class UserMetadata {
     public int indexOf(final String aName) {
         Objects.requireNonNull(aName, LOGGER.getMessage(MessageCodes.SS3_003));
 
+        final String name = aName.toLowerCase(DEFAULT_LOCALE);
+
         for (int index = 0; index < myMetadata.size(); index++) {
-            if (myMetadata.get(index).getName().equals(aName)) {
+            if (myMetadata.get(index).getName().equals(name)) {
                 return index;
             }
         }
@@ -168,7 +175,7 @@ public class UserMetadata {
         private String myValue;
 
         NameValuePair(final String aName, final String aValue) {
-            myName = aName;
+            myName = aName.toLowerCase(DEFAULT_LOCALE);
             myValue = aValue;
         }
 
