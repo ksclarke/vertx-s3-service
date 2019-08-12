@@ -39,6 +39,12 @@ public abstract class AbstractS3IT {
     /** The test file used in the tests */
     protected static final File TEST_FILE = new File("src/test/resources/green.gif");
 
+    /** A sample AWS Access Key */
+    protected static final String YOUR_ACCESS_KEY = "YOUR_ACCESS_KEY";
+
+    /** A sample AWS Secret Key */
+    protected static final String YOUR_SECRET_KEY = "YOUR_SECRET_KEY";
+
     /** AWS access key */
     protected static String myAccessKey;
 
@@ -70,8 +76,8 @@ public abstract class AbstractS3IT {
         final String endpoint = StringUtils.trimToNull(System.getProperty("vertx.s3.region"));
 
         myTestBucket = System.getProperty("vertx.s3.bucket", "vertx-pairtree-tests");
-        myAccessKey = System.getProperty("vertx.s3.access_key", "YOUR_ACCESS_KEY");
-        mySecretKey = System.getProperty("vertx.s3.secret_key", "YOUR_SECRET_KEY");
+        myAccessKey = System.getProperty("vertx.s3.access_key", YOUR_ACCESS_KEY);
+        mySecretKey = System.getProperty("vertx.s3.secret_key", YOUR_SECRET_KEY);
 
         try {
             myResource = IOUtils.readBytes(new FileInputStream(TEST_FILE));
@@ -87,9 +93,14 @@ public abstract class AbstractS3IT {
         }
     }
 
+    /**
+     * Set up the testing environment.
+     *
+     * @param aContext A testing context
+     */
     @Before
     public void setUp(final TestContext aContext) {
-        if (mySecretKey.equals("YOUR_SECRET_KEY") || myAccessKey.equals("YOUR_ACCESS_KEY")) {
+        if (mySecretKey.equals(YOUR_SECRET_KEY) || myAccessKey.equals(YOUR_ACCESS_KEY)) {
             aContext.fail(getLogger().getMessage(MessageCodes.SS3_002));
         }
 

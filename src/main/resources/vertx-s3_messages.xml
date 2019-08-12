@@ -13,5 +13,7 @@
   <entry key="SS3-000">{}</entry>
   <entry key="SS3-001">{} request for '{}' returned '{}': {}</entry>
   <entry key="SS3-002">Please supply your own S3 access and secret keys for testing</entry>
+  <entry key="SS3-003">The metadata property name cannot be null.</entry>
+  <entry key="SS3-004">Length: {}</entry>
 
 </properties>

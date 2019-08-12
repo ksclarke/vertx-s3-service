@@ -246,6 +246,20 @@ public class S3Client {
     }
 
     /**
+     * Uploads contents of the Buffer to S3.
+     *
+     * @param aBucket An S3 bucket
+     * @param aKey An S3 key
+     * @param aBuffer A data buffer
+     * @param aMetadata User metadata that should be set on the S3 object
+     * @param aHandler A response handler
+     */
+    public void put(final String aBucket, final String aKey, final Buffer aBuffer, final UserMetadata aMetadata,
+            final Handler<HttpClientResponse> aHandler) {
+        createPutRequest(aBucket, aKey, aHandler).setUserMetadata(aMetadata).end(aBuffer);
+    }
+
+    /**
      * Uploads the file contents to S3.
      *
      * @param aBucket An S3 bucket
@@ -255,8 +269,26 @@ public class S3Client {
      */
     public void put(final String aBucket, final String aKey, final AsyncFile aFile,
             final Handler<HttpClientResponse> aHandler) {
+        put(aBucket, aKey, aFile, null, aHandler);
+    }
+
+    /**
+     * Uploads the file contents to S3.
+     *
+     * @param aBucket An S3 bucket
+     * @param aKey An S3 key
+     * @param aFile A file to upload
+     * @param aMetadata User metadata to set on the S3 object
+     * @param aHandler A response handler for the upload
+     */
+    public void put(final String aBucket, final String aKey, final AsyncFile aFile, final UserMetadata aMetadata,
+            final Handler<HttpClientResponse> aHandler) {
         final S3ClientRequest request = createPutRequest(aBucket, aKey, aHandler);
         final Buffer buffer = Buffer.buffer();
+
+        if (aMetadata != null) {
+            request.setUserMetadata(aMetadata);
+        }
 
         aFile.endHandler(event -> {
             request.putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(buffer.length()));
@@ -278,8 +310,26 @@ public class S3Client {
      */
     public void put(final String aBucket, final String aKey, final HttpServerFileUpload aUpload,
             final Handler<HttpClientResponse> aHandler) {
+        put(aBucket, aKey, aUpload, null, aHandler);
+    }
+
+    /**
+     * Uploads the file contents to S3.
+     *
+     * @param aBucket An S3 bucket
+     * @param aKey An S3 key
+     * @param aUpload An HttpServerFileUpload
+     * @param aMetadata User metadata to set on the uploaded S3 object
+     * @param aHandler An upload response handler
+     */
+    public void put(final String aBucket, final String aKey, final HttpServerFileUpload aUpload,
+            final UserMetadata aMetadata, final Handler<HttpClientResponse> aHandler) {
         final S3ClientRequest request = createPutRequest(aBucket, aKey, aHandler);
         final Buffer buffer = Buffer.buffer();
+
+        if (aMetadata != null) {
+            request.setUserMetadata(aMetadata);
+        }
 
         aUpload.endHandler(event -> {
             request.putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(buffer.length()));
@@ -312,7 +362,7 @@ public class S3Client {
      */
     protected S3ClientRequest createPutRequest(final String aBucket, final String aKey,
             final Handler<HttpClientResponse> aHandler) {
-        @SuppressWarnings("deprecation")
+        @SuppressWarnings({ "PMD.AvoidDuplicateLiterals", "deprecation" })
         final HttpClientRequest httpRequest = myHttpClient.put(PATH_SEP + aBucket + PATH_SEP + aKey, aHandler);
         return new S3ClientRequest("PUT", aBucket, aKey, httpRequest, myAccessKey, mySecretKey, mySessionToken);
     }
@@ -327,7 +377,7 @@ public class S3Client {
      */
     protected S3ClientRequest createHeadRequest(final String aBucket, final String aKey,
             final Handler<HttpClientResponse> aHandler) {
-        @SuppressWarnings("deprecation")
+        @SuppressWarnings({ "PMD.AvoidDuplicateLiterals", "deprecation" })
         final HttpClientRequest httpRequest = myHttpClient.head(PATH_SEP + aBucket + PATH_SEP + aKey, aHandler);
         return new S3ClientRequest("HEAD", aBucket, aKey, httpRequest, myAccessKey, mySecretKey, mySessionToken);
     }
@@ -342,7 +392,7 @@ public class S3Client {
      */
     protected S3ClientRequest createGetRequest(final String aBucket, final String aKey,
             final Handler<HttpClientResponse> aHandler) {
-        @SuppressWarnings("deprecation")
+        @SuppressWarnings({ "PMD.AvoidDuplicateLiterals", "deprecation" })
         final HttpClientRequest httpRequest = myHttpClient.get(PATH_SEP + aBucket + PATH_SEP + aKey, aHandler);
         return new S3ClientRequest("GET", aBucket, aKey, httpRequest, myAccessKey, mySecretKey, mySessionToken);
     }
@@ -357,7 +407,7 @@ public class S3Client {
      */
     protected S3ClientRequest createDeleteRequest(final String aBucket, final String aKey,
             final Handler<HttpClientResponse> aHandler) {
-        @SuppressWarnings("deprecation")
+        @SuppressWarnings({ "PMD.AvoidDuplicateLiterals", "deprecation" })
         final HttpClientRequest httpRequest = myHttpClient.delete(PATH_SEP + aBucket + PATH_SEP + aKey, aHandler);
         return new S3ClientRequest("DELETE", aBucket, aKey, httpRequest, myAccessKey, mySecretKey, mySessionToken);
     }
