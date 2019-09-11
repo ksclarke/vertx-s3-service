@@ -5,7 +5,7 @@
 
   <artifactId>vertx-super-s3</artifactId>
   <packaging>jar</packaging>
-  <version>1.1.2-SNAPSHOT</version>
+  <version>1.2.2-SNAPSHOT</version>
   <name>Vert.x Super S3</name>
   <description>An S3 client library for the Vert.x toolkit</description>
   <url>http://projects.freelibrary.info/vertx-super-s3</url>
@@ -41,12 +41,14 @@
 
   <properties>
     <!-- Dependency versions -->
-    <freelib.utils.version>0.8.10</freelib.utils.version>
+    <freelib.utils.version>1.0.1</freelib.utils.version>
+    <freelib.maven.version>0.0.3</freelib.maven.version>
     <aws.sdk.version>1.11.586</aws.sdk.version>
     <vertx.version>3.7.1</vertx.version>
-    <jackson.version>2.10.0</jackson.version>
-    <jackson.databind.version>2.10.0</jackson.databind.version>
+    <jackson.version>2.10.1</jackson.version>
+    <jackson.databind.version>2.10.1</jackson.databind.version>
     <jaxb.version>2.3.0.1</jaxb.version>
+    <aws.v4.signature.version>1.3</aws.v4.signature.version>
     <jaxb.runtime.version>2.4.0-b180830.0438</jaxb.runtime.version>
 
     <!-- Plug-in versions -->
@@ -79,6 +81,11 @@
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-s3</artifactId>
       <version>${aws.sdk.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>uk.co.lucasweb</groupId>
+      <artifactId>aws-v4-signer-java</artifactId>
+      <version>${aws.v4.signature.version}</version>
     </dependency>
     <!-- Below dependencies are only used for testing -->
     <dependency>
@@ -116,8 +123,8 @@
       <!-- Generate our MessageCodes class from the messages resource file -->
       <plugin>
         <groupId>info.freelibrary</groupId>
-        <artifactId>freelib-utils</artifactId>
-        <version>${freelib.utils.version}</version>
+        <artifactId>freelib-maven-plugins</artifactId>
+        <version>${freelib.maven.version}</version>
         <executions>
           <execution>
             <phase>process-resources</phase>
@@ -201,12 +208,8 @@
         </configuration>
       </plugin>
       <plugin>
-        <groupId>br.com.ingenieux</groupId>
+        <groupId>org.jbake</groupId>
         <artifactId>jbake-maven-plugin</artifactId>
-      </plugin>
-      <plugin>
-        <groupId>org.jacoco</groupId>
-        <artifactId>jacoco-maven-plugin</artifactId>
       </plugin>
     </plugins>
   </build>
@@ -251,7 +254,7 @@
   <parent>
     <artifactId>freelib-parent</artifactId>
     <groupId>info.freelibrary</groupId>
-    <version>3.7.0</version>
+    <version>3.7.8</version>
   </parent>
 
 </project>

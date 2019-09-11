@@ -9,6 +9,9 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.BasicSessionCredentials;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 
+import info.freelibrary.util.Logger;
+import info.freelibrary.util.LoggerFactory;
+
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -23,10 +26,17 @@ import io.vertx.core.http.HttpServerFileUpload;
 /**
  * An S3 client implementation used by the S3Pairtree object.
  */
+@SuppressWarnings("PMD.TooManyMethods")
 public class S3Client {
 
     /** Default S3 endpoint */
-    private static final String DEFAULT_ENDPOINT = "s3.amazonaws.com";
+    public static final String DEFAULT_ENDPOINT = "s3.amazonaws.com";
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(S3Client.class, Constants.BUNDLE_NAME);
+
+    private static final String LIST_CMD = "?list-type=2";
+
+    private static final String PREFIX_LIST_CMD = "?list-type=2&prefix=";
 
     /** AWS access key */
     private final String myAccessKey;
@@ -40,13 +50,16 @@ public class S3Client {
     /** HTTP client used to interact with S3 */
     private final HttpClient myHttpClient;
 
+    /** Whether the client uses a V2 signature */
+    private boolean isV2Signature;
+
     /**
      * Creates a new S3 client using system defined AWS credentials and the default S3 endpoint.
      *
      * @param aVertx A Vert.x instance from which to create the <code>HttpClient</code>
      */
     public S3Client(final Vertx aVertx) {
-        this(DefaultAWSCredentialsProviderChain.getInstance().getCredentials(), aVertx.createHttpClient(
+        this(DefaultAWSCredentialsProviderChain.getInstance().getCredentials(), getHttpClient(aVertx,
                 new HttpClientOptions().setDefaultHost(DEFAULT_ENDPOINT)));
     }
 
@@ -57,7 +70,7 @@ public class S3Client {
      * @param aVertx A Vert.x instance from which to create the <code>HttpClient</code>
      */
     public S3Client(final Vertx aVertx, final Profile aProfile) {
-        this(aProfile.getCredentials(), aVertx.createHttpClient(new HttpClientOptions().setDefaultHost(
+        this(aProfile.getCredentials(), getHttpClient(aVertx, new HttpClientOptions().setDefaultHost(
                 DEFAULT_ENDPOINT)));
     }
 
@@ -68,7 +81,7 @@ public class S3Client {
      * @param aConfig A configuration for the internal HttpClient
      */
     public S3Client(final Vertx aVertx, final HttpClientOptions aConfig) {
-        this(DefaultAWSCredentialsProviderChain.getInstance().getCredentials(), aVertx.createHttpClient(aConfig));
+        this(DefaultAWSCredentialsProviderChain.getInstance().getCredentials(), getHttpClient(aVertx, aConfig));
     }
 
     /**
@@ -79,7 +92,7 @@ public class S3Client {
      * @param aConfig A configuration for the internal HttpClient
      */
     public S3Client(final Vertx aVertx, final Profile aProfile, final HttpClientOptions aConfig) {
-        this(aProfile.getCredentials(), aVertx.createHttpClient(aConfig));
+        this(aProfile.getCredentials(), getHttpClient(aVertx, aConfig));
     }
 
     /**
@@ -89,7 +102,7 @@ public class S3Client {
      * @param aVertx A Vert.x instance from which to create the <code>HttpClient</code>
      */
     public S3Client(final Vertx aVertx, final String aEndpoint) {
-        this(DefaultAWSCredentialsProviderChain.getInstance().getCredentials(), aVertx.createHttpClient(
+        this(DefaultAWSCredentialsProviderChain.getInstance().getCredentials(), getHttpClient(aVertx,
                 new HttpClientOptions().setDefaultHost(aEndpoint)));
     }
 
@@ -100,7 +113,7 @@ public class S3Client {
      * @param aVertx A Vert.x instance from which to create the <code>HttpClient</code>
      */
     public S3Client(final Vertx aVertx, final Profile aProfile, final String aEndpoint) {
-        this(aProfile.getCredentials(), aVertx.createHttpClient(new HttpClientOptions().setDefaultHost(aEndpoint)));
+        this(aProfile.getCredentials(), getHttpClient(aVertx, new HttpClientOptions().setDefaultHost(aEndpoint)));
     }
 
     /**
@@ -190,6 +203,16 @@ public class S3Client {
     }
 
     /**
+     * Sets the client to use the almost obsolete V2 authentication signature.
+     *
+     * @return The S3 client.
+     */
+    public S3Client useV2Signature(final boolean aV2Signature) {
+        isV2Signature = aV2Signature;
+        return this;
+    }
+
+    /**
      * Performs a HEAD request on an object in S3.
      *
      * @param aBucket An S3 bucket
@@ -197,7 +220,32 @@ public class S3Client {
      * @param aHandler A response handler
      */
     public void head(final String aBucket, final String aKey, final Handler<HttpClientResponse> aHandler) {
-        createHeadRequest(aBucket, aKey, aHandler).end();
+        createHeadRequest(aBucket, aKey, aHandler).useV2Signature(isV2Signature).end();
+    }
+
+    /**
+     * Performs a HEAD request on an object in S3.
+     *
+     * @param aBucket An S3 bucket
+     * @param aKey An S3 key
+     * @param aHandler A response handler
+     * @param aExceptionHandler An exception handler
+     */
+    public void head(final String aBucket, final String aKey, final Handler<HttpClientResponse> aHandler,
+            final Handler<Throwable> aExceptionHandler) {
+        createHeadRequest(aBucket, aKey, aHandler).exceptionHandler(aExceptionHandler).useV2Signature(isV2Signature)
+                .end();
+    }
+
+    /**
+     * Gets an object, represented by the supplied key, from an S3 bucket. Logs any exceptions.
+     *
+     * @param aBucket An S3 bucket
+     * @param aKey An S3 key
+     * @param aHandler A response handler
+     */
+    public void get(final String aBucket, final String aKey, final Handler<HttpClientResponse> aHandler) {
+        createGetRequest(aBucket, aKey, aHandler).useV2Signature(isV2Signature).end();
     }
 
     /**
@@ -206,9 +254,22 @@ public class S3Client {
      * @param aBucket An S3 bucket
      * @param aKey An S3 key
      * @param aHandler A response handler
+     * @param aExceptionHandler An exception handler
      */
-    public void get(final String aBucket, final String aKey, final Handler<HttpClientResponse> aHandler) {
-        createGetRequest(aBucket, aKey, aHandler).end();
+    public void get(final String aBucket, final String aKey, final Handler<HttpClientResponse> aHandler,
+            final Handler<Throwable> aExceptionHandler) {
+        createGetRequest(aBucket, aKey, aHandler).exceptionHandler(aExceptionHandler).useV2Signature(isV2Signature)
+                .end();
+    }
+
+    /**
+     * Lists an S3 bucket. Logs any exceptions.
+     *
+     * @param aBucket A bucket from which to get a listing
+     * @param aHandler A response handler
+     */
+    public void list(final String aBucket, final Handler<HttpClientResponse> aHandler) {
+        createGetRequest(aBucket, LIST_CMD, aHandler).useV2Signature(isV2Signature).end();
     }
 
     /**
@@ -216,9 +277,23 @@ public class S3Client {
      *
      * @param aBucket A bucket from which to get a listing
      * @param aHandler A response handler
+     * @param aExceptionHandler An exception handler
      */
-    public void list(final String aBucket, final Handler<HttpClientResponse> aHandler) {
-        createGetRequest(aBucket, "?list-type=2", aHandler).end();
+    public void list(final String aBucket, final Handler<HttpClientResponse> aHandler,
+            final Handler<Throwable> aExceptionHandler) {
+        createGetRequest(aBucket, LIST_CMD, aHandler).exceptionHandler(aExceptionHandler).useV2Signature(
+                isV2Signature).end();
+    }
+
+    /**
+     * Lists an S3 bucket using the supplied prefix as a filter. Logs any exceptions.
+     *
+     * @param aBucket An S3 bucket
+     * @param aPrefix A prefix to use to limit which objects are listed
+     * @param aHandler A response handler
+     */
+    public void list(final String aBucket, final String aPrefix, final Handler<HttpClientResponse> aHandler) {
+        createGetRequest(aBucket, PREFIX_LIST_CMD + aPrefix, aHandler).useV2Signature(isV2Signature).end();
     }
 
     /**
@@ -227,9 +302,25 @@ public class S3Client {
      * @param aBucket An S3 bucket
      * @param aPrefix A prefix to use to limit which objects are listed
      * @param aHandler A response handler
+     * @param aExceptionHandler An exception handler
      */
-    public void list(final String aBucket, final String aPrefix, final Handler<HttpClientResponse> aHandler) {
-        createGetRequest(aBucket, "?list-type=2&prefix=" + aPrefix, aHandler).end();
+    public void list(final String aBucket, final String aPrefix, final Handler<HttpClientResponse> aHandler,
+            final Handler<Throwable> aExceptionHandler) {
+        createGetRequest(aBucket, PREFIX_LIST_CMD + aPrefix, aHandler).exceptionHandler(aExceptionHandler)
+                .useV2Signature(isV2Signature).end();
+    }
+
+    /**
+     * Uploads contents of the Buffer to S3. Logs any exceptions.
+     *
+     * @param aBucket An S3 bucket
+     * @param aKey An S3 key
+     * @param aBuffer A data buffer
+     * @param aHandler A response handler
+     */
+    public void put(final String aBucket, final String aKey, final Buffer aBuffer,
+            final Handler<HttpClientResponse> aHandler) {
+        createPutRequest(aBucket, aKey, aHandler).useV2Signature(isV2Signature).end(aBuffer);
     }
 
     /**
@@ -239,10 +330,27 @@ public class S3Client {
      * @param aKey An S3 key
      * @param aBuffer A data buffer
      * @param aHandler A response handler
+     * @param aExceptionHandler An exception handler
      */
     public void put(final String aBucket, final String aKey, final Buffer aBuffer,
+            final Handler<HttpClientResponse> aHandler, final Handler<Throwable> aExceptionHandler) {
+        createPutRequest(aBucket, aKey, aHandler).exceptionHandler(aExceptionHandler).useV2Signature(isV2Signature)
+                .end(aBuffer);
+    }
+
+    /**
+     * Uploads contents of the Buffer to S3. Logs any exceptions.
+     *
+     * @param aBucket An S3 bucket
+     * @param aKey An S3 key
+     * @param aBuffer A data buffer
+     * @param aMetadata User metadata that should be set on the S3 object
+     * @param aHandler A response handler
+     */
+    public void put(final String aBucket, final String aKey, final Buffer aBuffer, final UserMetadata aMetadata,
             final Handler<HttpClientResponse> aHandler) {
-        createPutRequest(aBucket, aKey, aHandler).end(aBuffer);
+        createPutRequest(aBucket, aKey, aHandler).setUserMetadata(aMetadata).useV2Signature(isV2Signature).end(
+                aBuffer);
     }
 
     /**
@@ -253,14 +361,16 @@ public class S3Client {
      * @param aBuffer A data buffer
      * @param aMetadata User metadata that should be set on the S3 object
      * @param aHandler A response handler
+     * @param aExceptionHandler An exception handler
      */
     public void put(final String aBucket, final String aKey, final Buffer aBuffer, final UserMetadata aMetadata,
-            final Handler<HttpClientResponse> aHandler) {
-        createPutRequest(aBucket, aKey, aHandler).setUserMetadata(aMetadata).end(aBuffer);
+            final Handler<HttpClientResponse> aHandler, final Handler<Throwable> aExceptionHandler) {
+        createPutRequest(aBucket, aKey, aHandler).exceptionHandler(aExceptionHandler).setUserMetadata(aMetadata)
+                .useV2Signature(isV2Signature).end(aBuffer);
     }
 
     /**
-     * Uploads the file contents to S3.
+     * Uploads the file contents to S3. Logs any exceptions.
      *
      * @param aBucket An S3 bucket
      * @param aKey An S3 key
@@ -278,11 +388,40 @@ public class S3Client {
      * @param aBucket An S3 bucket
      * @param aKey An S3 key
      * @param aFile A file to upload
+     * @param aHandler A response handler for the upload
+     * @param aExceptionHandler An exception handler
+     */
+    public void put(final String aBucket, final String aKey, final AsyncFile aFile,
+            final Handler<HttpClientResponse> aHandler, final Handler<Throwable> aExceptionHandler) {
+        put(aBucket, aKey, aFile, null, aHandler, aExceptionHandler);
+    }
+
+    /**
+     * Uploads the file contents to S3. Logs any exceptions.
+     *
+     * @param aBucket An S3 bucket
+     * @param aKey An S3 key
+     * @param aFile A file to upload
      * @param aMetadata User metadata to set on the S3 object
      * @param aHandler A response handler for the upload
      */
     public void put(final String aBucket, final String aKey, final AsyncFile aFile, final UserMetadata aMetadata,
             final Handler<HttpClientResponse> aHandler) {
+        put(aBucket, aKey, aFile, aMetadata, aHandler, null);
+    }
+
+    /**
+     * Uploads the file contents to S3. Logs any exceptions.
+     *
+     * @param aBucket An S3 bucket
+     * @param aKey An S3 key
+     * @param aFile A file to upload
+     * @param aMetadata User metadata to set on the S3 object
+     * @param aHandler A response handler for the upload
+     * @param aExceptionHandler An exception handler for the upload
+     */
+    public void put(final String aBucket, final String aKey, final AsyncFile aFile, final UserMetadata aMetadata,
+            final Handler<HttpClientResponse> aHandler, final Handler<Throwable> aExceptionHandler) {
         final S3ClientRequest request = createPutRequest(aBucket, aKey, aHandler);
         final Buffer buffer = Buffer.buffer();
 
@@ -290,18 +429,29 @@ public class S3Client {
             request.setUserMetadata(aMetadata);
         }
 
+        request.useV2Signature(isV2Signature);
+
+        aFile.handler(data -> {
+            buffer.appendBuffer(data);
+        });
+
         aFile.endHandler(event -> {
             request.putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(buffer.length()));
             request.end(buffer);
         });
 
-        aFile.handler(data -> {
-            buffer.appendBuffer(data);
-        });
+        // If we have an exception handler, use it; else, just log any exceptions
+        if (aExceptionHandler == null) {
+            request.exceptionHandler(exception -> {
+                LOGGER.error(exception, exception.getMessage());
+            });
+        } else {
+            request.exceptionHandler(aExceptionHandler);
+        }
     }
 
     /**
-     * Uploads the file contents to S3.
+     * Uploads the file contents to S3. Logs any exceptions.
      *
      * @param aBucket An S3 bucket
      * @param aKey An S3 key
@@ -319,11 +469,41 @@ public class S3Client {
      * @param aBucket An S3 bucket
      * @param aKey An S3 key
      * @param aUpload An HttpServerFileUpload
+     * @param aHandler An upload response handler
+     * @param aExceptionHandler An exception handler
+     */
+    public void put(final String aBucket, final String aKey, final HttpServerFileUpload aUpload,
+            final Handler<HttpClientResponse> aHandler, final Handler<Throwable> aExceptionHandler) {
+        put(aBucket, aKey, aUpload, null, aHandler, aExceptionHandler);
+    }
+
+    /**
+     * Uploads the file contents to S3. Logs any exceptions.
+     *
+     * @param aBucket An S3 bucket
+     * @param aKey An S3 key
+     * @param aUpload An HttpServerFileUpload
      * @param aMetadata User metadata to set on the uploaded S3 object
      * @param aHandler An upload response handler
      */
     public void put(final String aBucket, final String aKey, final HttpServerFileUpload aUpload,
             final UserMetadata aMetadata, final Handler<HttpClientResponse> aHandler) {
+        put(aBucket, aKey, aUpload, aMetadata, aHandler, null);
+    }
+
+    /**
+     * Uploads the file contents to S3.
+     *
+     * @param aBucket An S3 bucket
+     * @param aKey An S3 key
+     * @param aUpload An HttpServerFileUpload
+     * @param aMetadata User metadata to set on the uploaded S3 object
+     * @param aHandler An upload response handler
+     * @param aExceptionHandler An upload exception handler
+     */
+    public void put(final String aBucket, final String aKey, final HttpServerFileUpload aUpload,
+            final UserMetadata aMetadata, final Handler<HttpClientResponse> aHandler,
+            final Handler<Throwable> aExceptionHandler) {
         final S3ClientRequest request = createPutRequest(aBucket, aKey, aHandler);
         final Buffer buffer = Buffer.buffer();
 
@@ -331,14 +511,35 @@ public class S3Client {
             request.setUserMetadata(aMetadata);
         }
 
+        request.useV2Signature(isV2Signature);
+
+        aUpload.handler(data -> {
+            buffer.appendBuffer(data);
+        });
+
         aUpload.endHandler(event -> {
             request.putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(buffer.length()));
             request.end(buffer);
         });
 
-        aUpload.handler(data -> {
-            buffer.appendBuffer(data);
-        });
+        if (aExceptionHandler == null) {
+            request.exceptionHandler(exception -> {
+                LOGGER.error(exception, exception.getMessage());
+            });
+        } else {
+            request.exceptionHandler(aExceptionHandler);
+        }
+    }
+
+    /**
+     * Deletes the S3 resource represented by the supplied key. Logs any exceptions.
+     *
+     * @param aBucket An S3 bucket
+     * @param aKey An S3 key
+     * @param aHandler A response handler
+     */
+    public void delete(final String aBucket, final String aKey, final Handler<HttpClientResponse> aHandler) {
+        createDeleteRequest(aBucket, aKey, aHandler).useV2Signature(isV2Signature).end();
     }
 
     /**
@@ -347,9 +548,12 @@ public class S3Client {
      * @param aBucket An S3 bucket
      * @param aKey An S3 key
      * @param aHandler A response handler
+     * @param aExceptionHandler An exception handler
      */
-    public void delete(final String aBucket, final String aKey, final Handler<HttpClientResponse> aHandler) {
-        createDeleteRequest(aBucket, aKey, aHandler).end();
+    public void delete(final String aBucket, final String aKey, final Handler<HttpClientResponse> aHandler,
+            final Handler<Throwable> aExceptionHandler) {
+        createDeleteRequest(aBucket, aKey, aHandler).exceptionHandler(aExceptionHandler).useV2Signature(isV2Signature)
+                .end();
     }
 
     /**
@@ -360,7 +564,7 @@ public class S3Client {
      * @param aHandler A response handler
      * @return An S3 PUT request
      */
-    protected S3ClientRequest createPutRequest(final String aBucket, final String aKey,
+    private S3ClientRequest createPutRequest(final String aBucket, final String aKey,
             final Handler<HttpClientResponse> aHandler) {
         @SuppressWarnings({ "PMD.AvoidDuplicateLiterals", "deprecation" })
         final HttpClientRequest httpRequest = myHttpClient.put(PATH_SEP + aBucket + PATH_SEP + aKey, aHandler);
@@ -375,7 +579,7 @@ public class S3Client {
      * @param aHandler A response handler
      * @return A S3 client HEAD request
      */
-    protected S3ClientRequest createHeadRequest(final String aBucket, final String aKey,
+    private S3ClientRequest createHeadRequest(final String aBucket, final String aKey,
             final Handler<HttpClientResponse> aHandler) {
         @SuppressWarnings({ "PMD.AvoidDuplicateLiterals", "deprecation" })
         final HttpClientRequest httpRequest = myHttpClient.head(PATH_SEP + aBucket + PATH_SEP + aKey, aHandler);
@@ -390,7 +594,7 @@ public class S3Client {
      * @param aHandler A response handler
      * @return A S3 client GET request
      */
-    protected S3ClientRequest createGetRequest(final String aBucket, final String aKey,
+    private S3ClientRequest createGetRequest(final String aBucket, final String aKey,
             final Handler<HttpClientResponse> aHandler) {
         @SuppressWarnings({ "PMD.AvoidDuplicateLiterals", "deprecation" })
         final HttpClientRequest httpRequest = myHttpClient.get(PATH_SEP + aBucket + PATH_SEP + aKey, aHandler);
@@ -405,7 +609,7 @@ public class S3Client {
      * @param aHandler An S3 handler
      * @return An S3 client request
      */
-    protected S3ClientRequest createDeleteRequest(final String aBucket, final String aKey,
+    private S3ClientRequest createDeleteRequest(final String aBucket, final String aKey,
             final Handler<HttpClientResponse> aHandler) {
         @SuppressWarnings({ "PMD.AvoidDuplicateLiterals", "deprecation" })
         final HttpClientRequest httpRequest = myHttpClient.delete(PATH_SEP + aBucket + PATH_SEP + aKey, aHandler);
@@ -451,9 +655,9 @@ public class S3Client {
         final HttpClient httpClient;
 
         if (aConfig == null) {
-            httpClient = aVertx.createHttpClient();
+            httpClient = aVertx.createHttpClient(new HttpClientOptions().setSsl(true).setDefaultPort(443));
         } else {
-            httpClient = aVertx.createHttpClient(aConfig);
+            httpClient = aVertx.createHttpClient(aConfig.setSsl(true).setDefaultPort(443));
         }
 
         return httpClient;
