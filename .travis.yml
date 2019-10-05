@@ -18,7 +18,7 @@ install:
 
 script:
   - >
-    mvn -Ps3it help:active-profiles verify org.jacoco:jacoco-maven-plugin:report \
+    mvn -Ps3it help:active-profiles verify \
       -Dvertx.s3.bucket="${VERTX_S3_BUCKET}-${TRAVIS_JDK_VERSION}" \
       -Dorg.slf4j.simpleLogger.log.net.sourceforge.pmd=error \
       -Dvertx.s3.access_key="${VERTX_S3_ACCESS_KEY}" -Dvertx.s3.secret_key="${VERTX_S3_SECRET_KEY}"
