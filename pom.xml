@@ -41,7 +41,8 @@
 
   <properties>
     <!-- Dependency versions -->
-    <freelib.utils.version>0.8.10</freelib.utils.version>
+    <freelib.utils.version>1.0.1</freelib.utils.version>
+    <freelib.maven.version>0.0.3</freelib.maven.version>
     <aws.sdk.version>1.11.586</aws.sdk.version>
     <vertx.version>3.7.1</vertx.version>
     <jackson.version>2.10.0</jackson.version>
@@ -116,8 +117,8 @@
       <!-- Generate our MessageCodes class from the messages resource file -->
       <plugin>
         <groupId>info.freelibrary</groupId>
-        <artifactId>freelib-utils</artifactId>
-        <version>${freelib.utils.version}</version>
+        <artifactId>freelib-maven-plugins</artifactId>
+        <version>${freelib.maven.version}</version>
         <executions>
           <execution>
             <phase>process-resources</phase>
@@ -204,10 +205,6 @@
         <groupId>br.com.ingenieux</groupId>
         <artifactId>jbake-maven-plugin</artifactId>
       </plugin>
-      <plugin>
-        <groupId>org.jacoco</groupId>
-        <artifactId>jacoco-maven-plugin</artifactId>
-      </plugin>
     </plugins>
   </build>
 
@@ -251,7 +248,7 @@
   <parent>
     <artifactId>freelib-parent</artifactId>
     <groupId>info.freelibrary</groupId>
-    <version>3.7.2</version>
+    <version>3.7.3</version>
   </parent>
 
 </project>
