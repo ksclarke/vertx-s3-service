@@ -9,6 +9,9 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.BasicSessionCredentials;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 
+import info.freelibrary.util.Logger;
+import info.freelibrary.util.LoggerFactory;
+
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -23,10 +26,17 @@ import io.vertx.core.http.HttpServerFileUpload;
 /**
  * An S3 client implementation used by the S3Pairtree object.
  */
+@SuppressWarnings("PMD.TooManyMethods")
 public class S3Client {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(S3Client.class, Constants.BUNDLE_NAME);
 
     /** Default S3 endpoint */
     private static final String DEFAULT_ENDPOINT = "s3.amazonaws.com";
+
+    private static final String LIST_CMD = "?list-type=2";
+
+    private static final String PREFIX_LIST_CMD = "?list-type=2&prefix=";
 
     /** AWS access key */
     private final String myAccessKey;
@@ -190,7 +200,7 @@ public class S3Client {
     }
 
     /**
-     * Performs a HEAD request on an object in S3.
+     * Performs a HEAD request on an object in S3. Logs any exceptions.
      *
      * @param aBucket An S3 bucket
      * @param aKey An S3 key
@@ -201,7 +211,20 @@ public class S3Client {
     }
 
     /**
-     * Gets an object, represented by the supplied key, from an S3 bucket.
+     * Performs a HEAD request on an object in S3.
+     *
+     * @param aBucket An S3 bucket
+     * @param aKey An S3 key
+     * @param aHandler A response handler
+     * @param aExceptionHandler An exception handler
+     */
+    public void head(final String aBucket, final String aKey, final Handler<HttpClientResponse> aHandler,
+            final Handler<Throwable> aExceptionHandler) {
+        createHeadRequest(aBucket, aKey, aHandler).exceptionHandler(aExceptionHandler).end();
+    }
+
+    /**
+     * Gets an object, represented by the supplied key, from an S3 bucket. Logs any exceptions.
      *
      * @param aBucket An S3 bucket
      * @param aKey An S3 key
@@ -212,13 +235,49 @@ public class S3Client {
     }
 
     /**
-     * Lists an S3 bucket.
+     * Gets an object, represented by the supplied key, from an S3 bucket.
+     *
+     * @param aBucket An S3 bucket
+     * @param aKey An S3 key
+     * @param aHandler A response handler
+     * @param aExceptionHandler An exception handler
+     */
+    public void get(final String aBucket, final String aKey, final Handler<HttpClientResponse> aHandler,
+            final Handler<Throwable> aExceptionHandler) {
+        createGetRequest(aBucket, aKey, aHandler).exceptionHandler(aExceptionHandler).end();
+    }
+
+    /**
+     * Lists an S3 bucket. Logs any exceptions.
      *
      * @param aBucket A bucket from which to get a listing
      * @param aHandler A response handler
      */
     public void list(final String aBucket, final Handler<HttpClientResponse> aHandler) {
-        createGetRequest(aBucket, "?list-type=2", aHandler).end();
+        createGetRequest(aBucket, LIST_CMD, aHandler).end();
+    }
+
+    /**
+     * Lists an S3 bucket.
+     *
+     * @param aBucket A bucket from which to get a listing
+     * @param aHandler A response handler
+     * @param aExceptionHandler An exception handler
+     */
+    public void list(final String aBucket, final Handler<HttpClientResponse> aHandler,
+            final Handler<Throwable> aExceptionHandler) {
+        createGetRequest(aBucket, LIST_CMD, aHandler).exceptionHandler(aExceptionHandler).end();
+    }
+
+    /**
+     * Lists an S3 bucket using the supplied prefix as a filter. Logs any exceptions.
+     *
+     * @param aBucket An S3 bucket
+     * @param aPrefix A prefix to use to limit which objects are listed
+     * @param aHandler A response handler
+     */
+    public void list(final String aBucket, final String aPrefix, final Handler<HttpClientResponse> aHandler) {
+        createGetRequest(aBucket, PREFIX_LIST_CMD + aPrefix, aHandler).end();
     }
 
     /**
@@ -227,13 +286,15 @@ public class S3Client {
      * @param aBucket An S3 bucket
      * @param aPrefix A prefix to use to limit which objects are listed
      * @param aHandler A response handler
+     * @param aExceptionHandler An exception handler
      */
-    public void list(final String aBucket, final String aPrefix, final Handler<HttpClientResponse> aHandler) {
-        createGetRequest(aBucket, "?list-type=2&prefix=" + aPrefix, aHandler).end();
+    public void list(final String aBucket, final String aPrefix, final Handler<HttpClientResponse> aHandler,
+            final Handler<Throwable> aExceptionHandler) {
+        createGetRequest(aBucket, PREFIX_LIST_CMD + aPrefix, aHandler).exceptionHandler(aExceptionHandler).end();
     }
 
     /**
-     * Uploads contents of the Buffer to S3.
+     * Uploads contents of the Buffer to S3. Logs any exceptions.
      *
      * @param aBucket An S3 bucket
      * @param aKey An S3 key
@@ -251,6 +312,20 @@ public class S3Client {
      * @param aBucket An S3 bucket
      * @param aKey An S3 key
      * @param aBuffer A data buffer
+     * @param aHandler A response handler
+     * @param aExceptionHandler An exception handler
+     */
+    public void put(final String aBucket, final String aKey, final Buffer aBuffer,
+            final Handler<HttpClientResponse> aHandler, final Handler<Throwable> aExceptionHandler) {
+        createPutRequest(aBucket, aKey, aHandler).exceptionHandler(aExceptionHandler).end(aBuffer);
+    }
+
+    /**
+     * Uploads contents of the Buffer to S3. Logs any exceptions.
+     *
+     * @param aBucket An S3 bucket
+     * @param aKey An S3 key
+     * @param aBuffer A data buffer
      * @param aMetadata User metadata that should be set on the S3 object
      * @param aHandler A response handler
      */
@@ -260,7 +335,23 @@ public class S3Client {
     }
 
     /**
-     * Uploads the file contents to S3.
+     * Uploads contents of the Buffer to S3.
+     *
+     * @param aBucket An S3 bucket
+     * @param aKey An S3 key
+     * @param aBuffer A data buffer
+     * @param aMetadata User metadata that should be set on the S3 object
+     * @param aHandler A response handler
+     * @param aExceptionHandler An exception handler
+     */
+    public void put(final String aBucket, final String aKey, final Buffer aBuffer, final UserMetadata aMetadata,
+            final Handler<HttpClientResponse> aHandler, final Handler<Throwable> aExceptionHandler) {
+        createPutRequest(aBucket, aKey, aHandler).exceptionHandler(aExceptionHandler).setUserMetadata(aMetadata).end(
+                aBuffer);
+    }
+
+    /**
+     * Uploads the file contents to S3. Logs any exceptions.
      *
      * @param aBucket An S3 bucket
      * @param aKey An S3 key
@@ -278,11 +369,40 @@ public class S3Client {
      * @param aBucket An S3 bucket
      * @param aKey An S3 key
      * @param aFile A file to upload
+     * @param aHandler A response handler for the upload
+     * @param aExceptionHandler An exception handler
+     */
+    public void put(final String aBucket, final String aKey, final AsyncFile aFile,
+            final Handler<HttpClientResponse> aHandler, final Handler<Throwable> aExceptionHandler) {
+        put(aBucket, aKey, aFile, null, aHandler, aExceptionHandler);
+    }
+
+    /**
+     * Uploads the file contents to S3. Logs any exceptions.
+     *
+     * @param aBucket An S3 bucket
+     * @param aKey An S3 key
+     * @param aFile A file to upload
      * @param aMetadata User metadata to set on the S3 object
      * @param aHandler A response handler for the upload
      */
     public void put(final String aBucket, final String aKey, final AsyncFile aFile, final UserMetadata aMetadata,
             final Handler<HttpClientResponse> aHandler) {
+        put(aBucket, aKey, aFile, aMetadata, aHandler, null);
+    }
+
+    /**
+     * Uploads the file contents to S3. Logs any exceptions.
+     *
+     * @param aBucket An S3 bucket
+     * @param aKey An S3 key
+     * @param aFile A file to upload
+     * @param aMetadata User metadata to set on the S3 object
+     * @param aHandler A response handler for the upload
+     * @param aExceptionHandler An exception handler for the upload
+     */
+    public void put(final String aBucket, final String aKey, final AsyncFile aFile, final UserMetadata aMetadata,
+            final Handler<HttpClientResponse> aHandler, final Handler<Throwable> aExceptionHandler) {
         final S3ClientRequest request = createPutRequest(aBucket, aKey, aHandler);
         final Buffer buffer = Buffer.buffer();
 
@@ -290,18 +410,27 @@ public class S3Client {
             request.setUserMetadata(aMetadata);
         }
 
+        aFile.handler(data -> {
+            buffer.appendBuffer(data);
+        });
+
         aFile.endHandler(event -> {
             request.putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(buffer.length()));
             request.end(buffer);
         });
 
-        aFile.handler(data -> {
-            buffer.appendBuffer(data);
-        });
+        // If we have an exception handler, use it; else, just log any exceptions
+        if (aExceptionHandler == null) {
+            request.exceptionHandler(exception -> {
+                LOGGER.error(exception, exception.getMessage());
+            });
+        } else {
+            request.exceptionHandler(aExceptionHandler);
+        }
     }
 
     /**
-     * Uploads the file contents to S3.
+     * Uploads the file contents to S3. Logs any exceptions.
      *
      * @param aBucket An S3 bucket
      * @param aKey An S3 key
@@ -319,11 +448,41 @@ public class S3Client {
      * @param aBucket An S3 bucket
      * @param aKey An S3 key
      * @param aUpload An HttpServerFileUpload
+     * @param aHandler An upload response handler
+     * @param aExceptionHandler An exception handler
+     */
+    public void put(final String aBucket, final String aKey, final HttpServerFileUpload aUpload,
+            final Handler<HttpClientResponse> aHandler, final Handler<Throwable> aExceptionHandler) {
+        put(aBucket, aKey, aUpload, null, aHandler, aExceptionHandler);
+    }
+
+    /**
+     * Uploads the file contents to S3. Logs any exceptions.
+     *
+     * @param aBucket An S3 bucket
+     * @param aKey An S3 key
+     * @param aUpload An HttpServerFileUpload
      * @param aMetadata User metadata to set on the uploaded S3 object
      * @param aHandler An upload response handler
      */
     public void put(final String aBucket, final String aKey, final HttpServerFileUpload aUpload,
             final UserMetadata aMetadata, final Handler<HttpClientResponse> aHandler) {
+        put(aBucket, aKey, aUpload, aMetadata, aHandler, null);
+    }
+
+    /**
+     * Uploads the file contents to S3.
+     *
+     * @param aBucket An S3 bucket
+     * @param aKey An S3 key
+     * @param aUpload An HttpServerFileUpload
+     * @param aMetadata User metadata to set on the uploaded S3 object
+     * @param aHandler An upload response handler
+     * @param aExceptionHandler An upload exception handler
+     */
+    public void put(final String aBucket, final String aKey, final HttpServerFileUpload aUpload,
+            final UserMetadata aMetadata, final Handler<HttpClientResponse> aHandler,
+            final Handler<Throwable> aExceptionHandler) {
         final S3ClientRequest request = createPutRequest(aBucket, aKey, aHandler);
         final Buffer buffer = Buffer.buffer();
 
@@ -331,14 +490,33 @@ public class S3Client {
             request.setUserMetadata(aMetadata);
         }
 
+        aUpload.handler(data -> {
+            buffer.appendBuffer(data);
+        });
+
         aUpload.endHandler(event -> {
             request.putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(buffer.length()));
             request.end(buffer);
         });
 
-        aUpload.handler(data -> {
-            buffer.appendBuffer(data);
-        });
+        if (aExceptionHandler == null) {
+            request.exceptionHandler(exception -> {
+                LOGGER.error(exception, exception.getMessage());
+            });
+        } else {
+            request.exceptionHandler(aExceptionHandler);
+        }
+    }
+
+    /**
+     * Deletes the S3 resource represented by the supplied key. Logs any exceptions.
+     *
+     * @param aBucket An S3 bucket
+     * @param aKey An S3 key
+     * @param aHandler A response handler
+     */
+    public void delete(final String aBucket, final String aKey, final Handler<HttpClientResponse> aHandler) {
+        createDeleteRequest(aBucket, aKey, aHandler).end();
     }
 
     /**
@@ -347,9 +525,11 @@ public class S3Client {
      * @param aBucket An S3 bucket
      * @param aKey An S3 key
      * @param aHandler A response handler
+     * @param aExceptionHandler An exception handler
      */
-    public void delete(final String aBucket, final String aKey, final Handler<HttpClientResponse> aHandler) {
-        createDeleteRequest(aBucket, aKey, aHandler).end();
+    public void delete(final String aBucket, final String aKey, final Handler<HttpClientResponse> aHandler,
+            final Handler<Throwable> aExceptionHandler) {
+        createDeleteRequest(aBucket, aKey, aHandler).exceptionHandler(aExceptionHandler).end();
     }
 
     /**
