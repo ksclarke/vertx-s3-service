@@ -5,7 +5,7 @@
 
   <artifactId>vertx-super-s3</artifactId>
   <packaging>jar</packaging>
-  <version>1.2.0</version>
+  <version>1.2.1-SNAPSHOT</version>
   <name>Vert.x Super S3</name>
   <description>An S3 client library for the Vert.x toolkit</description>
   <url>http://projects.freelibrary.info/vertx-super-s3</url>
