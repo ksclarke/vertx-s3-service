@@ -5,7 +5,7 @@
 
   <artifactId>vertx-super-s3</artifactId>
   <packaging>jar</packaging>
-  <version>1.1.4-SNAPSHOT</version>
+  <version>1.2.0-SNAPSHOT</version>
   <name>Vert.x Super S3</name>
   <description>An S3 client library for the Vert.x toolkit</description>
   <url>http://projects.freelibrary.info/vertx-super-s3</url>
@@ -202,7 +202,7 @@
         </configuration>
       </plugin>
       <plugin>
-        <groupId>br.com.ingenieux</groupId>
+        <groupId>org.jbake</groupId>
         <artifactId>jbake-maven-plugin</artifactId>
       </plugin>
     </plugins>
@@ -248,7 +248,7 @@
   <parent>
     <artifactId>freelib-parent</artifactId>
     <groupId>info.freelibrary</groupId>
-    <version>3.7.3</version>
+    <version>3.7.5</version>
   </parent>
 
 </project>
