@@ -16,6 +16,11 @@
       <username>${env.SONATYPE_USERNAME}</username>
       <password>${env.SONATYPE_PASSWORD}</password>
     </server>
+    <server>
+      <id>s3.site</id>
+      <username>${env.S3_SITE_USERNAME}</username>
+      <password>${env.S3_SITE_PASSWORD}</password>
+    </server>
   </servers>
   <mirrors>
     <mirror>
