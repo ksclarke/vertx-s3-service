@@ -1345,6 +1345,35 @@ public class S3ClientIT extends AbstractS3IT {
     }
 
     /**
+     * Test for
+     * {@link info.freelibrary.vertx.s3.S3Client#delete(java.lang.String, java.lang.String, io.vertx.core.Handler)}
+     */
+    @Test
+    public void testDeleteV2(final TestContext aContext) {
+        LOGGER.info(MessageCodes.SS3_006, myName.getMethodName());
+
+        final Async asyncTask = aContext.async();
+        final String s3Key = TEST_KEY_PREFIX + myTestID + TEST_KEY_SUFFIX;
+        final UserMetadata metadata = new UserMetadata(THREE, FOUR);
+
+        if (createResource(s3Key, aContext, asyncTask)) {
+            myV2Client.delete(myTestBucket, s3Key, response -> {
+                final int code = response.statusCode();
+
+                if (code != 204) {
+                    response.bodyHandler(body -> {
+                        final String status = response.statusMessage() + System.lineSeparator() + body.toString();
+
+                        aContext.fail(LOGGER.getMessage(MessageCodes.SS3_001, HTTP.DELETE, s3Key, code, status));
+                    });
+                } else {
+                    asyncTask.complete();
+                }
+            });
+        }
+    }
+
+    /**
      * Tests PUTing an AsyncFile to S3 bucket.
      *
      * @param aContext A testing environment
