@@ -1,22 +1,14 @@
 
 package info.freelibrary.vertx.s3;
 
-import static info.freelibrary.vertx.s3.Constants.PATH_SEP;
+import static info.freelibrary.vertx.s3.AwsSignatureFactory.Version.V2;
 
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.text.SimpleDateFormat;
-import java.util.Base64;
-import java.util.Date;
-import java.util.Locale;
-import java.util.StringJoiner;
-
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
+import java.net.URI;
+import java.nio.charset.Charset;
+import java.util.Optional;
 
 import info.freelibrary.util.Logger;
 import info.freelibrary.util.LoggerFactory;
-import info.freelibrary.util.StringUtils;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
@@ -25,6 +17,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpConnection;
+import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
@@ -33,25 +26,12 @@ import io.vertx.core.http.StreamPriority;
  * An S3 client request implementation of <code>HttpClientRequest</code>.
  */
 @SuppressWarnings({ "PMD.ExcessivePublicCount", "PMD.TooManyMethods", "PMD.AvoidDuplicateLiterals" })
-public class S3ClientRequest implements HttpClientRequest {
+class S3ClientRequest implements HttpClientRequest {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(S3ClientRequest.class, Constants.BUNDLE_NAME);
 
     /** Prefix for the AWS user metadata keys */
     private static final String AWS_NAME_PREFIX = "x-amz-meta-";
-
-    /** Hash-based message authentication code used for signing AWS requests */
-    private static final String HASH_CODE = "HmacSHA1";
-
-    /** System-independent end of line */
-    private static final String EOL = "\n";
-
-    /** Colon, which is used as a header delimiter **/
-    private static final String COLON = ":";
-
-    /** The date format used for timestamping S3 requests */
-    private static final String DATE_FORMAT = "EEE, dd MMM yyyy HH:mm:ss zzz";
-
-    /** The logger used for S3 client requests */
-    private static final Logger LOGGER = LoggerFactory.getLogger(S3ClientRequest.class);
 
     /** The underlying S3 HTTP client request */
     private final HttpClientRequest myRequest;
@@ -65,37 +45,29 @@ public class S3ClientRequest implements HttpClientRequest {
     /** The S3 key for the request */
     private final String myKey;
 
-    /** The MD5 for the content */
-    private String myContentMd5;
+    /** The AWS S3 credentials */
+    private final Optional<AwsCredentials> myCredentials;
 
-    /** The content type for the request */
-    private String myContentType;
-
-    /** AWS access key */
-    private String myAccessKey;
-
-    /** AWS secret key */
-    private String mySecretKey;
-
-    /** The S3 session token (optional) */
-    private final String mySessionToken;
+    /** Whether to use the older v2 syntax */
+    private boolean isV2Signature;
 
     /**
      * Creates a new S3 client request.
      *
+     * @param aEndpoint An S3 endpoint
      * @param aMethod An HTTP method
      * @param aBucket An S3 bucket
      * @param aKey An S3 key
      * @param aRequest A HttpClientRequest
      */
-    public S3ClientRequest(final String aMethod, final String aBucket, final String aKey,
-            final HttpClientRequest aRequest) {
+    S3ClientRequest(final String aMethod, final String aBucket, final String aKey, final HttpClientRequest aRequest) {
         this(aMethod, aBucket, aKey, aRequest, null, null, null);
     }
 
     /**
      * Creates a new S3 client request.
      *
+     * @param aEndpoint An S3 endpoint
      * @param aMethod An HTTP method
      * @param aBucket An S3 bucket
      * @param aKey An S3 key
@@ -104,37 +76,26 @@ public class S3ClientRequest implements HttpClientRequest {
      * @param aSecretKey An AWS secret key
      * @param aSessionToken An S3 session token (optional)
      */
-    public S3ClientRequest(final String aMethod, final String aBucket, final String aKey,
-            final HttpClientRequest aRequest, final String aAccessKey, final String aSecretKey,
-            final String aSessionToken) {
-        this(aMethod, aBucket, aKey, aRequest, aAccessKey, aSecretKey, aSessionToken, "", "");
-    }
-
-    /**
-     * Creates a new S3 client request.
-     *
-     * @param aMethod An HTTP method
-     * @param aBucket An S3 bucket
-     * @param aKey An S3 key
-     * @param aRequest A HttpClientRequest
-     * @param aAccessKey An AWS access key
-     * @param aSecretKey An AWS secret key
-     * @param aSessionToken An S3 session token (optional)
-     * @param aContentMd5 An MD5 hash for the request's content
-     * @param aContentType A type of the request's content
-     */
-    public S3ClientRequest(final String aMethod, final String aBucket, final String aKey,
-            final HttpClientRequest aRequest, final String aAccessKey, final String aSecretKey,
-            final String aSessionToken, final String aContentMd5, final String aContentType) {
+    S3ClientRequest(final String aMethod, final String aBucket, final String aKey, final HttpClientRequest aRequest,
+            final String aAccessKey, final String aSecretKey, final String aSessionToken) {
         myMethod = aMethod;
         myBucket = aBucket;
         myKey = aKey;
         myRequest = aRequest;
-        myAccessKey = aAccessKey;
-        mySecretKey = aSecretKey;
-        mySessionToken = aSessionToken;
-        myContentMd5 = aContentMd5;
-        myContentType = aContentType;
+
+        if (aAccessKey != null && aSecretKey != null) {
+            if (aSessionToken != null) {
+                myCredentials = Optional.of(new AwsCredentials(aAccessKey, aSecretKey, aSessionToken));
+            } else {
+                myCredentials = Optional.of(new AwsCredentials(aAccessKey, aSecretKey));
+            }
+        } else {
+            if (aAccessKey != null || aSecretKey != null) {
+                LOGGER.warn(MessageCodes.SS3_009);
+            }
+
+            myCredentials = Optional.empty();
+        }
     }
 
     @Override
@@ -285,26 +246,37 @@ public class S3ClientRequest implements HttpClientRequest {
 
     @Override
     public void end(final String aChunk) {
-        initAuthenticationHeader();
+        addAuthorizationHeader(aChunk.getBytes());
         myRequest.end(aChunk);
     }
 
     @Override
     public void end(final String aChunk, final String aEncoding) {
-        initAuthenticationHeader();
+        addAuthorizationHeader(aChunk.getBytes(Charset.forName(aEncoding)));
         myRequest.end(aChunk, aEncoding);
     }
 
     @Override
     public void end(final Buffer aChunk) {
-        initAuthenticationHeader();
+        addAuthorizationHeader(aChunk.getBytes());
         myRequest.end(aChunk);
     }
 
     @Override
     public void end() {
-        initAuthenticationHeader();
+        addAuthenticationHeader();
         myRequest.end();
+    }
+
+    /**
+     * Tells the S3 request to use the older, almost obsolete, AWS V2 signature format.
+     *
+     * @param aV2Signature
+     * @return The S3 client request
+     */
+    public S3ClientRequest useV2Signature(final boolean aV2Signature) {
+        isV2Signature = aV2Signature;
+        return this;
     }
 
     /**
@@ -312,82 +284,39 @@ public class S3ClientRequest implements HttpClientRequest {
      *
      * @return The S3 client request
      */
-    protected S3ClientRequest initAuthenticationHeader() {
-        if (isAuthenticated()) {
-            // Calculate the v2 signature
-            // http://docs.amazonwebservices.com/AmazonS3/latest/dev/RESTAuthentication.html
-            // #ConstructingTheAuthenticationHeader
+    protected S3ClientRequest addAuthenticationHeader() {
+        return addAuthorizationHeader(new byte[] {});
+    }
 
-            // Date should look like Thu, 17 Nov 2005 18:49:58 GMT, and must be
-            // within 15 min. of S3 server time. contentMd5 and type are optional
+    /**
+     * Adds the authentication header.
+     *
+     * @return The S3 client request
+     */
+    protected S3ClientRequest addAuthorizationHeader(final byte[] aBytes) {
+        if (myCredentials.isPresent()) {
+            final MultiMap headers = headers();
+            final AwsSignatureFactory factory;
+            final AwsSignature signature;
 
-            // We can't risk letting our date get clobbered and being inconsistent
-            final String xamzdate = new SimpleDateFormat(DATE_FORMAT, Locale.US).format(new Date());
-            final StringJoiner signedHeaders = new StringJoiner(EOL, "", EOL);
-            final StringBuilder toSign = new StringBuilder();
-            final String key = myKey.charAt(0) == '?' ? "" : myKey;
-
-            headers().add("X-Amz-Date", xamzdate);
-            signedHeaders.add("x-amz-date:" + xamzdate);
-
-            if (!StringUtils.isEmpty(mySessionToken)) {
-                headers().add("X-Amz-Security-Token", mySessionToken);
-                signedHeaders.add("x-amz-security-token:" + mySessionToken);
+            // Get the signature we want; only the latest signature version requires a host
+            if (isV2Signature) {
+                factory = AwsSignatureFactory.getFactory(V2);
+            } else {
+                factory = AwsSignatureFactory.getFactory().setHost(URI.create(absoluteURI()));
             }
 
-            /* If we have any user metadata set, add them to the signed headers */
-            headers().forEach(header -> {
-                final String userMetadataKey = header.getKey();
+            factory.setCredentials(myCredentials.get());
 
-                if (header.getKey().startsWith(AWS_NAME_PREFIX)) {
-                    signedHeaders.add(userMetadataKey + COLON + header.getValue());
-                }
-            });
+            // If the content-md5 header isn't already set, we can set it now using our supplied byte array
+            if (!headers.contains(HttpHeaders.CONTENT_MD5) && aBytes != null && aBytes.length > 0) {
 
-            toSign.append(myMethod).append(EOL).append(myContentMd5).append(EOL).append(myContentType).append(EOL)
-                    .append(EOL).append(signedHeaders).append(PATH_SEP).append(myBucket).append(PATH_SEP).append(key);
-
-            try {
-                final String signature = b64SignHmacSha1(mySecretKey, toSign.toString());
-                final String authorization = "AWS" + " " + myAccessKey + COLON + signature;
-
-                headers().add("Authorization", authorization);
-            } catch (InvalidKeyException | NoSuchAlgorithmException details) {
-                LOGGER.error("Failed to sign S3 request due to {}", details);
             }
+
+            signature = factory.getSignature();
+            headers.add("Authorization", signature.getAuthorization(headers, myMethod, myBucket, myKey, aBytes));
         }
 
-        return this;
-    }
-
-    /**
-     * Returns whether the request is authenticated.
-     *
-     * @return True if request is authenticated; else, false
-     */
-    public boolean isAuthenticated() {
-        return myAccessKey != null && mySecretKey != null;
-    }
-
-    /**
-     * Sets an access key for the request.
-     *
-     * @param aAccessKey An S3 access key
-     * @return The S3 client request
-     */
-    public S3ClientRequest setAccessKey(final String aAccessKey) {
-        myAccessKey = aAccessKey;
-        return this;
-    }
-
-    /**
-     * Sets a secret key for the request.
-     *
-     * @param aSecretKey An S3 secret key
-     * @return The S3 client request
-     */
-    public S3ClientRequest setSecretKey(final String aSecretKey) {
-        mySecretKey = aSecretKey;
         return this;
     }
 
@@ -398,46 +327,6 @@ public class S3ClientRequest implements HttpClientRequest {
      */
     public String getMethod() {
         return myMethod;
-    }
-
-    /**
-     * Gets the content MD5.
-     *
-     * @return The content MD5
-     */
-    public String getContentMd5() {
-        return myContentMd5;
-    }
-
-    /**
-     * Sets the content MD5.
-     *
-     * @param aContentMd5 An MD5 value for the content
-     * @return The S3 client request
-     */
-    public S3ClientRequest setContentMd5(final String aContentMd5) {
-        myContentMd5 = aContentMd5;
-        return this;
-    }
-
-    /**
-     * Gets the content type for the request.
-     *
-     * @return The content type for the request
-     */
-    public String getContentType() {
-        return myContentType;
-    }
-
-    /**
-     * Sets the content type for the request
-     *
-     * @param aContentType The content type for the request
-     * @return The S3 client request
-     */
-    public S3ClientRequest setContentType(final String aContentType) {
-        myContentType = aContentType;
-        return this;
     }
 
     /**
@@ -452,25 +341,6 @@ public class S3ClientRequest implements HttpClientRequest {
         }
 
         return this;
-    }
-
-    /**
-     * Returns a Base64 HmacSha1 signature.
-     *
-     * @param aAwsSecretKey An AWS secret key
-     * @param aCanonicalString A canonical string to encode
-     * @return A Base64 HmacSha1 signature
-     * @throws NoSuchAlgorithmException If the system doesn't support the encoding algorithm
-     * @throws InvalidKeyException If the supplied AWS secret key is invalid
-     */
-    private static String b64SignHmacSha1(final String aAwsSecretKey, final String aCanonicalString)
-            throws NoSuchAlgorithmException, InvalidKeyException {
-        final SecretKeySpec signingKey = new SecretKeySpec(aAwsSecretKey.getBytes(), HASH_CODE);
-        final Mac mac = Mac.getInstance(HASH_CODE);
-
-        mac.init(signingKey);
-
-        return new String(Base64.getEncoder().encode(mac.doFinal(aCanonicalString.getBytes())));
     }
 
     @Override
@@ -517,13 +387,14 @@ public class S3ClientRequest implements HttpClientRequest {
 
     @Override
     public S3ClientRequest sendHead(final Handler<HttpVersion> aHandler) {
+        addAuthenticationHeader();
         myRequest.sendHead(aHandler);
         return this;
     }
 
     @Override
     public S3ClientRequest sendHead() {
-        initAuthenticationHeader();
+        addAuthenticationHeader();
         myRequest.sendHead();
         return this;
     }

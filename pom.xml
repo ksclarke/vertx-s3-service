@@ -48,6 +48,7 @@
     <jackson.version>2.10.1</jackson.version>
     <jackson.databind.version>2.10.1</jackson.databind.version>
     <jaxb.version>2.3.0.1</jaxb.version>
+    <aws.v4.signature.version>1.3</aws.v4.signature.version>
     <jaxb.runtime.version>2.4.0-b180830.0438</jaxb.runtime.version>
 
     <!-- Plug-in versions -->
@@ -80,6 +81,11 @@
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-s3</artifactId>
       <version>${aws.sdk.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>uk.co.lucasweb</groupId>
+      <artifactId>aws-v4-signer-java</artifactId>
+      <version>${aws.v4.signature.version}</version>
     </dependency>
     <!-- Below dependencies are only used for testing -->
     <dependency>
@@ -248,7 +254,7 @@
   <parent>
     <artifactId>freelib-parent</artifactId>
     <groupId>info.freelibrary</groupId>
-    <version>3.7.7</version>
+    <version>3.7.8</version>
   </parent>
 
 </project>

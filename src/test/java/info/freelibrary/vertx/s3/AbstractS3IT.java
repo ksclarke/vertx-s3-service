@@ -123,17 +123,18 @@ public abstract class AbstractS3IT {
      */
     @After
     public void tearDown(final TestContext aContext) {
-        // Clean up our test resources in the S3 bucket
-        final ObjectListing listing = myS3Client.listObjects(myTestBucket);
-        final Iterator<S3ObjectSummary> iterator = listing.getObjectSummaries().iterator();
+        if (myS3Client != null) {
+            final ObjectListing listing = myS3Client.listObjects(myTestBucket);
+            final Iterator<S3ObjectSummary> iterator = listing.getObjectSummaries().iterator();
 
-        while (iterator.hasNext()) {
-            final String key = iterator.next().getKey();
+            while (iterator.hasNext()) {
+                final String key = iterator.next().getKey();
 
-            try {
-                myS3Client.deleteObject(myTestBucket, key);
-            } catch (final AmazonClientException details) {
-                aContext.fail(details);
+                try {
+                    myS3Client.deleteObject(myTestBucket, key);
+                } catch (final AmazonClientException details) {
+                    aContext.fail(details);
+                }
             }
         }
     }

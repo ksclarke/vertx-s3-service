@@ -15,7 +15,11 @@
   <entry key="SS3-002">Please supply your own S3 access and secret keys for testing</entry>
   <entry key="SS3-003">The metadata property name cannot be null.</entry>
   <entry key="SS3-004">Length: {}</entry>
+  <entry key="SS3-005">Tried to create a non-existent type of AWS authentication signature</entry>
   <entry key="SS3-005">Didn't find expected key: {}</entry>
   <entry key="SS3-006">Running: {}</entry>
+  <entry key="SS3-007">Expected algorithm not found: {}</entry>
+  <entry key="SS3-008">Invalid key exception: {}</entry>
+  <entry key="SS3-009">Setting AWS credentials requires at least an access key and a secret key</entry>
 
 </properties>
