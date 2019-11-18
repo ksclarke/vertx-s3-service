@@ -5,6 +5,9 @@ jdk:
 
 before_install:
   - mkdir ~/.aws
+  - printf "[default] \n" >> ~/.aws/credentials
+  - printf "aws_secret_access_key = $VERTX_S3_SECRET_KEY \n" >> ~/.aws/credentials
+  - printf "aws_access_key_id = $VERTX_S3_ACCESS_KEY \n" >> ~/.aws/credentials
   - printf "[vertx-s3] \n" >> ~/.aws/credentials
   - printf "aws_secret_access_key = $VERTX_S3_SECRET_KEY \n" >> ~/.aws/credentials
   - printf "aws_access_key_id = $VERTX_S3_ACCESS_KEY \n" >> ~/.aws/credentials
