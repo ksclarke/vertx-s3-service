@@ -1,6 +1,6 @@
 # vertx-super-s3 &nbsp;[![Build Status](https://api.travis-ci.org/ksclarke/vertx-super-s3.svg?branch=master)](https://travis-ci.org/ksclarke/vertx-super-s3) [![Codacy Badge](https://api.codacy.com/project/badge/Coverage/9d91580617f3424ba17f0738746c3991)](https://www.codacy.com/app/ksclarke/vertx-super-s3?utm_source=github.com&utm_medium=referral&utm_content=ksclarke/vertx-super-s3&utm_campaign=Badge_Coverage) [![Known Vulnerabilities](https://snyk.io/test/github/ksclarke/vertx-super-s3/badge.svg)](https://snyk.io/test/github/ksclarke/vertx-super-s3) [![Maven](https://img.shields.io/maven-metadata/v/http/central.maven.org/maven2/info/freelibrary/vertx-super-s3/maven-metadata.xml.svg?colorB=brightgreen)](http://mvnrepository.com/artifact/info.freelibrary/vertx-supers3) [![Javadocs](http://javadoc.io/badge/info.freelibrary/vertx-super-s3.svg)](http://projects.freelibrary.info/vertx-super-s3/javadocs.html)
 
-An S3 client for the Vert.x toolkit, vertx-super-s3 is a fork of Anand Gupta's [SuperS3t](https://github.com/spartango/SuperS3t/) project. The SuperS3t code was originally integrated into my [vertx-pairtree](https://github.com/ksclarke/vertx-pairtree) project, but I later split out so that it could be used by some of my other projects. Thanks to Anand Gupta for making the original code available under a MIT license. My modifications are available under the same license.
+An S3 client for the Vert.x toolkit, vertx-super-s3 is a fork of Anand Gupta's [SuperS3t](https://github.com/spartango/SuperS3t/) project (which was named after the [JetS3t](http://www.jets3t.org/) library, another S3 library that provides a nice, synchronous, Java implementation). The SuperS3t code was originally integrated into my own [vertx-pairtree](https://github.com/ksclarke/vertx-pairtree) project, but I later split out so that it could be used by some of my other projects. It now lives on its own. Thanks to Anand Gupta for making the original code available under a MIT license. My modifications are available under the same license.
 
 ### Getting Started
 
@@ -39,6 +39,14 @@ You'll also need to put the authorization information in the system AWS credenti
     [vertx-s3]
     aws_secret_access_key = YOUR_SECRET_KEY
     aws_access_key_id = YOUR_ACCESS_KEY
+
+If you do not already have a `default` profile in this credentials file, you will also need to add:
+
+    [default]
+    aws_secret_access_key = YOUR_SECRET_KEY
+    aws_access_key_id = YOUR_ACCESS_KEY
+
+If you do have a default you don't need to change it's values. It's presence is detected by some of the tests, but they don't care about the values found (i.e., they don't try to use it to communicate with S3).
 
 The test bucket name will be taken from the settings.xml file. Once all this is done, the build can be run with the integration tests by supplying the `s3it` profile name at build time:
 
