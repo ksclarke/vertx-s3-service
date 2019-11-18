@@ -98,6 +98,10 @@ class S3ClientRequest implements HttpClientRequest {
         }
     }
 
+    public Optional<AwsCredentials> getCredentials() {
+        return myCredentials;
+    }
+
     @Override
     public S3ClientRequest setFollowRedirects(final boolean aBool) {
         myRequest.setFollowRedirects(aBool);

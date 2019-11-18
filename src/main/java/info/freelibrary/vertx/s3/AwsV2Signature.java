@@ -60,25 +60,12 @@ public class AwsV2Signature implements AwsSignature {
 
     private final AwsCredentials myCredentials;
 
-    private String mySessionToken;
-
     /**
      * Creates a new AWS v2 signature. It must be used within 15 minutes of its creation.
      *
      * @param aCredentials An AWS credentials object
      */
     public AwsV2Signature(final AwsCredentials aCredentials) {
-        myCredentials = aCredentials;
-    }
-
-    /**
-     * Creates a new AWS v2 signature. It must be used within 15 minutes of its creation.
-     *
-     * @param aCredentials AWS credentials
-     * @param aSessionToken An AWS session token
-     */
-    public AwsV2Signature(final AwsCredentials aCredentials, final String aSessionToken) {
-        mySessionToken = aSessionToken;
         myCredentials = aCredentials;
     }
 
@@ -104,9 +91,11 @@ public class AwsV2Signature implements AwsSignature {
         aHeaders.add("X-Amz-Date", xamzdate);
         signedHeaders.add("x-amz-date:" + xamzdate);
 
-        if (!StringUtils.isEmpty(mySessionToken)) {
-            aHeaders.add("X-Amz-Security-Token", mySessionToken);
-            signedHeaders.add("x-amz-security-token:" + mySessionToken);
+        if (myCredentials != null && myCredentials.hasSessionToken()) {
+            final String sessionToken = myCredentials.getSessionToken();
+
+            aHeaders.add("X-Amz-Security-Token", sessionToken);
+            signedHeaders.add("x-amz-security-token:" + sessionToken);
         }
 
         // If we have any user metadata set, add it to the signed headers

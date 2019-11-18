@@ -3,8 +3,12 @@ package info.freelibrary.vertx.s3;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.util.UUID;
+
+import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -12,16 +16,30 @@ import org.junit.Test;
  */
 public class UserMetadataTest {
 
+    private String myName1;
+
+    private String myName2;
+
+    private String myValue1;
+
+    private String myValue2;
+
+    @Before
+    public void setUp() {
+        myName1 = UUID.randomUUID().toString();
+        myName2 = UUID.randomUUID().toString();
+        myValue1 = UUID.randomUUID().toString();
+        myValue2 = UUID.randomUUID().toString();
+    }
+
     /**
      * Tests creating new user metadata from a supplied name-value pair.
      */
     public final void newUserMetadataStringString() {
-        final String name = "name";
-        final String value = "value";
-        final UserMetadata metadata = new UserMetadata(name, value);
+        final UserMetadata metadata = new UserMetadata(myName1, myValue1);
 
-        assertEquals(name, metadata.getName(0));
-        assertEquals(value, metadata.getValue(0));
+        assertEquals(myName1, metadata.getName(0));
+        assertEquals(myValue1, metadata.getValue(0));
     }
 
     /**
@@ -29,11 +47,7 @@ public class UserMetadataTest {
      */
     @Test
     public final void testGetNameInt() {
-        final String name = "aaaa";
-        final String value = "cccc";
-        final UserMetadata metadata = new UserMetadata().add(name, value);
-
-        assertEquals(name, metadata.getName(0));
+        assertEquals(myName1, new UserMetadata().add(myName1, myValue1).getName(0));
     }
 
     /**
@@ -41,11 +55,7 @@ public class UserMetadataTest {
      */
     @Test
     public final void testGetValueInt() {
-        final String name = "bbbb";
-        final String value = "dddd";
-        final UserMetadata metadata = new UserMetadata().add(name, value);
-
-        assertEquals(value, metadata.getValue(0));
+        assertEquals(myValue1, new UserMetadata().add(myName1, myValue1).getValue(0));
     }
 
     /**
@@ -53,11 +63,14 @@ public class UserMetadataTest {
      */
     @Test
     public final void testGetValueString() {
-        final String name = "qqqq";
-        final String value = "pppp";
-        final UserMetadata metadata = new UserMetadata().add(name, value);
+        final UserMetadata metadata = new UserMetadata().add(myName1, myValue1);
 
-        assertEquals(value, metadata.getValue(name));
+        assertEquals(myValue1, metadata.getValue(myName1));
+    }
+
+    @Test
+    public final void testGetValueStringNull() {
+        assertNull(new UserMetadata().add(myName1, myValue1).getValue("nothing"));
     }
 
     /**
@@ -65,13 +78,23 @@ public class UserMetadataTest {
      */
     @Test
     public final void testAddSimple() {
-        final String name = "peach";
-        final String value = "grape";
-        final UserMetadata metadata = new UserMetadata().add(name, value);
+        final UserMetadata metadata = new UserMetadata().add(myName1, myValue1);
 
         assertEquals(1, metadata.count());
-        assertTrue(metadata.contains(name));
-        assertEquals(value, metadata.getValue(name));
+        assertTrue(metadata.contains(myName1));
+        assertEquals(myValue1, metadata.getValue(myName1));
+    }
+
+    /**
+     * Tests adding a name-value pair to user metadata.
+     */
+    @Test
+    public final void testAddNull() {
+        final UserMetadata metadata = new UserMetadata().add(myName1, null);
+
+        assertEquals(1, metadata.count());
+        assertTrue(metadata.contains(myName1));
+        assertEquals(null, metadata.getValue(myName1));
     }
 
     /**
@@ -79,13 +102,11 @@ public class UserMetadataTest {
      */
     @Test
     public final void testIndexOfString() {
-        final String name1 = "good";
-        final String name2 = "wrong";
-        final UserMetadata metadata = new UserMetadata().add(name1, "evil");
+        final UserMetadata metadata = new UserMetadata().add(myName1, myValue1);
 
-        assertEquals(0, metadata.indexOf(name1));
-        metadata.add(name2, "right");
-        assertEquals(1, metadata.indexOf(name2));
+        assertEquals(0, metadata.indexOf(myName1));
+        metadata.add(myName2, myValue2);
+        assertEquals(1, metadata.indexOf(myName2));
     }
 
     /**
@@ -93,17 +114,13 @@ public class UserMetadataTest {
      */
     @Test
     public final void testAddMultiple() {
-        final String name1 = "sky";
-        final String name2 = "rock";
-        final String value1 = "ocean";
-        final String value2 = "tree";
-        final UserMetadata metadata = new UserMetadata().add(name1, value1).add(name2, value2);
+        final UserMetadata metadata = new UserMetadata().add(myName1, myValue1).add(myName2, myValue2);
 
         assertEquals(2, metadata.count());
-        assertTrue(metadata.contains(name1));
-        assertTrue(metadata.contains(name2));
-        assertEquals(value1, metadata.getValue(name1));
-        assertEquals(value2, metadata.getValue(name2));
+        assertTrue(metadata.contains(myName1));
+        assertTrue(metadata.contains(myName2));
+        assertEquals(myValue1, metadata.getValue(myName1));
+        assertEquals(myValue2, metadata.getValue(myName2));
     }
 
     /**
@@ -111,14 +128,11 @@ public class UserMetadataTest {
      */
     @Test
     public final void testAddSame() {
-        final String name1 = "fridge";
-        final String value1 = "ac";
-        final String value2 = "heater";
-        final UserMetadata metadata = new UserMetadata().add(name1, value1).add(name1, value2);
+        final UserMetadata metadata = new UserMetadata().add(myName1, myValue1).add(myName1, myValue2);
 
         assertEquals(1, metadata.count());
-        assertTrue(metadata.contains(name1));
-        assertEquals(value1 + ',' + value2, metadata.getValue(name1));
+        assertTrue(metadata.contains(myName1));
+        assertEquals(myValue1 + ',' + myValue2, metadata.getValue(myName1));
     }
 
     /**
@@ -126,11 +140,10 @@ public class UserMetadataTest {
      */
     @Test
     public final void testRemove() {
-        final String name = "stop";
-        final UserMetadata metadata = new UserMetadata().add(name, "start");
+        final UserMetadata metadata = new UserMetadata().add(myName1, myValue1);
 
         assertEquals(1, metadata.count());
-        assertEquals(0, metadata.remove(name).count());
+        assertEquals(0, metadata.remove(myName1).count());
     }
 
     /**
@@ -138,10 +151,9 @@ public class UserMetadataTest {
      */
     @Test
     public final void testContains() {
-        final String name = "black";
-        final UserMetadata metadata = new UserMetadata().add(name, "white");
+        final UserMetadata metadata = new UserMetadata().add(myName1, myValue1);
 
-        assertTrue(metadata.contains(name));
-        assertFalse(metadata.contains("nothing"));
+        assertTrue(metadata.contains(myName1));
+        assertFalse(metadata.contains(myValue2));
     }
 }

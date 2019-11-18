@@ -73,11 +73,11 @@ public abstract class AbstractS3IT {
      */
     @BeforeClass
     public static void setUpBeforeClass(final TestContext aContext) {
-        final String endpoint = StringUtils.trimToNull(System.getProperty("vertx.s3.region"));
+        final String endpoint = StringUtils.trimToNull(System.getProperty(Constants.S3_REGION));
 
-        myTestBucket = System.getProperty("vertx.s3.bucket", "vertx-pairtree-tests");
-        myAccessKey = System.getProperty("vertx.s3.access_key", YOUR_ACCESS_KEY);
-        mySecretKey = System.getProperty("vertx.s3.secret_key", YOUR_SECRET_KEY);
+        myTestBucket = System.getProperty(Constants.S3_BUCKET, "vertx-pairtree-tests");
+        myAccessKey = System.getProperty(Constants.S3_ACCESS_KEY, YOUR_ACCESS_KEY);
+        mySecretKey = System.getProperty(Constants.S3_SECRET_KEY, YOUR_SECRET_KEY);
 
         try {
             myResource = IOUtils.readBytes(new FileInputStream(TEST_FILE));

@@ -41,7 +41,7 @@
 
   <properties>
     <!-- Dependency versions -->
-    <freelib.utils.version>1.0.1</freelib.utils.version>
+    <freelib.utils.version>1.0.2</freelib.utils.version>
     <freelib.maven.version>0.0.3</freelib.maven.version>
     <aws.sdk.version>1.11.586</aws.sdk.version>
     <vertx.version>3.7.1</vertx.version>
@@ -254,7 +254,7 @@
   <parent>
     <artifactId>freelib-parent</artifactId>
     <groupId>info.freelibrary</groupId>
-    <version>3.7.8</version>
+    <version>3.7.9</version>
   </parent>
 
 </project>

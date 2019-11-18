@@ -1,0 +1,37 @@
+
+package info.freelibrary.vertx.s3;
+
+/**
+ * A class of constants to use in the tests.
+ */
+final class TestConstants {
+
+    static final String TEST_PROFILE = "vertx-s3";
+
+    static final String TEST_KEY_PREFIX = "green-";
+
+    static final String TEST_KEY_SUFFIX = ".gif";
+
+    static final String PATH_TO_ONE = "path/to/one-";
+
+    static final String PATH_TO_TWO = "path/to/two-";
+
+    static final String PATH_FROM_ONE = "path/from/one-";
+
+    static final String PATH_FROM_TWO = "path/from/two-";
+
+    static final String PATH_FROM = "path/from";
+
+    static final String ONE = "one";
+
+    static final String TWO = "two";
+
+    static final String THREE = "three";
+
+    static final String FOUR = "four";
+
+    static final String S3_SERVICE = "s3";
+
+    private TestConstants() {
+    }
+}

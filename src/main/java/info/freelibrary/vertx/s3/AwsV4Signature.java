@@ -99,7 +99,6 @@ public class AwsV4Signature implements AwsSignature {
                 }
             }
 
-            // aHeaders.clear();
             signer.header(HOST, myHost.getHost());
             aHeaders.add(HOST, myHost.getHost());
             signer.header(X_AMZ_DATE, timestamp);

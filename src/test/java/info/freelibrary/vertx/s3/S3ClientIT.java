@@ -33,6 +33,7 @@ import info.freelibrary.util.StringUtils;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.OpenOptions;
+import io.vertx.core.http.HttpClientOptions;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -44,32 +45,6 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 public class S3ClientIT extends AbstractS3IT {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(S3ClientIT.class, BUNDLE_NAME);
-
-    private static final String TEST_PROFILE = "vertx-s3";
-
-    private static final String TEST_KEY_PREFIX = "green-";
-
-    private static final String TEST_KEY_SUFFIX = ".gif";
-
-    private static final String PATH_TO_ONE = "path/to/one-";
-
-    private static final String PATH_TO_TWO = "path/to/two-";
-
-    private static final String PATH_FROM_ONE = "path/from/one-";
-
-    private static final String PATH_FROM_TWO = "path/from/two-";
-
-    private static final String PATH_FROM = "path/from";
-
-    private static final String ONE = "one";
-
-    private static final String TWO = "two";
-
-    private static final String THREE = "three";
-
-    private static final String FOUR = "four";
-
-    private static final String S3_SERVICE = "s3";
 
     @Rule
     public TestName myName = new TestName();
@@ -89,9 +64,10 @@ public class S3ClientIT extends AbstractS3IT {
         super.setUp(aContext);
 
         myTestID = UUID.randomUUID().toString();
-        myClient = new S3Client(myVertx, myAccessKey, mySecretKey, myRegion.getServiceEndpoint(S3_SERVICE));
-        myV2Client = new S3Client(myVertx, myAccessKey, mySecretKey, myRegion.getServiceEndpoint(S3_SERVICE))
-                .useV2Signature(true);
+        myClient = new S3Client(myVertx, myAccessKey, mySecretKey, myRegion.getServiceEndpoint(
+                TestConstants.S3_SERVICE));
+        myV2Client = new S3Client(myVertx, myAccessKey, mySecretKey, myRegion.getServiceEndpoint(
+                TestConstants.S3_SERVICE)).useV2Signature(true);
     }
 
     @Override
@@ -109,13 +85,45 @@ public class S3ClientIT extends AbstractS3IT {
     }
 
     /**
+     * Test empty constructor.
+     */
+    @Test
+    public void testEmptyConstructor() {
+        new S3Client(myVertx);
+    }
+
+    /**
+     * Test constructor with client options.
+     */
+    @Test
+    public void testConstructorWithClientOptions() {
+        new S3Client(myVertx, new HttpClientOptions());
+    }
+
+    /**
+     * Test constructor with endpoint.
+     */
+    @Test
+    public void testConstructorWithEndpoint() {
+        new S3Client(myVertx, S3Client.DEFAULT_ENDPOINT);
+    }
+
+    /**
+     * Test constructor with access and secret keys.
+     */
+    @Test
+    public void testConstructorWithAccessSecretKeys() {
+        new S3Client(myVertx, UUID.randomUUID().toString(), UUID.randomUUID().toString());
+    }
+
+    /**
      * Test for a client constructor that's pulling information from an AWS credentials file.
      */
     @Test
     public void testProfileFromSystemCredentials() {
         LOGGER.info(MessageCodes.SS3_006, myName.getMethodName());
 
-        final Profile profile = new Profile(TEST_PROFILE);
+        final Profile profile = new Profile(TestConstants.TEST_PROFILE);
         final AWSCredentials credentials = profile.getCredentials();
 
         assertEquals(myAccessKey, credentials.getAWSAccessKeyId());
@@ -131,7 +139,7 @@ public class S3ClientIT extends AbstractS3IT {
         LOGGER.info(MessageCodes.SS3_006, myName.getMethodName());
 
         final Async asyncTask = aContext.async();
-        final String s3Key = TEST_KEY_PREFIX + myTestID + TEST_KEY_SUFFIX;
+        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
 
         if (createResource(s3Key, aContext, asyncTask)) {
             myClient.head(myTestBucket, s3Key, response -> {
@@ -164,7 +172,7 @@ public class S3ClientIT extends AbstractS3IT {
         LOGGER.info(MessageCodes.SS3_006, myName.getMethodName());
 
         final Async asyncTask = aContext.async();
-        final String s3Key = TEST_KEY_PREFIX + myTestID + TEST_KEY_SUFFIX;
+        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
 
         if (createResource(s3Key, aContext, asyncTask)) {
             myV2Client.head(myTestBucket, s3Key, response -> {
@@ -197,7 +205,7 @@ public class S3ClientIT extends AbstractS3IT {
         LOGGER.info(MessageCodes.SS3_006, myName.getMethodName());
 
         final Async asyncTask = aContext.async();
-        final String s3Key = TEST_KEY_PREFIX + myTestID + TEST_KEY_SUFFIX;
+        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
 
         if (createResource(s3Key, aContext, asyncTask)) {
             myClient.head(myTestBucket, s3Key, response -> {
@@ -232,7 +240,7 @@ public class S3ClientIT extends AbstractS3IT {
         LOGGER.info(MessageCodes.SS3_006, myName.getMethodName());
 
         final Async asyncTask = aContext.async();
-        final String s3Key = TEST_KEY_PREFIX + myTestID + TEST_KEY_SUFFIX;
+        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
 
         if (createResource(s3Key, aContext, asyncTask)) {
             myV2Client.head(myTestBucket, s3Key, response -> {
@@ -268,8 +276,8 @@ public class S3ClientIT extends AbstractS3IT {
         LOGGER.info(MessageCodes.SS3_006, myName.getMethodName());
 
         final Async asyncTask = aContext.async();
-        final String[] keys = { PATH_TO_ONE + myTestID, PATH_TO_TWO + myTestID, PATH_FROM_ONE + myTestID,
-            PATH_FROM_TWO + myTestID };
+        final String[] keys = { TestConstants.PATH_TO_ONE + myTestID, TestConstants.PATH_TO_TWO + myTestID,
+            TestConstants.PATH_FROM_ONE + myTestID, TestConstants.PATH_FROM_TWO + myTestID };
 
         if (createResources(keys, aContext, asyncTask)) {
             myClient.list(myTestBucket, response -> {
@@ -325,8 +333,8 @@ public class S3ClientIT extends AbstractS3IT {
         LOGGER.info(MessageCodes.SS3_006, myName.getMethodName());
 
         final Async asyncTask = aContext.async();
-        final String[] keys = { PATH_TO_ONE + myTestID, PATH_TO_TWO + myTestID, PATH_FROM_ONE + myTestID,
-            PATH_FROM_TWO + myTestID };
+        final String[] keys = { TestConstants.PATH_TO_ONE + myTestID, TestConstants.PATH_TO_TWO + myTestID,
+            TestConstants.PATH_FROM_ONE + myTestID, TestConstants.PATH_FROM_TWO + myTestID };
 
         if (createResources(keys, aContext, asyncTask)) {
             myV2Client.list(myTestBucket, response -> {
@@ -383,8 +391,8 @@ public class S3ClientIT extends AbstractS3IT {
         LOGGER.info(MessageCodes.SS3_006, myName.getMethodName());
 
         final Async asyncTask = aContext.async();
-        final String[] keys = { PATH_TO_ONE + myTestID, PATH_TO_TWO + myTestID, PATH_FROM_ONE + myTestID,
-            PATH_FROM_TWO + myTestID };
+        final String[] keys = { TestConstants.PATH_TO_ONE + myTestID, TestConstants.PATH_TO_TWO + myTestID,
+            TestConstants.PATH_FROM_ONE + myTestID, TestConstants.PATH_FROM_TWO + myTestID };
 
         if (createResources(keys, aContext, asyncTask)) {
             myClient.list(myTestBucket, response -> {
@@ -443,8 +451,8 @@ public class S3ClientIT extends AbstractS3IT {
         LOGGER.info(MessageCodes.SS3_006, myName.getMethodName());
 
         final Async asyncTask = aContext.async();
-        final String[] keys = { PATH_TO_ONE + myTestID, PATH_TO_TWO + myTestID, PATH_FROM_ONE + myTestID,
-            PATH_FROM_TWO + myTestID };
+        final String[] keys = { TestConstants.PATH_TO_ONE + myTestID, TestConstants.PATH_TO_TWO + myTestID,
+            TestConstants.PATH_FROM_ONE + myTestID, TestConstants.PATH_FROM_TWO + myTestID };
 
         if (createResources(keys, aContext, asyncTask)) {
             myV2Client.list(myTestBucket, response -> {
@@ -502,11 +510,11 @@ public class S3ClientIT extends AbstractS3IT {
         LOGGER.info(MessageCodes.SS3_006, myName.getMethodName());
 
         final Async asyncTask = aContext.async();
-        final String[] keys = { PATH_TO_ONE + myTestID, PATH_TO_TWO + myTestID, PATH_FROM_ONE + myTestID,
-            PATH_FROM_TWO + myTestID };
+        final String[] keys = { TestConstants.PATH_TO_ONE + myTestID, TestConstants.PATH_TO_TWO + myTestID,
+            TestConstants.PATH_FROM_ONE + myTestID, TestConstants.PATH_FROM_TWO + myTestID };
 
         if (createResources(keys, aContext, asyncTask)) {
-            myClient.list(myTestBucket, PATH_FROM, response -> {
+            myClient.list(myTestBucket, TestConstants.PATH_FROM, response -> {
                 final int code = response.statusCode();
 
                 if (code == 200) {
@@ -557,11 +565,11 @@ public class S3ClientIT extends AbstractS3IT {
         LOGGER.info(MessageCodes.SS3_006, myName.getMethodName());
 
         final Async asyncTask = aContext.async();
-        final String[] keys = { PATH_TO_ONE + myTestID, PATH_TO_TWO + myTestID, PATH_FROM_ONE + myTestID,
-            PATH_FROM_TWO + myTestID };
+        final String[] keys = { TestConstants.PATH_TO_ONE + myTestID, TestConstants.PATH_TO_TWO + myTestID,
+            TestConstants.PATH_FROM_ONE + myTestID, TestConstants.PATH_FROM_TWO + myTestID };
 
         if (createResources(keys, aContext, asyncTask)) {
-            myV2Client.list(myTestBucket, PATH_FROM, response -> {
+            myV2Client.list(myTestBucket, TestConstants.PATH_FROM, response -> {
                 final int code = response.statusCode();
 
                 if (code == 200) {
@@ -613,11 +621,11 @@ public class S3ClientIT extends AbstractS3IT {
         LOGGER.info(MessageCodes.SS3_006, myName.getMethodName());
 
         final Async asyncTask = aContext.async();
-        final String[] keys = { PATH_TO_ONE + myTestID, PATH_TO_TWO + myTestID, PATH_FROM_ONE + myTestID,
-            PATH_FROM_TWO + myTestID };
+        final String[] keys = { TestConstants.PATH_TO_ONE + myTestID, TestConstants.PATH_TO_TWO + myTestID,
+            TestConstants.PATH_FROM_ONE + myTestID, TestConstants.PATH_FROM_TWO + myTestID };
 
         if (createResources(keys, aContext, asyncTask)) {
-            myClient.list(myTestBucket, PATH_FROM, response -> {
+            myClient.list(myTestBucket, TestConstants.PATH_FROM, response -> {
                 final int code = response.statusCode();
 
                 if (code == 200) {
@@ -671,11 +679,11 @@ public class S3ClientIT extends AbstractS3IT {
         LOGGER.info(MessageCodes.SS3_006, myName.getMethodName());
 
         final Async asyncTask = aContext.async();
-        final String[] keys = { PATH_TO_ONE + myTestID, PATH_TO_TWO + myTestID, PATH_FROM_ONE + myTestID,
-            PATH_FROM_TWO + myTestID };
+        final String[] keys = { TestConstants.PATH_TO_ONE + myTestID, TestConstants.PATH_TO_TWO + myTestID,
+            TestConstants.PATH_FROM_ONE + myTestID, TestConstants.PATH_FROM_TWO + myTestID };
 
         if (createResources(keys, aContext, asyncTask)) {
-            myV2Client.list(myTestBucket, PATH_FROM, response -> {
+            myV2Client.list(myTestBucket, TestConstants.PATH_FROM, response -> {
                 final int code = response.statusCode();
 
                 if (code == 200) {
@@ -727,7 +735,7 @@ public class S3ClientIT extends AbstractS3IT {
         LOGGER.info(MessageCodes.SS3_006, myName.getMethodName());
 
         final Async asyncTask = aContext.async();
-        final String s3Key = TEST_KEY_PREFIX + myTestID + TEST_KEY_SUFFIX;
+        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
 
         if (createResource(s3Key, aContext, asyncTask)) {
             myClient.get(myTestBucket, s3Key, response -> {
@@ -759,7 +767,7 @@ public class S3ClientIT extends AbstractS3IT {
         LOGGER.info(MessageCodes.SS3_006, myName.getMethodName());
 
         final Async asyncTask = aContext.async();
-        final String s3Key = TEST_KEY_PREFIX + myTestID + TEST_KEY_SUFFIX;
+        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
 
         if (createResource(s3Key, aContext, asyncTask)) {
             myV2Client.get(myTestBucket, s3Key, response -> {
@@ -792,7 +800,7 @@ public class S3ClientIT extends AbstractS3IT {
         LOGGER.info(MessageCodes.SS3_006, myName.getMethodName());
 
         final Async asyncTask = aContext.async();
-        final String s3Key = TEST_KEY_PREFIX + myTestID + TEST_KEY_SUFFIX;
+        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
 
         if (createResource(s3Key, aContext, asyncTask)) {
             myClient.get(myTestBucket, s3Key, response -> {
@@ -827,7 +835,7 @@ public class S3ClientIT extends AbstractS3IT {
         LOGGER.info(MessageCodes.SS3_006, myName.getMethodName());
 
         final Async asyncTask = aContext.async();
-        final String s3Key = TEST_KEY_PREFIX + myTestID + TEST_KEY_SUFFIX;
+        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
 
         if (createResource(s3Key, aContext, asyncTask)) {
             myV2Client.get(myTestBucket, s3Key, response -> {
@@ -862,7 +870,7 @@ public class S3ClientIT extends AbstractS3IT {
         LOGGER.info(MessageCodes.SS3_006, myName.getMethodName());
 
         final Async asyncTask = aContext.async();
-        final String s3Key = TEST_KEY_PREFIX + myTestID + TEST_KEY_SUFFIX;
+        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
 
         myClient.put(myTestBucket, s3Key, Buffer.buffer(myResource), response -> {
             final int code = response.statusCode();
@@ -887,7 +895,7 @@ public class S3ClientIT extends AbstractS3IT {
         LOGGER.info(MessageCodes.SS3_006, myName.getMethodName());
 
         final Async asyncTask = aContext.async();
-        final String s3Key = TEST_KEY_PREFIX + myTestID + TEST_KEY_SUFFIX;
+        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
 
         myV2Client.put(myTestBucket, s3Key, Buffer.buffer(myResource), response -> {
             final int code = response.statusCode();
@@ -913,7 +921,7 @@ public class S3ClientIT extends AbstractS3IT {
         LOGGER.info(MessageCodes.SS3_006, myName.getMethodName());
 
         final Async asyncTask = aContext.async();
-        final String s3Key = TEST_KEY_PREFIX + myTestID + TEST_KEY_SUFFIX;
+        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
 
         myClient.put(myTestBucket, s3Key, Buffer.buffer(myResource), response -> {
             final int code = response.statusCode();
@@ -941,7 +949,7 @@ public class S3ClientIT extends AbstractS3IT {
         LOGGER.info(MessageCodes.SS3_006, myName.getMethodName());
 
         final Async asyncTask = aContext.async();
-        final String s3Key = TEST_KEY_PREFIX + myTestID + TEST_KEY_SUFFIX;
+        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
 
         myV2Client.put(myTestBucket, s3Key, Buffer.buffer(myResource), response -> {
             final int code = response.statusCode();
@@ -968,8 +976,8 @@ public class S3ClientIT extends AbstractS3IT {
         LOGGER.info(MessageCodes.SS3_006, myName.getMethodName());
 
         final Async asyncTask = aContext.async();
-        final String s3Key = TEST_KEY_PREFIX + myTestID + TEST_KEY_SUFFIX;
-        final UserMetadata metadata = new UserMetadata(ONE, TWO);
+        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
+        final UserMetadata metadata = new UserMetadata(TestConstants.ONE, TestConstants.TWO);
 
         myClient.put(myTestBucket, s3Key, Buffer.buffer(myResource), metadata, response -> {
             final int code = response.statusCode();
@@ -996,8 +1004,8 @@ public class S3ClientIT extends AbstractS3IT {
         LOGGER.info(MessageCodes.SS3_006, myName.getMethodName());
 
         final Async asyncTask = aContext.async();
-        final String s3Key = TEST_KEY_PREFIX + myTestID + TEST_KEY_SUFFIX;
-        final UserMetadata metadata = new UserMetadata(ONE, TWO);
+        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
+        final UserMetadata metadata = new UserMetadata(TestConstants.ONE, TestConstants.TWO);
 
         myV2Client.put(myTestBucket, s3Key, Buffer.buffer(myResource), metadata, response -> {
             final int code = response.statusCode();
@@ -1025,8 +1033,8 @@ public class S3ClientIT extends AbstractS3IT {
         LOGGER.info(MessageCodes.SS3_006, myName.getMethodName());
 
         final Async asyncTask = aContext.async();
-        final String s3Key = TEST_KEY_PREFIX + myTestID + TEST_KEY_SUFFIX;
-        final UserMetadata metadata = new UserMetadata(ONE, TWO);
+        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
+        final UserMetadata metadata = new UserMetadata(TestConstants.ONE, TestConstants.TWO);
 
         myClient.put(myTestBucket, s3Key, Buffer.buffer(myResource), metadata, response -> {
             final int code = response.statusCode();
@@ -1056,8 +1064,8 @@ public class S3ClientIT extends AbstractS3IT {
         LOGGER.info(MessageCodes.SS3_006, myName.getMethodName());
 
         final Async asyncTask = aContext.async();
-        final String s3Key = TEST_KEY_PREFIX + myTestID + TEST_KEY_SUFFIX;
-        final UserMetadata metadata = new UserMetadata(ONE, TWO);
+        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
+        final UserMetadata metadata = new UserMetadata(TestConstants.ONE, TestConstants.TWO);
 
         myV2Client.put(myTestBucket, s3Key, Buffer.buffer(myResource), metadata, response -> {
             final int code = response.statusCode();
@@ -1086,7 +1094,7 @@ public class S3ClientIT extends AbstractS3IT {
         LOGGER.info(MessageCodes.SS3_006, myName.getMethodName());
 
         final Async asyncTask = aContext.async();
-        final String s3Key = TEST_KEY_PREFIX + myTestID + TEST_KEY_SUFFIX;
+        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
 
         myVertx.fileSystem().open(TEST_FILE.getAbsolutePath(), new OpenOptions(), openResult -> {
             if (openResult.succeeded()) {
@@ -1119,7 +1127,7 @@ public class S3ClientIT extends AbstractS3IT {
         LOGGER.info(MessageCodes.SS3_006, myName.getMethodName());
 
         final Async asyncTask = aContext.async();
-        final String s3Key = TEST_KEY_PREFIX + myTestID + TEST_KEY_SUFFIX;
+        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
 
         myVertx.fileSystem().open(TEST_FILE.getAbsolutePath(), new OpenOptions(), openResult -> {
             if (openResult.succeeded()) {
@@ -1153,7 +1161,7 @@ public class S3ClientIT extends AbstractS3IT {
         LOGGER.info(MessageCodes.SS3_006, myName.getMethodName());
 
         final Async asyncTask = aContext.async();
-        final String s3Key = TEST_KEY_PREFIX + myTestID + TEST_KEY_SUFFIX;
+        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
 
         myVertx.fileSystem().open(TEST_FILE.getAbsolutePath(), new OpenOptions(), openResult -> {
             if (openResult.succeeded()) {
@@ -1187,7 +1195,7 @@ public class S3ClientIT extends AbstractS3IT {
         LOGGER.info(MessageCodes.SS3_006, myName.getMethodName());
 
         final Async asyncTask = aContext.async();
-        final String s3Key = TEST_KEY_PREFIX + myTestID + TEST_KEY_SUFFIX;
+        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
 
         myVertx.fileSystem().open(TEST_FILE.getAbsolutePath(), new OpenOptions(), openResult -> {
             if (openResult.succeeded()) {
@@ -1220,8 +1228,8 @@ public class S3ClientIT extends AbstractS3IT {
         LOGGER.info(MessageCodes.SS3_006, myName.getMethodName());
 
         final Async asyncTask = aContext.async();
-        final String s3Key = TEST_KEY_PREFIX + myTestID + TEST_KEY_SUFFIX;
-        final UserMetadata metadata = new UserMetadata(THREE, FOUR);
+        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
+        final UserMetadata metadata = new UserMetadata(TestConstants.THREE, TestConstants.FOUR);
 
         myVertx.fileSystem().open(TEST_FILE.getAbsolutePath(), new OpenOptions(), openResult -> {
             if (openResult.succeeded()) {
@@ -1254,8 +1262,8 @@ public class S3ClientIT extends AbstractS3IT {
         LOGGER.info(MessageCodes.SS3_006, myName.getMethodName());
 
         final Async asyncTask = aContext.async();
-        final String s3Key = TEST_KEY_PREFIX + myTestID + TEST_KEY_SUFFIX;
-        final UserMetadata metadata = new UserMetadata(THREE, FOUR);
+        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
+        final UserMetadata metadata = new UserMetadata(TestConstants.THREE, TestConstants.FOUR);
 
         myVertx.fileSystem().open(TEST_FILE.getAbsolutePath(), new OpenOptions(), openResult -> {
             if (openResult.succeeded()) {
@@ -1289,8 +1297,8 @@ public class S3ClientIT extends AbstractS3IT {
         LOGGER.info(MessageCodes.SS3_006, myName.getMethodName());
 
         final Async asyncTask = aContext.async();
-        final String s3Key = TEST_KEY_PREFIX + myTestID + TEST_KEY_SUFFIX;
-        final UserMetadata metadata = new UserMetadata(THREE, FOUR);
+        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
+        final UserMetadata metadata = new UserMetadata(TestConstants.THREE, TestConstants.FOUR);
 
         myVertx.fileSystem().open(TEST_FILE.getAbsolutePath(), new OpenOptions(), openResult -> {
             if (openResult.succeeded()) {
@@ -1324,8 +1332,7 @@ public class S3ClientIT extends AbstractS3IT {
         LOGGER.info(MessageCodes.SS3_006, myName.getMethodName());
 
         final Async asyncTask = aContext.async();
-        final String s3Key = TEST_KEY_PREFIX + myTestID + TEST_KEY_SUFFIX;
-        final UserMetadata metadata = new UserMetadata(THREE, FOUR);
+        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
 
         if (createResource(s3Key, aContext, asyncTask)) {
             myClient.delete(myTestBucket, s3Key, response -> {
@@ -1353,8 +1360,7 @@ public class S3ClientIT extends AbstractS3IT {
         LOGGER.info(MessageCodes.SS3_006, myName.getMethodName());
 
         final Async asyncTask = aContext.async();
-        final String s3Key = TEST_KEY_PREFIX + myTestID + TEST_KEY_SUFFIX;
-        final UserMetadata metadata = new UserMetadata(THREE, FOUR);
+        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
 
         if (createResource(s3Key, aContext, asyncTask)) {
             myV2Client.delete(myTestBucket, s3Key, response -> {
@@ -1384,8 +1390,8 @@ public class S3ClientIT extends AbstractS3IT {
         LOGGER.info(MessageCodes.SS3_006, myName.getMethodName());
 
         final Async asyncTask = aContext.async();
-        final String s3Key = TEST_KEY_PREFIX + myTestID + TEST_KEY_SUFFIX;
-        final UserMetadata metadata = new UserMetadata(THREE, FOUR);
+        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
+        final UserMetadata metadata = new UserMetadata(TestConstants.THREE, TestConstants.FOUR);
 
         myVertx.fileSystem().open(TEST_FILE.getAbsolutePath(), new OpenOptions(), openResult -> {
             if (openResult.succeeded()) {
@@ -1420,7 +1426,7 @@ public class S3ClientIT extends AbstractS3IT {
         LOGGER.info(MessageCodes.SS3_006, myName.getMethodName());
 
         final Async asyncTask = aContext.async();
-        final String s3Key = TEST_KEY_PREFIX + myTestID + TEST_KEY_SUFFIX;
+        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
 
         if (createResource(s3Key, aContext, asyncTask)) {
             myClient.delete(myTestBucket, s3Key, response -> {
@@ -1450,7 +1456,7 @@ public class S3ClientIT extends AbstractS3IT {
         LOGGER.info(MessageCodes.SS3_006, myName.getMethodName());
 
         final Async asyncTask = aContext.async();
-        final String s3Key = TEST_KEY_PREFIX + myTestID + TEST_KEY_SUFFIX;
+        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
 
         if (createResource(s3Key, aContext, asyncTask)) {
             myV2Client.delete(myTestBucket, s3Key, response -> {
@@ -1486,7 +1492,9 @@ public class S3ClientIT extends AbstractS3IT {
                 myS3Client.putObject(myTestBucket, resource, TEST_FILE);
             } catch (final AmazonClientException details) {
                 LOGGER.error(details, details.getMessage());
+
                 aContext.fail(details);
+
                 return false;
             }
         }
