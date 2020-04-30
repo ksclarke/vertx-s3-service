@@ -17,7 +17,7 @@ import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 
 @RunWith(VertxUnitRunner.class)
-public class S3ClientRequestTest {
+public class S3ClientRequestIT {
 
     private static final String METHOD = "DELETE";
 

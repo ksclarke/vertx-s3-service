@@ -93,9 +93,9 @@ public class AwsV4Signature implements AwsSignature {
                 if (headerKey.startsWith(AWS_NAME_PREFIX)) {
                     signer.header(headerKey, entry.getValue());
                 } else if (headerKey.equalsIgnoreCase(HttpHeaders.CONTENT_MD5.toString())) {
-                    // contentMD5 = entry.getValue();
+                    signer.header(headerKey, entry.getValue());
                 } else if (headerKey.equalsIgnoreCase(HttpHeaders.CONTENT_TYPE.toString())) {
-                    // contentType = entry.getValue();
+                    signer.header(headerKey, entry.getValue());
                 }
             }
 

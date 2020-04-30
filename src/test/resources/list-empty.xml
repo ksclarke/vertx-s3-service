@@ -1,0 +1,7 @@
+<ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+  <Name>058d3cd6-1c43-4de2-a4f1-aa43911dd1dc</Name>
+  <Prefix>prefix_</Prefix>
+  <MaxKeys>1000</MaxKeys>
+  <KeyCount>0</KeyCount>
+  <IsTruncated>false</IsTruncated>
+</ListBucketResult>

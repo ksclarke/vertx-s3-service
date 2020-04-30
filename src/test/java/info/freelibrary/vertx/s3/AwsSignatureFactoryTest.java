@@ -20,6 +20,9 @@ public final class AwsSignatureFactoryTest {
 
     private static final URI DEFAULT_ENDPOINT = URI.create("s3.amazon.com");
 
+    /**
+     * Gets default signature.
+     */
     @Test
     public void testGetDefaultSignature() {
         final AwsSignature signature = AwsSignatureFactory.getFactory().setHost(DEFAULT_ENDPOINT).setCredentials(
@@ -28,6 +31,9 @@ public final class AwsSignatureFactoryTest {
         assertEquals(AwsV4Signature.class.getName(), signature.getClass().getName());
     }
 
+    /**
+     * Gets v.4 signature.
+     */
     @Test
     public void testGetV4Signature() {
         final AwsSignature signature = AwsSignatureFactory.getFactory(Version.V4).setHost(DEFAULT_ENDPOINT)
@@ -36,6 +42,9 @@ public final class AwsSignatureFactoryTest {
         assertEquals(AwsV4Signature.class.getName(), signature.getClass().getName());
     }
 
+    /**
+     * Gets v.2 signature.
+     */
     @Test
     public void testGetV2Signature() {
         final AwsSignature signature = AwsSignatureFactory.getFactory(Version.V2).setCredentials(S3_ACCESS_KEY,

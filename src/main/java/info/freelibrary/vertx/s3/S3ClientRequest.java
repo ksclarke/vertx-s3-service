@@ -91,7 +91,7 @@ class S3ClientRequest implements HttpClientRequest {
             }
         } else {
             if (aAccessKey != null || aSecretKey != null) {
-                LOGGER.warn(MessageCodes.SS3_009);
+                LOGGER.warn(MessageCodes.VS3_009);
             }
 
             myCredentials = Optional.empty();

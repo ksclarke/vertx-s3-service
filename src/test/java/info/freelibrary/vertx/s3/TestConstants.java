@@ -30,7 +30,13 @@ final class TestConstants {
 
     static final String FOUR = "four";
 
+    //
+
     static final String S3_SERVICE = "s3";
+
+    static final String S3_BUCKET = "test.s3.bucket";
+
+    static final String S3_REGION = "test.s3.region";
 
     private TestConstants() {
     }

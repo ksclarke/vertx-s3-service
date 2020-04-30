@@ -1,9 +1,6 @@
 
 package info.freelibrary.vertx.s3;
 
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.profile.ProfileCredentialsProvider;
-
 /**
  * A AWS profile defined in the system credentials file.
  */
@@ -25,8 +22,8 @@ public class Profile {
      *
      * @return The AWS credentials for this profile
      */
-    public AWSCredentials getCredentials() {
-        return new ProfileCredentialsProvider(myProfileName).getCredentials();
+    public AwsCredentials getCredentials() {
+        return new AwsCredentialsProviderChain(myProfileName).getCredentials();
     }
 
 }

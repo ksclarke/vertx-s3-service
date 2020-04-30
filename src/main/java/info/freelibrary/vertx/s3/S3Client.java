@@ -3,11 +3,7 @@ package info.freelibrary.vertx.s3;
 
 import static info.freelibrary.vertx.s3.Constants.PATH_SEP;
 
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSSessionCredentials;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.auth.BasicSessionCredentials;
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import java.net.URI;
 
 import info.freelibrary.util.Logger;
 import info.freelibrary.util.LoggerFactory;
@@ -38,6 +34,10 @@ public class S3Client {
 
     private static final String PREFIX_LIST_CMD = "?list-type=2&prefix=";
 
+    private static final String HTTPS = "https://";
+
+    private static final String HTTP = "http://";
+
     /** AWS access key */
     private final String myAccessKey;
 
@@ -51,7 +51,7 @@ public class S3Client {
     private final HttpClient myHttpClient;
 
     /** Whether the client uses a V2 signature */
-    private boolean isV2Signature;
+    private boolean hasV2Signature;
 
     /**
      * Creates a new S3 client using system defined AWS credentials and the default S3 endpoint.
@@ -59,8 +59,8 @@ public class S3Client {
      * @param aVertx A Vert.x instance from which to create the <code>HttpClient</code>
      */
     public S3Client(final Vertx aVertx) {
-        this(DefaultAWSCredentialsProviderChain.getInstance().getCredentials(), getHttpClient(aVertx,
-                new HttpClientOptions().setDefaultHost(DEFAULT_ENDPOINT)));
+        this(new AwsCredentialsProviderChain().getCredentials(), getHttpClient(aVertx, new HttpClientOptions()
+                .setDefaultHost(DEFAULT_ENDPOINT)));
     }
 
     /**
@@ -81,7 +81,7 @@ public class S3Client {
      * @param aConfig A configuration for the internal HttpClient
      */
     public S3Client(final Vertx aVertx, final HttpClientOptions aConfig) {
-        this(DefaultAWSCredentialsProviderChain.getInstance().getCredentials(), getHttpClient(aVertx, aConfig));
+        this(new AwsCredentialsProviderChain().getCredentials(), getHttpClient(aVertx, aConfig));
     }
 
     /**
@@ -90,6 +90,7 @@ public class S3Client {
      *
      * @param aVertx A Vert.x instance from which to create the <code>HttpClient</code>
      * @param aConfig A configuration for the internal HttpClient
+     * @param aProfile An AWS credentials profile
      */
     public S3Client(final Vertx aVertx, final Profile aProfile, final HttpClientOptions aConfig) {
         this(aProfile.getCredentials(), getHttpClient(aVertx, aConfig));
@@ -100,10 +101,11 @@ public class S3Client {
      * <a href="https://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region">endpoint</a>.
      *
      * @param aVertx A Vert.x instance from which to create the <code>HttpClient</code>
+     * @param aEndpoint An S3 endpoint
      */
     public S3Client(final Vertx aVertx, final String aEndpoint) {
-        this(DefaultAWSCredentialsProviderChain.getInstance().getCredentials(), getHttpClient(aVertx,
-                new HttpClientOptions().setDefaultHost(aEndpoint)));
+        this(new AwsCredentialsProviderChain().getCredentials(), getHttpClient(aVertx, new HttpClientOptions()
+                .setDefaultHost(aEndpoint)));
     }
 
     /**
@@ -111,6 +113,8 @@ public class S3Client {
      * <a href="https://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region">endpoint</a>.
      *
      * @param aVertx A Vert.x instance from which to create the <code>HttpClient</code>
+     * @param aProfile An AWS credentials profile
+     * @param aEndpoint An S3 endpoint
      */
     public S3Client(final Vertx aVertx, final Profile aProfile, final String aEndpoint) {
         this(aProfile.getCredentials(), getHttpClient(aVertx, new HttpClientOptions().setDefaultHost(aEndpoint)));
@@ -189,15 +193,15 @@ public class S3Client {
      * @param aCredentials AWS credentials for the S3Client
      * @param aHttpClient A Vert.x HttpClient to use from the S3Client
      */
-    protected S3Client(final AWSCredentials aCredentials, final HttpClient aHttpClient) {
-        if (aCredentials instanceof AWSSessionCredentials) {
-            mySessionToken = ((AWSSessionCredentials) aCredentials).getSessionToken();
+    protected S3Client(final AwsCredentials aCredentials, final HttpClient aHttpClient) {
+        if (aCredentials.hasSessionToken()) {
+            mySessionToken = aCredentials.getSessionToken();
         } else {
             mySessionToken = null;
         }
 
-        myAccessKey = aCredentials.getAWSAccessKeyId();
-        mySecretKey = aCredentials.getAWSSecretKey();
+        myAccessKey = aCredentials.getAccessKey();
+        mySecretKey = aCredentials.getSecretKey();
 
         myHttpClient = aHttpClient;
     }
@@ -205,11 +209,21 @@ public class S3Client {
     /**
      * Sets the client to use the almost obsolete V2 authentication signature.
      *
+     * @param aV2Signature A version 2 AWS signature
      * @return The S3 client.
      */
     public S3Client useV2Signature(final boolean aV2Signature) {
-        isV2Signature = aV2Signature;
+        hasV2Signature = aV2Signature;
         return this;
+    }
+
+    /**
+     * Checks to see if client is using the almost obsolete V2 authentication signature.
+     *
+     * @return True if the client is using a V2 signature; else, false
+     */
+    public boolean usesV2Signature() {
+        return hasV2Signature;
     }
 
     /**
@@ -220,7 +234,8 @@ public class S3Client {
      * @param aHandler A response handler
      */
     public void head(final String aBucket, final String aKey, final Handler<HttpClientResponse> aHandler) {
-        createHeadRequest(aBucket, aKey, aHandler).useV2Signature(isV2Signature).end();
+        createHeadRequest(aBucket, aKey, aHandler).exceptionHandler(new ExceptionLogger()).useV2Signature(
+                hasV2Signature).end();
     }
 
     /**
@@ -233,7 +248,7 @@ public class S3Client {
      */
     public void head(final String aBucket, final String aKey, final Handler<HttpClientResponse> aHandler,
             final Handler<Throwable> aExceptionHandler) {
-        createHeadRequest(aBucket, aKey, aHandler).exceptionHandler(aExceptionHandler).useV2Signature(isV2Signature)
+        createHeadRequest(aBucket, aKey, aHandler).exceptionHandler(aExceptionHandler).useV2Signature(hasV2Signature)
                 .end();
     }
 
@@ -245,7 +260,8 @@ public class S3Client {
      * @param aHandler A response handler
      */
     public void get(final String aBucket, final String aKey, final Handler<HttpClientResponse> aHandler) {
-        createGetRequest(aBucket, aKey, aHandler).useV2Signature(isV2Signature).end();
+        createGetRequest(aBucket, aKey, aHandler).exceptionHandler(new ExceptionLogger()).useV2Signature(
+                hasV2Signature).end();
     }
 
     /**
@@ -258,7 +274,7 @@ public class S3Client {
      */
     public void get(final String aBucket, final String aKey, final Handler<HttpClientResponse> aHandler,
             final Handler<Throwable> aExceptionHandler) {
-        createGetRequest(aBucket, aKey, aHandler).exceptionHandler(aExceptionHandler).useV2Signature(isV2Signature)
+        createGetRequest(aBucket, aKey, aHandler).exceptionHandler(aExceptionHandler).useV2Signature(hasV2Signature)
                 .end();
     }
 
@@ -269,7 +285,8 @@ public class S3Client {
      * @param aHandler A response handler
      */
     public void list(final String aBucket, final Handler<HttpClientResponse> aHandler) {
-        createGetRequest(aBucket, LIST_CMD, aHandler).useV2Signature(isV2Signature).end();
+        createGetRequest(aBucket, LIST_CMD, aHandler).exceptionHandler(new ExceptionLogger()).useV2Signature(
+                hasV2Signature).end();
     }
 
     /**
@@ -282,7 +299,7 @@ public class S3Client {
     public void list(final String aBucket, final Handler<HttpClientResponse> aHandler,
             final Handler<Throwable> aExceptionHandler) {
         createGetRequest(aBucket, LIST_CMD, aHandler).exceptionHandler(aExceptionHandler).useV2Signature(
-                isV2Signature).end();
+                hasV2Signature).end();
     }
 
     /**
@@ -293,7 +310,8 @@ public class S3Client {
      * @param aHandler A response handler
      */
     public void list(final String aBucket, final String aPrefix, final Handler<HttpClientResponse> aHandler) {
-        createGetRequest(aBucket, PREFIX_LIST_CMD + aPrefix, aHandler).useV2Signature(isV2Signature).end();
+        createGetRequest(aBucket, PREFIX_LIST_CMD + aPrefix, aHandler).exceptionHandler(new ExceptionLogger())
+                .useV2Signature(hasV2Signature).end();
     }
 
     /**
@@ -307,7 +325,7 @@ public class S3Client {
     public void list(final String aBucket, final String aPrefix, final Handler<HttpClientResponse> aHandler,
             final Handler<Throwable> aExceptionHandler) {
         createGetRequest(aBucket, PREFIX_LIST_CMD + aPrefix, aHandler).exceptionHandler(aExceptionHandler)
-                .useV2Signature(isV2Signature).end();
+                .useV2Signature(hasV2Signature).end();
     }
 
     /**
@@ -320,7 +338,8 @@ public class S3Client {
      */
     public void put(final String aBucket, final String aKey, final Buffer aBuffer,
             final Handler<HttpClientResponse> aHandler) {
-        createPutRequest(aBucket, aKey, aHandler).useV2Signature(isV2Signature).end(aBuffer);
+        createPutRequest(aBucket, aKey, aHandler).exceptionHandler(new ExceptionLogger()).useV2Signature(
+                hasV2Signature).end(aBuffer);
     }
 
     /**
@@ -334,7 +353,7 @@ public class S3Client {
      */
     public void put(final String aBucket, final String aKey, final Buffer aBuffer,
             final Handler<HttpClientResponse> aHandler, final Handler<Throwable> aExceptionHandler) {
-        createPutRequest(aBucket, aKey, aHandler).exceptionHandler(aExceptionHandler).useV2Signature(isV2Signature)
+        createPutRequest(aBucket, aKey, aHandler).exceptionHandler(aExceptionHandler).useV2Signature(hasV2Signature)
                 .end(aBuffer);
     }
 
@@ -349,8 +368,8 @@ public class S3Client {
      */
     public void put(final String aBucket, final String aKey, final Buffer aBuffer, final UserMetadata aMetadata,
             final Handler<HttpClientResponse> aHandler) {
-        createPutRequest(aBucket, aKey, aHandler).setUserMetadata(aMetadata).useV2Signature(isV2Signature).end(
-                aBuffer);
+        createPutRequest(aBucket, aKey, aHandler).setUserMetadata(aMetadata).exceptionHandler(new ExceptionLogger())
+                .useV2Signature(hasV2Signature).end(aBuffer);
     }
 
     /**
@@ -366,7 +385,7 @@ public class S3Client {
     public void put(final String aBucket, final String aKey, final Buffer aBuffer, final UserMetadata aMetadata,
             final Handler<HttpClientResponse> aHandler, final Handler<Throwable> aExceptionHandler) {
         createPutRequest(aBucket, aKey, aHandler).exceptionHandler(aExceptionHandler).setUserMetadata(aMetadata)
-                .useV2Signature(isV2Signature).end(aBuffer);
+                .useV2Signature(hasV2Signature).end(aBuffer);
     }
 
     /**
@@ -379,7 +398,7 @@ public class S3Client {
      */
     public void put(final String aBucket, final String aKey, final AsyncFile aFile,
             final Handler<HttpClientResponse> aHandler) {
-        put(aBucket, aKey, aFile, null, aHandler);
+        put(aBucket, aKey, aFile, null, aHandler, new ExceptionLogger());
     }
 
     /**
@@ -407,7 +426,7 @@ public class S3Client {
      */
     public void put(final String aBucket, final String aKey, final AsyncFile aFile, final UserMetadata aMetadata,
             final Handler<HttpClientResponse> aHandler) {
-        put(aBucket, aKey, aFile, aMetadata, aHandler, null);
+        put(aBucket, aKey, aFile, aMetadata, aHandler, new ExceptionLogger());
     }
 
     /**
@@ -429,7 +448,7 @@ public class S3Client {
             request.setUserMetadata(aMetadata);
         }
 
-        request.useV2Signature(isV2Signature);
+        request.useV2Signature(hasV2Signature);
 
         aFile.handler(data -> {
             buffer.appendBuffer(data);
@@ -442,9 +461,7 @@ public class S3Client {
 
         // If we have an exception handler, use it; else, just log any exceptions
         if (aExceptionHandler == null) {
-            request.exceptionHandler(exception -> {
-                LOGGER.error(exception, exception.getMessage());
-            });
+            request.exceptionHandler(new ExceptionLogger());
         } else {
             request.exceptionHandler(aExceptionHandler);
         }
@@ -460,7 +477,7 @@ public class S3Client {
      */
     public void put(final String aBucket, final String aKey, final HttpServerFileUpload aUpload,
             final Handler<HttpClientResponse> aHandler) {
-        put(aBucket, aKey, aUpload, null, aHandler);
+        put(aBucket, aKey, aUpload, null, aHandler, new ExceptionLogger());
     }
 
     /**
@@ -488,7 +505,7 @@ public class S3Client {
      */
     public void put(final String aBucket, final String aKey, final HttpServerFileUpload aUpload,
             final UserMetadata aMetadata, final Handler<HttpClientResponse> aHandler) {
-        put(aBucket, aKey, aUpload, aMetadata, aHandler, null);
+        put(aBucket, aKey, aUpload, aMetadata, aHandler, new ExceptionLogger());
     }
 
     /**
@@ -511,7 +528,7 @@ public class S3Client {
             request.setUserMetadata(aMetadata);
         }
 
-        request.useV2Signature(isV2Signature);
+        request.useV2Signature(hasV2Signature);
 
         aUpload.handler(data -> {
             buffer.appendBuffer(data);
@@ -523,9 +540,7 @@ public class S3Client {
         });
 
         if (aExceptionHandler == null) {
-            request.exceptionHandler(exception -> {
-                LOGGER.error(exception, exception.getMessage());
-            });
+            request.exceptionHandler(new ExceptionLogger());
         } else {
             request.exceptionHandler(aExceptionHandler);
         }
@@ -539,7 +554,8 @@ public class S3Client {
      * @param aHandler A response handler
      */
     public void delete(final String aBucket, final String aKey, final Handler<HttpClientResponse> aHandler) {
-        createDeleteRequest(aBucket, aKey, aHandler).useV2Signature(isV2Signature).end();
+        createDeleteRequest(aBucket, aKey, aHandler).exceptionHandler(new ExceptionLogger()).useV2Signature(
+                hasV2Signature).end();
     }
 
     /**
@@ -552,8 +568,8 @@ public class S3Client {
      */
     public void delete(final String aBucket, final String aKey, final Handler<HttpClientResponse> aHandler,
             final Handler<Throwable> aExceptionHandler) {
-        createDeleteRequest(aBucket, aKey, aHandler).exceptionHandler(aExceptionHandler).useV2Signature(isV2Signature)
-                .end();
+        createDeleteRequest(aBucket, aKey, aHandler).exceptionHandler(aExceptionHandler).useV2Signature(
+                hasV2Signature).end();
     }
 
     /**
@@ -631,14 +647,14 @@ public class S3Client {
      * @param aSessionToken A token from an existing session
      * @return AWS credentials representing the supplied information
      */
-    private static AWSCredentials getCredentials(final String aAccessKey, final String aSecretKey,
+    private static AwsCredentials getCredentials(final String aAccessKey, final String aSecretKey,
             final String aSessionToken) {
-        final AWSCredentials credentials;
+        final AwsCredentials credentials;
 
         if (aSessionToken != null) {
-            credentials = new BasicSessionCredentials(aAccessKey, aSecretKey, aSessionToken);
+            credentials = new AwsCredentials(aAccessKey, aSecretKey, aSessionToken);
         } else {
-            credentials = new BasicAWSCredentials(aAccessKey, aSecretKey);
+            credentials = new AwsCredentials(aAccessKey, aSecretKey);
         }
 
         return credentials;
@@ -653,14 +669,56 @@ public class S3Client {
      */
     private static HttpClient getHttpClient(final Vertx aVertx, final HttpClientOptions aConfig) {
         final HttpClient httpClient;
+        final String defaultHost;
+        final URI hostURI;
+        final int port;
 
         if (aConfig == null) {
-            httpClient = aVertx.createHttpClient(new HttpClientOptions().setSsl(true).setDefaultPort(443));
+            httpClient = aVertx.createHttpClient(new HttpClientOptions().setSsl(true).setDefaultPort(443)
+                    .setDefaultHost(HTTPS + S3Client.DEFAULT_ENDPOINT));
+        } else if ((defaultHost = aConfig.getDefaultHost()) != null) {
+            if (defaultHost.startsWith(HTTP)) {
+                hostURI = URI.create(defaultHost);
+                port = hostURI.getPort();
+
+                aConfig.setSsl(false);
+
+                if (port != -1) {
+                    aConfig.setDefaultPort(port);
+                } else {
+                    aConfig.setDefaultPort(80);
+                }
+            } else {
+                hostURI = URI.create(defaultHost.startsWith(HTTPS) ? defaultHost : HTTPS + defaultHost);
+                port = hostURI.getPort();
+
+                if (port != -1) {
+                    aConfig.setDefaultPort(port);
+                } else {
+                    aConfig.setDefaultPort(443);
+                }
+
+                aConfig.setSsl(true);
+            }
+
+            httpClient = aVertx.createHttpClient(aConfig.setDefaultHost(hostURI.getHost()));
         } else {
-            httpClient = aVertx.createHttpClient(aConfig.setSsl(true).setDefaultPort(443));
+            aConfig.setSsl(true).setDefaultPort(443).setDefaultHost(HTTPS + S3Client.DEFAULT_ENDPOINT);
+            httpClient = aVertx.createHttpClient(aConfig);
         }
 
         return httpClient;
     }
 
+    /**
+     * An exception handler than can be used to log errors when no other exception handler has been supplied.
+     */
+    private class ExceptionLogger implements Handler<Throwable> {
+
+        @Override
+        public void handle(final Throwable aThrowable) {
+            LOGGER.error(aThrowable, aThrowable.getMessage());
+        }
+
+    }
 }
