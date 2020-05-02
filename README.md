@@ -4,7 +4,7 @@ This project provides an S3 client for the [Vert.x](https://vertx.io/) toolkit.
 
 ### About the Project
 
-Vertx-Super-S3 started as a fork of [SuperS3t](https://github.com/spartango/SuperS3t/), which originally took the inspiration for its name from [JetS3t](http://www.jets3t.org/) (a popular synchronous S3 client). While breaking with the tradition of punny names, vertx-super-s3 is still released under the [same license](https://github.com/ksclarke/vertx-super-s3/blob/master/LICENSE.txt) as its predecessor.
+Vertx-Super-S3 started as a fork of [SuperS3t](https://github.com/spartango/SuperS3t/), which originally took the inspiration for its name from [JetS3t](http://www.jets3t.org/). While breaking with the tradition of punny names, vertx-super-s3 is still released under the [same license](https://github.com/ksclarke/vertx-super-s3/blob/master/LICENSE.txt) as its predecessor.
 
 Like its predecessor, vertx-super-s3 is essentially a shim over Vert.x's native HttpClient. It's value is that it provides some conveniences for interacting with AWS' S3 service. These include: the ability to sign S3 requests (using version two or four of AWS' signing protocol), convenience classes to help deal with the listing of S3 buckets, a simplified way to set user metadata on S3 objects, and methods for authenticating S3 connections without requiring the use of the AWS S3 Java SDK.
 
