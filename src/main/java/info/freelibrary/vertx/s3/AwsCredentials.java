@@ -72,4 +72,5 @@ public class AwsCredentials extends uk.co.lucasweb.aws.v4.signer.credentials.Aws
         mySessionToken = aSessionToken;
         return this;
     }
+
 }

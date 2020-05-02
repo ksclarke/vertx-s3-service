@@ -1,6 +1,7 @@
 
 package info.freelibrary.vertx.s3;
 
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,50 +14,121 @@ import org.xml.sax.helpers.DefaultHandler;
  */
 class ObjectListHandler extends DefaultHandler {
 
-    /** The element name for an S3 key */
+    /** The element name for an S3 key. */
     private static final String KEY = "Key";
 
-    /** List of S3 keys */
-    final List<String> myKeys = new ArrayList<>();
+    /** The element name for the S3 object's last modified timestamp. */
+    private static final String LAST_MODIFIED = "LastModified";
 
-    /** Builder for an S3's key value */
-    final StringBuilder myKeyText = new StringBuilder(); // NOPMD
+    /** The element name for the S3 object's storage class. */
+    private static final String STORAGE_CLASS = "StorageClass";
+
+    /** The element name for an S3 list object. */
+    private static final String CONTENTS = "Contents";
+
+    /** The element name for S3 object size. */
+    private static final String SIZE = "Size";
+
+    /** The element name for the S3 object's ETag. */
+    private static final String ETAG = "ETag";
+
+    /** The S3 list in a Java {@link List}. */
+    private final List<ListObject> myList = new ArrayList<>();
+
+    /** Temporary storage for characters parsed through SAX */
+    private final StringBuilder myValue = new StringBuilder();
+
+    /** A single S3 list object */
+    private ListObject myListObject;
 
     /** The last element encountered while parsing S3 output */
-    String myLastElement;
+    private String myCurrentElement;
 
     @Override
     public void characters(final char[] aCharArray, final int aStart, final int aLength) throws SAXException {
-        if (myLastElement.equals(KEY)) {
-            myKeyText.append(aCharArray, aStart, aLength);
+        switch (myCurrentElement) {
+            case KEY:
+            case ETAG:
+            case SIZE:
+            case STORAGE_CLASS:
+            case LAST_MODIFIED:
+                myValue.append(aCharArray, aStart, aLength);
+            default:
+                // ignore everything else
         }
     }
 
     @Override
     public void startElement(final String aURI, final String aLocalName, final String aQName,
             final Attributes aAttributes) throws SAXException {
-        if (aLocalName.equals(KEY)) {
-            myKeyText.delete(0, myKeyText.length());
+        switch (aLocalName) {
+            case CONTENTS:
+                myListObject = new ListObject();
+                break;
+            case KEY:
+            case ETAG:
+            case SIZE:
+            case STORAGE_CLASS:
+            case LAST_MODIFIED:
+                myValue.delete(0, myValue.length());
+            default:
+                // ignore everything else
         }
 
-        myLastElement = aLocalName;
+        myCurrentElement = aLocalName;
     }
 
     @Override
-    public void endElement(final String aURI, final String aLocalName, final String aQName) {
-        if (aLocalName.equals(KEY)) {
-            myKeys.add(myKeyText.toString());
-            myKeyText.delete(0, myKeyText.length());
+    public void endElement(final String aURI, final String aLocalName, final String aQName) throws SAXException {
+        switch (aLocalName) {
+            case CONTENTS:
+                myList.add(myListObject);
+                break;
+            case KEY:
+                myListObject.setKey(getValue());
+                break;
+            case ETAG:
+                myListObject.setETag(getValue());
+                break;
+            case SIZE:
+                myListObject.setSize(getValue());
+                break;
+            case STORAGE_CLASS:
+                myListObject.setStorageClass(getValue());
+                break;
+            case LAST_MODIFIED:
+                try {
+                    myListObject.setLastUpdated(getValue());
+                } catch (final ParseException details) {
+                    throw new SAXException(details);
+                }
+
+                break;
+            default:
+                myValue.delete(0, myValue.length());
         }
     }
 
     /**
-     * Gets the S3 keys returned by a List Objects command.
+     * Gets S3 list objects.
      *
-     * @return The S3 keys returned by a List Objects command
+     * @return The list of S3 objects
      */
-    public List<String> getKeys() {
-        return myKeys;
+    public List<ListObject> getList() {
+        return myList;
+    }
+
+    /**
+     * Gets the current element's text value.
+     *
+     * @return The current element's text value
+     */
+    private String getValue() {
+        try {
+            return myValue.toString();
+        } finally {
+            myValue.delete(0, myValue.length());
+        }
     }
 
 }

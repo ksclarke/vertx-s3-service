@@ -123,12 +123,12 @@ public class AwsV2Signature implements AwsSignature {
             final String signature = b64SignHmacSha1(myCredentials.getSecretKey(), toSign.toString());
             return StringUtils.format(SIGNATURE_PATTERN, myCredentials.getAccessKey(), signature);
         } catch (final NoSuchAlgorithmException details) {
-            final String message = LOGGER.getMessage(MessageCodes.SS3_007, details.getMessage());
+            final String message = LOGGER.getMessage(MessageCodes.VS3_007, details.getMessage());
 
             LOGGER.error(details, message);
             throw new I18nRuntimeException(details);
         } catch (final InvalidKeyException details) {
-            final String message = LOGGER.getMessage(MessageCodes.SS3_008, details.getMessage());
+            final String message = LOGGER.getMessage(MessageCodes.VS3_008, details.getMessage());
 
             LOGGER.error(details, message);
             throw new I18nRuntimeException(details);

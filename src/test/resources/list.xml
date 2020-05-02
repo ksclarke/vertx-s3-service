@@ -1,0 +1,21 @@
+<ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+  <Name>058d3cd6-1c43-4de2-a4f1-aa43911dd1dc</Name>
+  <Prefix>prefix_</Prefix>
+  <MaxKeys>1000</MaxKeys>
+  <KeyCount>2</KeyCount>
+  <IsTruncated>false</IsTruncated>
+  <Contents>
+    <Key>prefix_29737da4-0344-4e69-b512-f746667330e6</Key>
+    <LastModified>2020-04-26T04:34:02.988Z</LastModified>
+    <ETag>&#34;618a996c65e02322bd5b5932c9b05714&#34;</ETag>
+    <Size>85</Size>
+    <StorageClass>STANDARD</StorageClass>
+  </Contents>
+  <Contents>
+    <Key>e48af1f0-b745-4d11-ad8c-3b024ecde959</Key>
+    <LastModified>2020-04-26T04:34:02.920Z</LastModified>
+    <ETag>&#34;618a996c65e02322bd5b5932c9b05714&#34;</ETag>
+    <Size>85</Size>
+    <StorageClass>STANDARD</StorageClass>
+  </Contents>
+</ListBucketResult>

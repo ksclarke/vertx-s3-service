@@ -55,6 +55,7 @@ public final class AwsSignatureFactory {
      * Sets the host for the V4 signature.
      *
      * @param aHost An S3 host
+     * @return This signature factory
      */
     public AwsSignatureFactory setHost(final URI aHost) {
         myHost = aHost;
@@ -84,6 +85,7 @@ public final class AwsSignatureFactory {
      *
      * @param aCredentials Used by the AWS signature
      * @return The signature factory
+     * @throws ConfigurationException If authentication credentials are missing or invalid
      */
     public AwsSignatureFactory setCredentials(final AwsCredentials aCredentials) throws ConfigurationException {
         if (aCredentials == null || !aCredentials.isValid()) {
@@ -100,6 +102,7 @@ public final class AwsSignatureFactory {
      * @param aAccessKey The AWS access key
      * @param aSecretKey The AWS secret key
      * @return The signature factory
+     * @throws ConfigurationException If authentication credentials are missing or invalid
      */
     public AwsSignatureFactory setCredentials(final String aAccessKey, final String aSecretKey)
             throws ConfigurationException {
@@ -117,6 +120,7 @@ public final class AwsSignatureFactory {
      *
      * @param aAccessKey The AWS access key
      * @param aSecretKey The AWS secret key
+     * @param aSessionToken The AWS session token
      * @return The signature factory
      */
     public AwsSignatureFactory setCredentials(final String aAccessKey, final String aSecretKey,
@@ -143,7 +147,7 @@ public final class AwsSignatureFactory {
         } else if (myVersion.equals(Version.V4)) {
             signature = new AwsV4Signature(myHost, myCredentials.get());
         } else {
-            throw new I18nRuntimeException(Constants.BUNDLE_NAME, MessageCodes.SS3_005);
+            throw new I18nRuntimeException(Constants.BUNDLE_NAME, MessageCodes.VS3_005);
         }
 
         return signature;

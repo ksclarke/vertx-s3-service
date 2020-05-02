@@ -12,6 +12,7 @@ import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 
 import com.amazonaws.AmazonClientException;
+import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
@@ -26,7 +27,7 @@ import info.freelibrary.util.IOUtils;
 import info.freelibrary.util.Logger;
 import info.freelibrary.util.StringUtils;
 
-import io.vertx.core.Vertx;
+import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 
@@ -45,12 +46,6 @@ public abstract class AbstractS3IT {
     /** A sample AWS Secret Key */
     protected static final String YOUR_SECRET_KEY = "YOUR_SECRET_KEY";
 
-    /** AWS access key */
-    protected static String myAccessKey;
-
-    /** AWS secret key */
-    protected static String mySecretKey;
-
     /** S3 bucket used in the tests */
     protected static String myTestBucket;
 
@@ -63,9 +58,6 @@ public abstract class AbstractS3IT {
     /** The S3 client used to setup some of the tests */
     protected AmazonS3 myS3Client;
 
-    /** The connection to the Vertx framework */
-    protected Vertx myVertx;
-
     /**
      * Static test setup.
      *
@@ -73,19 +65,16 @@ public abstract class AbstractS3IT {
      */
     @BeforeClass
     public static void setUpBeforeClass(final TestContext aContext) {
-        final String endpoint = StringUtils.trimToNull(System.getProperty(Constants.S3_REGION));
-
-        myTestBucket = System.getProperty(Constants.S3_BUCKET, "vertx-pairtree-tests");
-        myAccessKey = System.getProperty(Constants.S3_ACCESS_KEY, YOUR_ACCESS_KEY);
-        mySecretKey = System.getProperty(Constants.S3_SECRET_KEY, YOUR_SECRET_KEY);
+        final String endpoint = StringUtils.trimToNull(System.getProperty(TestConstants.S3_REGION));
 
         try {
+            myTestBucket = StringUtils.trimToNull(System.getProperty(TestConstants.S3_BUCKET));
             myResource = IOUtils.readBytes(new FileInputStream(TEST_FILE));
 
-            // We use "us-east-1" as the default region
             if (endpoint != null) {
                 myRegion = RegionUtils.getRegion(endpoint);
             } else {
+                // Use "us-east-1" as default region if needed
                 myRegion = RegionUtils.getRegion("us-east-1");
             }
         } catch (final IOException details) {
@@ -100,20 +89,18 @@ public abstract class AbstractS3IT {
      */
     @Before
     public void setUp(final TestContext aContext) {
-        if (mySecretKey.equals(YOUR_SECRET_KEY) || myAccessKey.equals(YOUR_ACCESS_KEY)) {
-            aContext.fail(getLogger().getMessage(MessageCodes.SS3_002));
-        }
-
-        // Initialize the S3 client we use for test set up and tear down
-        final AmazonS3ClientBuilder builder = AmazonS3ClientBuilder.standard().withCredentials(
-                new AWSStaticCredentialsProvider(new BasicAWSCredentials(myAccessKey, mySecretKey)));
+        final AwsCredentials creds = new AwsCredentialsProviderChain(TestConstants.TEST_PROFILE).getCredentials();
+        final String accessKey = creds.getAccessKey();
+        final String secretKey = creds.getSecretKey();
+        final BasicAWSCredentials basicCredentials = new BasicAWSCredentials(accessKey, secretKey);
+        final AWSCredentialsProvider provider = new AWSStaticCredentialsProvider(basicCredentials);
+        final AmazonS3ClientBuilder builder = AmazonS3ClientBuilder.standard().withCredentials(provider);
         final String endpoint = myRegion.getServiceEndpoint("s3");
         final String regionName = myRegion.getName();
 
         builder.setEndpointConfiguration(new EndpointConfiguration(endpoint, regionName));
 
         myS3Client = builder.build();
-        myVertx = Vertx.vertx();
     }
 
     /**
@@ -136,6 +123,17 @@ public abstract class AbstractS3IT {
                     aContext.fail(details);
                 }
             }
+        }
+    }
+
+    /**
+     * Completes an uncompleted {@link Async} task.
+     *
+     * @param aAsyncTask An asynchronous task to be completed.
+     */
+    protected void complete(final Async aAsyncTask) {
+        if (!aAsyncTask.isCompleted()) {
+            aAsyncTask.complete();
         }
     }
 

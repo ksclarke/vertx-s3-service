@@ -38,7 +38,7 @@ public class UserMetadata {
      * @param aValue
      */
     public UserMetadata(final String aName, final String aValue) {
-        Objects.requireNonNull(aName, LOGGER.getMessage(MessageCodes.SS3_003));
+        Objects.requireNonNull(aName, LOGGER.getMessage(MessageCodes.VS3_003));
 
         myMetadata = new ArrayList<>();
         myMetadata.add(new NameValuePair(aName, aValue));
@@ -54,7 +54,7 @@ public class UserMetadata {
      */
     @SuppressWarnings("PMD.ForLoopCanBeForeach")
     public UserMetadata add(final String aName, final String aValue) {
-        Objects.requireNonNull(aName, LOGGER.getMessage(MessageCodes.SS3_003));
+        Objects.requireNonNull(aName, LOGGER.getMessage(MessageCodes.VS3_003));
 
         boolean found = false;
 
@@ -87,7 +87,7 @@ public class UserMetadata {
      * @return The user metadata object itself
      */
     public UserMetadata remove(final String aName) {
-        Objects.requireNonNull(aName, LOGGER.getMessage(MessageCodes.SS3_003));
+        Objects.requireNonNull(aName, LOGGER.getMessage(MessageCodes.VS3_003));
 
         myMetadata.remove(indexOf(aName));
 
@@ -101,7 +101,7 @@ public class UserMetadata {
      * @return The value of the supplied name
      */
     public String getValue(final String aName) {
-        Objects.requireNonNull(aName, LOGGER.getMessage(MessageCodes.SS3_003));
+        Objects.requireNonNull(aName, LOGGER.getMessage(MessageCodes.VS3_003));
 
         final int index = indexOf(aName);
 
@@ -144,7 +144,7 @@ public class UserMetadata {
      * @return True if the metadata property exists; else, false
      */
     public boolean contains(final String aName) {
-        Objects.requireNonNull(aName, LOGGER.getMessage(MessageCodes.SS3_003));
+        Objects.requireNonNull(aName, LOGGER.getMessage(MessageCodes.VS3_003));
         return indexOf(aName) != -1;
     }
 
@@ -155,7 +155,7 @@ public class UserMetadata {
      * @return The index position of the supplied name
      */
     public int indexOf(final String aName) {
-        Objects.requireNonNull(aName, LOGGER.getMessage(MessageCodes.SS3_003));
+        Objects.requireNonNull(aName, LOGGER.getMessage(MessageCodes.VS3_003));
 
         final String name = aName.toLowerCase(DEFAULT_LOCALE);
 
