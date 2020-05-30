@@ -74,14 +74,14 @@ The [project's tests](https://github.com/ksclarke/vertx-super-s3/tree/master/src
 final Vertx vertx = Vertx.vertx();
 final S3Client s3Client = new S3Client(vertx, new Profile("vertx-s3"));
 final String fileName = "ucla-library-logo.png";
-final Future<File> future = Future.future();
+final Promise<File> promise = Promise.promise();
 
 // Do something with the result of our S3 download
-future.setHandler(download -> {
-    if (download.succeeded()) {
-        LOGGER.info("Successfully downloaded: {}", download.result());
+promise.future.onComplete(handler -> {
+    if (handler.succeeded()) {
+        LOGGER.info("Successfully downloaded: {}", handler.result());
     } else {
-        LOGGER.error("Download failed: {}", download.cause().getMessage());
+        LOGGER.error("Download failed: {}", handler.cause().getMessage());
     }
 });
 
@@ -96,17 +96,17 @@ s3Client.get("presentation-materials", fileName, get -> {
             // Write our S3 file to our local file system
             vertx.fileSystem().writeFile(path.toString(), body, write -> {
                 if (write.succeeded()) {
-                    future.complete(path.toFile());
+                    promise.complete(path.toFile());
                 } else {
-                    future.fail(write.cause());
+                    promise.fail(write.cause());
                 }
             });
         });
     } else {
-        future.fail(LOGGER.getMessage("Unexpected status code: {} [{}]", statusCode, get.statusMessage()));
+        promise.fail(LOGGER.getMessage("Unexpected status code: {} [{}]", statusCode, get.statusMessage()));
     }
 }, error -> {
-    future.fail(error);
+    promise.fail(error);
 });
 ```
 

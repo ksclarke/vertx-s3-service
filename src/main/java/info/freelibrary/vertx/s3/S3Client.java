@@ -16,6 +16,7 @@ import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpServerFileUpload;
 
@@ -224,6 +225,17 @@ public class S3Client {
      */
     public boolean usesV2Signature() {
         return hasV2Signature;
+    }
+
+    /**
+     * Sets a connection handler for the client. This handler is called when a new connection is established.
+     *
+     * @param aHandler A connection handler
+     * @return This S3 client
+     */
+    public S3Client connectionHandler(final Handler<HttpConnection> aHandler) {
+        myHttpClient.connectionHandler(aHandler);
+        return this;
     }
 
     /**

@@ -11,7 +11,7 @@ import org.junit.runner.RunWith;
 import info.freelibrary.util.Logger;
 import info.freelibrary.util.LoggerFactory;
 
-import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -37,14 +37,14 @@ public class ExamplesIT {
         final Vertx vertx = Vertx.vertx();
         final S3Client s3Client = new S3Client(vertx, new Profile("vertx-s3"));
         final String fileName = "ucla-library-logo.png";
-        final Future<File> future = Future.future();
+        final Promise<File> promise = Promise.promise();
 
         // Do something with the result of our S3 download
-        future.setHandler(download -> {
-            if (download.succeeded()) {
-                LOGGER.info("Successfully downloaded: {}", download.result());
+        promise.future().onComplete(handler -> {
+            if (handler.succeeded()) {
+                LOGGER.info("Successfully downloaded: {}", handler.result());
             } else {
-                LOGGER.error("Download failed: {}", download.cause().getMessage());
+                LOGGER.error("Download failed: {}", handler.cause().getMessage());
             }
 
             asyncTask.complete(); // Remove this; it's just needed here because we're in a test
@@ -61,17 +61,17 @@ public class ExamplesIT {
                     // Write our S3 file to our local file system
                     vertx.fileSystem().writeFile(path.toString(), body, write -> {
                         if (write.succeeded()) {
-                            future.complete(path.toFile());
+                            promise.complete(path.toFile());
                         } else {
-                            future.fail(write.cause());
+                            promise.fail(write.cause());
                         }
                     });
                 });
             } else {
-                future.fail(LOGGER.getMessage("Unexpected status code: {} [{}]", statusCode, get.statusMessage()));
+                promise.fail(LOGGER.getMessage("Unexpected status code: {} [{}]", statusCode, get.statusMessage()));
             }
         }, error -> {
-            future.fail(error);
+            promise.fail(error);
         });
     }
 
