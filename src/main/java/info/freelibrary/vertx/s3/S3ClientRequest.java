@@ -353,6 +353,7 @@ class S3ClientRequest implements HttpClientRequest {
     }
 
     @Override
+    @Deprecated
     public S3ClientRequest connectionHandler(final Handler<HttpConnection> aHandler) {
         myRequest.connectionHandler(aHandler);
         return this;
@@ -471,6 +472,12 @@ class S3ClientRequest implements HttpClientRequest {
     @Override
     public void end(final Handler<AsyncResult<Void>> aHandler) {
         myRequest.end(aHandler);
+    }
+
+    @Override
+    public S3ClientRequest setMaxRedirects(final int aMaxRedirects) {
+        myRequest.setMaxRedirects(aMaxRedirects);
+        return this;
     }
 
 }
