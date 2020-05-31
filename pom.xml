@@ -317,6 +317,7 @@
                   <systemPropertyVariables>
                     <test.user>${project.artifactId}</test.user>
                     <vertx.logger-delegate-factory-class-name>io.vertx.core.logging.SLF4JLogDelegateFactory</vertx.logger-delegate-factory-class-name>
+                    <container.tag.version>${project.version}</container.tag.version>
                   </systemPropertyVariables>
                   <forkCount>0</forkCount><!-- Multiple forks result in multiple containers -->
                   <useSystemClassLoader>false</useSystemClassLoader> <!-- Override parent project setting -->
