@@ -2,8 +2,8 @@
 package info.freelibrary.vertx.s3;
 
 import java.nio.file.Paths;
-import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.GenericContainer;
@@ -39,7 +39,7 @@ abstract class AbstractS3FT {
     private static final String TEST_USER = System.getProperty("test.user");
 
     /* The local tag of our test container */
-    private static final String TAG = TEST_USER + ":latest";
+    private static final String TAG = toTag(System.getProperty(TestConstants.TAG_VERSION));
 
     /* The local Maven repository cache */
     private static final String LOCAL_M2_REPO = ".m2";
@@ -81,14 +81,12 @@ abstract class AbstractS3FT {
      * @return A local test container
      */
     protected static GenericContainer getContainer() {
-        if (TEST_CONTAINER != null) {
-            return TEST_CONTAINER;
-        }
+        Objects.requireNonNull(S3_CONTAINER);
 
         // Build the container where our code can be compiled
         final String localM2RepoCache = Paths.get(System.getProperty("user.home"), LOCAL_M2_REPO).toString();
         final String containerM2RepoCache = Paths.get("/home", TEST_USER, LOCAL_M2_REPO).toString();
-        final GenericContainer container = new GenericContainer(TAG);
+        final GenericContainer<?> container = new GenericContainer(TAG);
         final AWSCredentials credentials = myCredentialsProvider.getCredentials();
         final Map<String, String> envMap = Map.of(AwsCredentialsProviderChain.ACCESS_KEY_ENV_VAR, credentials
                 .getAWSAccessKeyId(), AwsCredentialsProviderChain.SECRET_KEY_ENV_VAR, credentials.getAWSSecretKey(),
@@ -116,12 +114,12 @@ abstract class AbstractS3FT {
     }
 
     /**
-     * Converts a system property name to an environmental variable.
+     * Replaces a SNAPSHOT version with 'latest' for the Docker image tag.
      *
-     * @param aPropertyName A system property name
-     * @return The environmental property
+     * @param aVersion An artifact version
+     * @return A Docker image tag
      */
-    private static String toEnv(final String aPropertyName) {
-        return aPropertyName.replace('.', '_').toUpperCase(Locale.US);
+    public static String toTag(final String aVersion) {
+        return "vertx-super-s3:" + (aVersion.contains("-SNAPSHOT") ? "latest" : aVersion);
     }
 }

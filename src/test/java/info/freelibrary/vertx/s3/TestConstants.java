@@ -38,6 +38,11 @@ final class TestConstants {
 
     static final String S3_REGION = "test.s3.region";
 
+    /**
+     * The version of the test container's tag.
+     */
+    static final String TAG_VERSION = "container.tag.version";
+
     private TestConstants() {
     }
 }
