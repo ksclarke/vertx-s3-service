@@ -3,6 +3,7 @@ package info.freelibrary.vertx.s3;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
@@ -76,7 +77,7 @@ public class S3ClientFT extends AbstractS3FT {
      * @param aContext A test context
      */
     @Test
-    public final void testHeadBucketKeyWithHandler(final TestContext aContext) {
+    public final void testHeadBucketKeyWithHandler(final TestContext aContext) throws MalformedURLException {
         final S3Client s3Client = new S3Client(VERTX, myAccessKey, mySecretKey, myEndpoint);
         final Async asyncTask = aContext.async();
 
@@ -101,7 +102,8 @@ public class S3ClientFT extends AbstractS3FT {
      */
     @Test
     @SuppressWarnings("checkstyle:indentation")
-    public final void testHeadBucketKeyWithHandlerAndExceptionHandler(final TestContext aContext) {
+    public final void testHeadBucketKeyWithHandlerAndExceptionHandler(final TestContext aContext)
+            throws MalformedURLException {
         final S3Client s3Client = new S3Client(VERTX, myAccessKey, mySecretKey, myEndpoint);
         final Async asyncTask = aContext.async();
 
@@ -128,7 +130,7 @@ public class S3ClientFT extends AbstractS3FT {
      * @param aContext A test context
      */
     @Test
-    public final void testGetBucketKeyWithHandler(final TestContext aContext) {
+    public final void testGetBucketKeyWithHandler(final TestContext aContext) throws MalformedURLException {
         final S3Client s3Client = new S3Client(VERTX, myAccessKey, mySecretKey, myEndpoint);
         final Async asyncTask = aContext.async();
 
@@ -156,7 +158,8 @@ public class S3ClientFT extends AbstractS3FT {
      */
     @Test
     @SuppressWarnings("checkstyle:indentation")
-    public final void testGetBucketKeyWithHandlerAndExceptionHandler(final TestContext aContext) {
+    public final void testGetBucketKeyWithHandlerAndExceptionHandler(final TestContext aContext)
+            throws MalformedURLException {
         final S3Client s3Client = new S3Client(VERTX, myAccessKey, mySecretKey, myEndpoint);
         final Async asyncTask = aContext.async();
 
@@ -186,7 +189,7 @@ public class S3ClientFT extends AbstractS3FT {
      * @param aContext A testing context
      */
     @Test
-    public final void testListBucketWithHandler(final TestContext aContext) {
+    public final void testListBucketWithHandler(final TestContext aContext) throws MalformedURLException {
         final S3Client s3Client = new S3Client(VERTX, myAccessKey, mySecretKey, myEndpoint);
         final Async asyncTask = aContext.async();
 
@@ -222,7 +225,8 @@ public class S3ClientFT extends AbstractS3FT {
      */
     @Test
     @SuppressWarnings("checkstyle:indentation")
-    public final void testListBucketWithHandlerAndExceptionHandler(final TestContext aContext) {
+    public final void testListBucketWithHandlerAndExceptionHandler(final TestContext aContext)
+            throws MalformedURLException {
         final S3Client s3Client = new S3Client(VERTX, myAccessKey, mySecretKey, myEndpoint);
         final Async asyncTask = aContext.async();
 
@@ -260,7 +264,7 @@ public class S3ClientFT extends AbstractS3FT {
      * @param aContext A test context
      */
     @Test
-    public final void testListBucketPrefixWithHandler(final TestContext aContext) {
+    public final void testListBucketPrefixWithHandler(final TestContext aContext) throws MalformedURLException {
         final S3Client s3Client = new S3Client(VERTX, myAccessKey, mySecretKey, myEndpoint);
         final Async asyncTask = aContext.async();
         final String pKey2 = PREFIX + UUID.randomUUID().toString();
@@ -302,7 +306,8 @@ public class S3ClientFT extends AbstractS3FT {
      */
     @Test
     @SuppressWarnings("checkstyle:indentation")
-    public final void testListBucketPrefixWithHandlerWithExceptionHandler(final TestContext aContext) {
+    public final void testListBucketPrefixWithHandlerWithExceptionHandler(final TestContext aContext)
+            throws MalformedURLException {
         final S3Client s3Client = new S3Client(VERTX, myAccessKey, mySecretKey, myEndpoint);
         final Async asyncTask = aContext.async();
         final String prefixedKey = PREFIX + myKey;
@@ -339,7 +344,7 @@ public class S3ClientFT extends AbstractS3FT {
      * @param aContext A test context
      */
     @Test
-    public final void testPutBucketKeyBufferHandler(final TestContext aContext) {
+    public final void testPutBucketKeyBufferHandler(final TestContext aContext) throws MalformedURLException {
         final S3Client s3Client = new S3Client(VERTX, myAccessKey, mySecretKey, myEndpoint);
         final Buffer buffer = myContext.vertx().fileSystem().readFileBlocking(TEST_FILE);
         final Async asyncTask = aContext.async();
@@ -365,7 +370,8 @@ public class S3ClientFT extends AbstractS3FT {
      */
     @Test
     @SuppressWarnings("checkstyle:indentation")
-    public final void testPutBucketKeyBufferHandlerExceptionHandler(final TestContext aContext) {
+    public final void testPutBucketKeyBufferHandlerExceptionHandler(final TestContext aContext)
+            throws MalformedURLException {
         final S3Client s3Client = new S3Client(VERTX, myAccessKey, mySecretKey, myEndpoint);
         final Buffer buffer = myContext.vertx().fileSystem().readFileBlocking(TEST_FILE);
         final Async asyncTask = aContext.async();
@@ -393,7 +399,8 @@ public class S3ClientFT extends AbstractS3FT {
      * @param aContext A test context
      */
     @Test
-    public final void testPutBucketKeyBufferUserMetadataHandler(final TestContext aContext) {
+    public final void testPutBucketKeyBufferUserMetadataHandler(final TestContext aContext)
+            throws MalformedURLException {
         final S3Client s3Client = new S3Client(VERTX, myAccessKey, mySecretKey, myEndpoint);
         final Buffer buffer = myContext.vertx().fileSystem().readFileBlocking(TEST_FILE);
         final UserMetadata metadata = getTestUserMetadata();
@@ -424,7 +431,8 @@ public class S3ClientFT extends AbstractS3FT {
      */
     @Test
     @SuppressWarnings("checkstyle:indentation")
-    public final void testPutBucketKeyBufferUserMetadataHandlerExceptionHandler(final TestContext aContext) {
+    public final void testPutBucketKeyBufferUserMetadataHandlerExceptionHandler(final TestContext aContext)
+            throws MalformedURLException {
         final S3Client s3Client = new S3Client(VERTX, myAccessKey, mySecretKey, myEndpoint);
         final Buffer buffer = myContext.vertx().fileSystem().readFileBlocking(TEST_FILE);
         final UserMetadata metadata = getTestUserMetadata();
@@ -457,7 +465,7 @@ public class S3ClientFT extends AbstractS3FT {
      * @param aContext A test context
      */
     @Test
-    public final void testPutBucketKeyAsyncFileHandler(final TestContext aContext) {
+    public final void testPutBucketKeyAsyncFileHandler(final TestContext aContext) throws MalformedURLException {
         final S3Client s3Client = new S3Client(VERTX, myAccessKey, mySecretKey, myEndpoint);
         final AsyncFile file = myContext.vertx().fileSystem().openBlocking(TEST_FILE, new OpenOptions());
         final Async asyncTask = aContext.async();
@@ -483,7 +491,8 @@ public class S3ClientFT extends AbstractS3FT {
      */
     @Test
     @SuppressWarnings("checkstyle:indentation")
-    public final void testPutBucketKeyAsyncFileHandlerExceptionHandler(final TestContext aContext) {
+    public final void testPutBucketKeyAsyncFileHandlerExceptionHandler(final TestContext aContext)
+            throws MalformedURLException {
         final S3Client s3Client = new S3Client(VERTX, myAccessKey, mySecretKey, myEndpoint);
         final AsyncFile file = myContext.vertx().fileSystem().openBlocking(TEST_FILE, new OpenOptions());
         final Async asyncTask = aContext.async();
@@ -511,7 +520,8 @@ public class S3ClientFT extends AbstractS3FT {
      * @param aContext A test context
      */
     @Test
-    public final void testPutBucketKeyAsyncFileUserMetadataHandler(final TestContext aContext) {
+    public final void testPutBucketKeyAsyncFileUserMetadataHandler(final TestContext aContext)
+            throws MalformedURLException {
         final S3Client s3Client = new S3Client(VERTX, myAccessKey, mySecretKey, myEndpoint);
         final AsyncFile file = myContext.vertx().fileSystem().openBlocking(TEST_FILE, new OpenOptions());
         final UserMetadata metadata = getTestUserMetadata();
@@ -542,7 +552,8 @@ public class S3ClientFT extends AbstractS3FT {
      */
     @Test
     @SuppressWarnings("checkstyle:indentation")
-    public final void testPutBucketKeyAsyncFileUserMetadataHandlerExceptionHandler(final TestContext aContext) {
+    public final void testPutBucketKeyAsyncFileUserMetadataHandlerExceptionHandler(final TestContext aContext)
+            throws MalformedURLException {
         final S3Client s3Client = new S3Client(VERTX, myAccessKey, mySecretKey, myEndpoint);
         final AsyncFile file = myContext.vertx().fileSystem().openBlocking(TEST_FILE, new OpenOptions());
         final UserMetadata metadata = getTestUserMetadata();
@@ -575,7 +586,7 @@ public class S3ClientFT extends AbstractS3FT {
      * @param aContext A test context
      */
     @Test
-    public final void testDeleteBucketKeyHandler(final TestContext aContext) {
+    public final void testDeleteBucketKeyHandler(final TestContext aContext) throws MalformedURLException {
         final S3Client s3Client = new S3Client(VERTX, myAccessKey, mySecretKey, myEndpoint);
         final Async asyncTask = aContext.async();
 
@@ -599,7 +610,8 @@ public class S3ClientFT extends AbstractS3FT {
      */
     @Test
     @SuppressWarnings("checkstyle:indentation")
-    public final void testDeleteBucketKeyHandlerExceptionHandler(final TestContext aContext) {
+    public final void testDeleteBucketKeyHandlerExceptionHandler(final TestContext aContext)
+            throws MalformedURLException {
         final S3Client s3Client = new S3Client(VERTX, myAccessKey, mySecretKey, myEndpoint);
         final Async asyncTask = aContext.async();
 

@@ -4,6 +4,7 @@ package info.freelibrary.vertx.s3;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.net.MalformedURLException;
 import java.util.UUID;
 
 import org.junit.Test;
@@ -64,7 +65,7 @@ public class S3ClientTest {
      * Tests constructor that takes an S3 access key, secret key, and S3 endpoint.
      */
     @Test
-    public final void testS3ClientVertxStringStringString() {
+    public final void testS3ClientVertxStringStringString() throws MalformedURLException {
         new S3Client(VERTX, getUUID(), getUUID(), S3Client.DEFAULT_ENDPOINT).close();
     }
 
@@ -81,7 +82,7 @@ public class S3ClientTest {
      * Tests constructor that takes Vert.x instance, access key, secret key, session key, and S3 endpoint.
      */
     @Test
-    public final void testS3ClientVertxStringStringStringString() {
+    public final void testS3ClientVertxStringStringStringString() throws MalformedURLException {
         new S3Client(VERTX, getUUID(), getUUID(), getUUID(), S3Client.DEFAULT_ENDPOINT).close();
     }
 
