@@ -3,7 +3,6 @@ package info.freelibrary.vertx.s3;
 
 import java.nio.file.Paths;
 import java.util.Map;
-import java.util.Objects;
 
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.GenericContainer;
@@ -48,9 +47,11 @@ abstract class AbstractS3FT {
     private static final Network NETWORK = Network.newNetwork();
 
     /* The S3 LocalStack container */
+    @SuppressWarnings("unused")
     private static final LocalStackContainer S3_CONTAINER = getS3Container();
 
     /* The test container */
+    @SuppressWarnings("unused")
     private static final GenericContainer TEST_CONTAINER = getContainer();
 
     /* An S3 client used to confirm tests have worked */
@@ -81,9 +82,6 @@ abstract class AbstractS3FT {
      * @return A local test container
      */
     protected static GenericContainer getContainer() {
-        Objects.requireNonNull(S3_CONTAINER);
-
-        // Build the container where our code can be compiled
         final String localM2RepoCache = Paths.get(System.getProperty("user.home"), LOCAL_M2_REPO).toString();
         final String containerM2RepoCache = Paths.get("/home", TEST_USER, LOCAL_M2_REPO).toString();
         final GenericContainer<?> container = new GenericContainer(TAG);

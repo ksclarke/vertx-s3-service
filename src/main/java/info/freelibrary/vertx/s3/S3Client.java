@@ -3,10 +3,13 @@ package info.freelibrary.vertx.s3;
 
 import static info.freelibrary.vertx.s3.Constants.PATH_SEP;
 
-import java.net.URI;
+import java.net.MalformedURLException;
+import java.net.URL;
 
+import info.freelibrary.util.I18nRuntimeException;
 import info.freelibrary.util.Logger;
 import info.freelibrary.util.LoggerFactory;
+import info.freelibrary.util.StringUtils;
 
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -27,7 +30,7 @@ import io.vertx.core.http.HttpServerFileUpload;
 public class S3Client {
 
     /** Default S3 endpoint */
-    public static final String DEFAULT_ENDPOINT = "s3.amazonaws.com";
+    public static final String DEFAULT_ENDPOINT = "https://s3.amazonaws.com";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(S3Client.class, Constants.BUNDLE_NAME);
 
@@ -35,9 +38,7 @@ public class S3Client {
 
     private static final String PREFIX_LIST_CMD = "?list-type=2&prefix=";
 
-    private static final String HTTPS = "https://";
-
-    private static final String HTTP = "http://";
+    private static final String HTTP = "http";
 
     /** AWS access key */
     private final String myAccessKey;
@@ -60,8 +61,7 @@ public class S3Client {
      * @param aVertx A Vert.x instance from which to create the <code>HttpClient</code>
      */
     public S3Client(final Vertx aVertx) {
-        this(new AwsCredentialsProviderChain().getCredentials(), getHttpClient(aVertx, new HttpClientOptions()
-                .setDefaultHost(DEFAULT_ENDPOINT)));
+        this(new AwsCredentialsProviderChain().getCredentials(), getHttpClient(aVertx, (HttpClientOptions) null));
     }
 
     /**
@@ -71,8 +71,7 @@ public class S3Client {
      * @param aVertx A Vert.x instance from which to create the <code>HttpClient</code>
      */
     public S3Client(final Vertx aVertx, final Profile aProfile) {
-        this(aProfile.getCredentials(), getHttpClient(aVertx, new HttpClientOptions().setDefaultHost(
-                DEFAULT_ENDPOINT)));
+        this(aProfile.getCredentials(), getHttpClient(aVertx, (HttpClientOptions) null));
     }
 
     /**
@@ -105,8 +104,7 @@ public class S3Client {
      * @param aEndpoint An S3 endpoint
      */
     public S3Client(final Vertx aVertx, final String aEndpoint) {
-        this(new AwsCredentialsProviderChain().getCredentials(), getHttpClient(aVertx, new HttpClientOptions()
-                .setDefaultHost(aEndpoint)));
+        this(new AwsCredentialsProviderChain().getCredentials(), getHttpClient(aVertx, (HttpClientOptions) null));
     }
 
     /**
@@ -118,7 +116,7 @@ public class S3Client {
      * @param aEndpoint An S3 endpoint
      */
     public S3Client(final Vertx aVertx, final Profile aProfile, final String aEndpoint) {
-        this(aProfile.getCredentials(), getHttpClient(aVertx, new HttpClientOptions().setDefaultHost(aEndpoint)));
+        this(aProfile.getCredentials(), getHttpClient(aVertx, (HttpClientOptions) null));
     }
 
     /**
@@ -129,7 +127,7 @@ public class S3Client {
      * @param aSecretKey An S3 secret key
      */
     public S3Client(final Vertx aVertx, final String aAccessKey, final String aSecretKey) {
-        this(aVertx, aAccessKey, aSecretKey, null, new HttpClientOptions().setDefaultHost(DEFAULT_ENDPOINT));
+        this(aVertx, aAccessKey, aSecretKey, null, (HttpClientOptions) null);
     }
 
     /**
@@ -153,9 +151,11 @@ public class S3Client {
      * @param aAccessKey An S3 access key
      * @param aSecretKey An S3 secret key
      * @param aEndpoint An S3 endpoint
+     * @throws MalformedURLException If the supplied endpoint isn't a valid URL
      */
-    public S3Client(final Vertx aVertx, final String aAccessKey, final String aSecretKey, final String aEndpoint) {
-        this(aVertx, aAccessKey, aSecretKey, null, new HttpClientOptions().setDefaultHost(aEndpoint));
+    public S3Client(final Vertx aVertx, final String aAccessKey, final String aSecretKey, final String aEndpoint)
+            throws MalformedURLException {
+        this(aVertx, aAccessKey, aSecretKey, null, getHttpOptions(aEndpoint));
     }
 
     /**
@@ -181,11 +181,11 @@ public class S3Client {
      * @param aSecretKey An S3 secret key
      * @param aSessionToken An S3 session token
      * @param aEndpoint An S3 endpoint
+     * @throws MalformedURLException If the supplied S3 endpoint isn't a valid URL
      */
     public S3Client(final Vertx aVertx, final String aAccessKey, final String aSecretKey, final String aSessionToken,
-            final String aEndpoint) {
-        this(getCredentials(aAccessKey, aSecretKey, aSessionToken), getHttpClient(aVertx, new HttpClientOptions()
-                .setDefaultHost(aEndpoint)));
+            final String aEndpoint) throws MalformedURLException {
+        this(getCredentials(aAccessKey, aSecretKey, aSessionToken), getHttpClient(aVertx, getHttpOptions(aEndpoint)));
     }
 
     /**
@@ -681,45 +681,65 @@ public class S3Client {
      */
     private static HttpClient getHttpClient(final Vertx aVertx, final HttpClientOptions aConfig) {
         final HttpClient httpClient;
-        final String defaultHost;
-        final URI hostURI;
-        final int port;
 
-        if (aConfig == null) {
-            httpClient = aVertx.createHttpClient(new HttpClientOptions().setSsl(true).setDefaultPort(443)
-                    .setDefaultHost(HTTPS + S3Client.DEFAULT_ENDPOINT));
-        } else if ((defaultHost = aConfig.getDefaultHost()) != null) {
-            if (defaultHost.startsWith(HTTP)) {
-                hostURI = URI.create(defaultHost);
-                port = hostURI.getPort();
-
-                aConfig.setSsl(false);
-
-                if (port != -1) {
-                    aConfig.setDefaultPort(port);
-                } else {
-                    aConfig.setDefaultPort(80);
-                }
-            } else {
-                hostURI = URI.create(defaultHost.startsWith(HTTPS) ? defaultHost : HTTPS + defaultHost);
-                port = hostURI.getPort();
-
-                if (port != -1) {
-                    aConfig.setDefaultPort(port);
-                } else {
-                    aConfig.setDefaultPort(443);
-                }
-
-                aConfig.setSsl(true);
-            }
-
-            httpClient = aVertx.createHttpClient(aConfig.setDefaultHost(hostURI.getHost()));
-        } else {
-            aConfig.setSsl(true).setDefaultPort(443).setDefaultHost(HTTPS + S3Client.DEFAULT_ENDPOINT);
+        if (aConfig != null && aConfig.getDefaultHost() != null && aConfig.getDefaultPort() != -1) {
+            // If someone has submitted an HTTP client config, trust they know what they're doing
             httpClient = aVertx.createHttpClient(aConfig);
+        } else {
+            final HttpClientOptions httpOptions;
+            final String host;
+
+            try {
+                host = new URL(S3Client.DEFAULT_ENDPOINT).getHost();
+                httpOptions = new HttpClientOptions().setSsl(true).setDefaultPort(443).setDefaultHost(host);
+                httpClient = aVertx.createHttpClient(httpOptions);
+            } catch (final MalformedURLException details) {
+                throw new I18nRuntimeException(details); // Should not be possible
+            }
         }
 
         return httpClient;
+    }
+
+    /**
+     * Creates HTTP client options from the supplied endpoint URL.
+     *
+     * @param aEndpoint A user supplied S3 endpoint
+     * @return HTTP client options
+     * @throws MalformedURLException If the supplied endpoint isn't a valid URL
+     */
+    private static HttpClientOptions getHttpOptions(final String aEndpoint) throws MalformedURLException {
+        final HttpClientOptions clientOptions = new HttpClientOptions();
+        final URL url = new URL(aEndpoint);
+        final String protocol = url.getProtocol();
+        final String host = StringUtils.trimToNull(url.getHost());
+        final int port = url.getPort();
+
+        // If there is a supplied host, set it in the client options
+        if (host != null) {
+            clientOptions.setDefaultHost(host);
+        }
+
+        // An exception has been thrown if there is no protocol
+        if (protocol.equals(HTTP)) {
+            clientOptions.setSsl(false);
+
+            if (port != -1) {
+                clientOptions.setDefaultPort(port);
+            } else {
+                clientOptions.setDefaultPort(80);
+            }
+        } else {
+            clientOptions.setSsl(true);
+
+            if (port != -1) {
+                clientOptions.setDefaultPort(port);
+            } else {
+                clientOptions.setDefaultPort(443);
+            }
+        }
+
+        return clientOptions;
     }
 
     /**
