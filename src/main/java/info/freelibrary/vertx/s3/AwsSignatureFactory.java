@@ -5,21 +5,17 @@ import java.net.URI;
 import java.util.Optional;
 
 import info.freelibrary.util.I18nRuntimeException;
-import info.freelibrary.util.Logger;
-import info.freelibrary.util.LoggerFactory;
 
 /**
  * An AWS signature factory from which S3 authentication signatures can be created.
  */
 public final class AwsSignatureFactory {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AwsSignatureFactory.class, Constants.BUNDLE_NAME);
-
     /**
      * The different signature options supported by this factory.
      */
     public enum Version {
-        V2, V4
+        V4
     }
 
     private final Version myVersion;
@@ -77,7 +73,7 @@ public final class AwsSignatureFactory {
      * @return The credentials used by the AWS signature
      */
     public Optional<AwsCredentials> getCredentials() {
-        return myCredentials;
+        return myCredentials == null ? Optional.empty() : myCredentials;
     }
 
     /**
@@ -142,10 +138,12 @@ public final class AwsSignatureFactory {
     public AwsSignature getSignature() {
         final AwsSignature signature;
 
-        if (myVersion.equals(Version.V2)) {
-            signature = new AwsV2Signature(myCredentials.get());
-        } else if (myVersion.equals(Version.V4)) {
-            signature = new AwsV4Signature(myHost, myCredentials.get());
+        if (myVersion.equals(Version.V4)) {
+            if (myCredentials.isPresent()) {
+                signature = new AwsV4Signature(myHost, myCredentials.get());
+            } else {
+                throw new ConfigurationException();
+            }
         } else {
             throw new I18nRuntimeException(Constants.BUNDLE_NAME, MessageCodes.VS3_005);
         }

@@ -52,21 +52,8 @@ public class AwsV4Signature implements AwsSignature {
         myHost = aHost;
     }
 
-    /**
-     * Creates a new AWS v4 signature. It must be used within 15 minutes of its creation.
-     *
-     * @param aHost An S3 host
-     * @param aCredentials An AWS credentials
-     * @param aSessionToken An S3 token session
-     */
-    public AwsV4Signature(final URI aHost, final AwsCredentials aCredentials, final String aSessionToken) {
-        myCredentials = aCredentials;
-        myHost = aHost;
-    }
-
     @Override
-    public String getAuthorization(final MultiMap aHeaders, final String aMethod, final String aBucket,
-            final String aKey, final byte[] aPayload) {
+    public String getAuthorization(final MultiMap aHeaders, final String aMethod, final byte[] aPayload) {
         try {
             final LocalDateTime localDateTime = LocalDateTime.ofInstant(Instant.now(), ZoneOffset.UTC);
             final String timestamp = localDateTime.format(DATE_TIME_FORMATTER);

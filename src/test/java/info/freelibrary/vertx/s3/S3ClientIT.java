@@ -24,6 +24,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpClientResponse;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.RunTestOnContext;
@@ -37,6 +38,8 @@ public class S3ClientIT extends AbstractS3IT {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(S3ClientIT.class, BUNDLE_NAME);
 
+    private static final String EOL = System.lineSeparator();
+
     @Rule
     public RunTestOnContext myContext = new RunTestOnContext();
 
@@ -45,9 +48,6 @@ public class S3ClientIT extends AbstractS3IT {
 
     /** The S3 client being used in the tests */
     private S3Client myClient;
-
-    /** The S3 client used for V2 signing in the tests */
-    private S3Client myV2SigClient;
 
     /** A test ID */
     private String myTestID;
@@ -66,7 +66,6 @@ public class S3ClientIT extends AbstractS3IT {
 
         myTestID = UUID.randomUUID().toString();
         myClient = new S3Client(vertx, profile, endpoint);
-        myV2SigClient = new S3Client(vertx, profile, endpoint).useV2Signature(true);
 
         super.setUp(aContext);
     }
@@ -83,10 +82,6 @@ public class S3ClientIT extends AbstractS3IT {
 
         if (myClient != null) {
             myClient.close();
-        }
-
-        if (myV2SigClient != null) {
-            myV2SigClient.close();
         }
     }
 
@@ -144,48 +139,26 @@ public class S3ClientIT extends AbstractS3IT {
 
         if (createResource(s3Key, aContext, asyncTask)) {
             myClient.head(myTestBucket, s3Key, head -> {
-                final int statusCode = head.statusCode();
+                if (head.succeeded()) {
+                    final HttpClientResponse response = head.result();
+                    final int statusCode = response.statusCode();
 
-                if (statusCode != HTTP.OK) {
-                    aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.HEAD, s3Key, statusCode, head
-                            .statusMessage()));
+                    if (statusCode != HTTP.OK) {
+                        final String message = response.statusMessage();
+                        aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.HEAD, s3Key, statusCode, message));
+                    } else {
+                        final String contentLength = response.getHeader(HTTP.CONTENT_LENGTH);
+
+                        aContext.assertNotNull(contentLength);
+                        aContext.assertTrue(Integer.parseInt(contentLength) > 0);
+
+                        complete(asyncTask);
+                    }
                 } else {
-                    final String contentLength = head.getHeader(HTTP.CONTENT_LENGTH);
-
-                    aContext.assertNotNull(contentLength);
-                    aContext.assertTrue(Integer.parseInt(contentLength) > 0);
-                    complete(asyncTask);
+                    aContext.fail(head.cause());
                 }
-            });
-        }
-    }
-
-    /**
-     * Test for {@link S3Client#head(String, String, Handler)}
-     *
-     * @param aContext A test context
-     */
-    @Test
-    public void testHeadV2(final TestContext aContext) {
-        LOGGER.info(MessageCodes.VS3_006, myName.getMethodName());
-
-        final Async asyncTask = aContext.async();
-        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
-
-        if (createResource(s3Key, aContext, asyncTask)) {
-            myV2SigClient.head(myTestBucket, s3Key, head -> {
-                final int statusCode = head.statusCode();
-
-                if (statusCode != HTTP.OK) {
-                    aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.HEAD, s3Key, statusCode, head
-                            .statusMessage()));
-                } else {
-                    final String contentLength = head.getHeader(HTTP.CONTENT_LENGTH);
-
-                    aContext.assertNotNull(contentLength);
-                    aContext.assertTrue(Integer.parseInt(contentLength) > 0);
-                    complete(asyncTask);
-                }
+            }, error -> {
+                aContext.fail(error);
             });
         }
     }
@@ -205,50 +178,23 @@ public class S3ClientIT extends AbstractS3IT {
 
         if (createResource(s3Key, aContext, asyncTask)) {
             myClient.head(myTestBucket, s3Key, head -> {
-                final int statusCode = head.statusCode();
+                if (head.succeeded()) {
+                    final HttpClientResponse response = head.result();
+                    final int statusCode = response.statusCode();
 
-                if (statusCode != HTTP.OK) {
-                    aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.HEAD, s3Key, statusCode, head
-                            .statusMessage()));
+                    if (statusCode != HTTP.OK) {
+                        final String message = response.statusMessage();
+                        aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.HEAD, s3Key, statusCode, message));
+                    } else {
+                        final String contentLength = response.getHeader(HTTP.CONTENT_LENGTH);
+
+                        aContext.assertNotNull(contentLength);
+                        aContext.assertTrue(Integer.parseInt(contentLength) > 0);
+
+                        complete(asyncTask);
+                    }
                 } else {
-                    final String contentLength = head.getHeader(HTTP.CONTENT_LENGTH);
-
-                    aContext.assertNotNull(contentLength);
-                    aContext.assertTrue(Integer.parseInt(contentLength) > 0);
-                    complete(asyncTask);
-                }
-            }, exception -> {
-                aContext.fail(exception);
-            });
-        }
-    }
-
-    /**
-     * Test for {@link S3Client#head(String, String, Handler, Handler)}
-     *
-     * @param aContext A test context
-     */
-    @SuppressWarnings("checkstyle:Indentation")
-    @Test
-    public void testHeadExceptionHandlerV2(final TestContext aContext) {
-        LOGGER.info(MessageCodes.VS3_006, myName.getMethodName());
-
-        final Async asyncTask = aContext.async();
-        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
-
-        if (createResource(s3Key, aContext, asyncTask)) {
-            myV2SigClient.head(myTestBucket, s3Key, head -> {
-                final int statusCode = head.statusCode();
-
-                if (statusCode != HTTP.OK) {
-                    aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.HEAD, s3Key, statusCode, head
-                            .statusMessage()));
-                } else {
-                    final String contentLength = head.getHeader(HTTP.CONTENT_LENGTH);
-
-                    aContext.assertNotNull(contentLength);
-                    aContext.assertTrue(Integer.parseInt(contentLength) > 0);
-                    complete(asyncTask);
+                    aContext.fail(head.cause());
                 }
             }, exception -> {
                 aContext.fail(exception);
@@ -266,76 +212,41 @@ public class S3ClientIT extends AbstractS3IT {
         LOGGER.info(MessageCodes.VS3_006, myName.getMethodName());
 
         final Async asyncTask = aContext.async();
-        final String[] keys = { TestConstants.PATH_TO_ONE + myTestID, TestConstants.PATH_TO_TWO + myTestID,
+        final String[] keysArray = { TestConstants.PATH_TO_ONE + myTestID, TestConstants.PATH_TO_TWO + myTestID,
             TestConstants.PATH_FROM_ONE + myTestID, TestConstants.PATH_FROM_TWO + myTestID };
 
-        if (createResources(keys, aContext, asyncTask)) {
+        if (createResources(keysArray, aContext, asyncTask)) {
             myClient.list(myTestBucket, list -> {
-                final int statusCode = list.statusCode();
+                if (list.succeeded()) {
+                    final HttpClientResponse response = list.result();
+                    final int statusCode = response.statusCode();
 
-                if (statusCode == HTTP.OK) {
-                    list.bodyHandler(body -> {
-                        try {
-                            final BucketList bucketList = new BucketList(body);
+                    if (statusCode == HTTP.OK) {
+                        response.bodyHandler(body -> {
+                            try {
+                                final BucketList bucketList = new BucketList(body);
 
-                            for (final String key : keys) {
-                                aContext.assertTrue(bucketList.containsKey(key));
+                                for (final String key : keysArray) {
+                                    aContext.assertTrue(bucketList.containsKey(key));
+                                }
+
+                                aContext.assertEquals(bucketList.size(), keysArray.length);
+                                complete(asyncTask);
+                            } catch (final IOException details) {
+                                aContext.fail(details);
                             }
+                        });
+                    } else {
+                        final String keys = StringUtils.toString(keysArray, '|');
+                        final String message = response.statusMessage();
 
-                            aContext.assertEquals(bucketList.size(), keys.length);
-                            complete(asyncTask);
-                        } catch (final IOException details) {
-                            aContext.fail(details);
-                        }
-                    });
+                        aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.LIST, keys, statusCode, message));
+                    }
                 } else {
-                    final String keyValues = StringUtils.toString(keys, '|');
-                    final String status = list.statusMessage();
-
-                    aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.LIST, keyValues, statusCode, status));
+                    aContext.fail(list.cause());
                 }
-            });
-        }
-    }
-
-    /**
-     * Tests LISTing an S3 bucket.
-     *
-     * @param aContext A testing environment
-     */
-    @Test
-    public void testListV2(final TestContext aContext) {
-        LOGGER.info(MessageCodes.VS3_006, myName.getMethodName());
-
-        final Async asyncTask = aContext.async();
-        final String[] keys = { TestConstants.PATH_TO_ONE + myTestID, TestConstants.PATH_TO_TWO + myTestID,
-            TestConstants.PATH_FROM_ONE + myTestID, TestConstants.PATH_FROM_TWO + myTestID };
-
-        if (createResources(keys, aContext, asyncTask)) {
-            myV2SigClient.list(myTestBucket, list -> {
-                final int statusCode = list.statusCode();
-
-                if (statusCode == HTTP.OK) {
-                    list.bodyHandler(body -> {
-                        try {
-                            final BucketList bucketList = new BucketList(body);
-
-                            for (final String key : keys) {
-                                aContext.assertTrue(bucketList.containsKey(key));
-                            }
-
-                            aContext.assertEquals(bucketList.size(), keys.length);
-                            complete(asyncTask);
-                        } catch (final IOException details) {
-                            aContext.fail(details);
-                        }
-                    });
-                } else {
-                    final String keyValues = StringUtils.toString(keys, '|');
-                    final String status = list.statusMessage();
-
-                    aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.LIST, keyValues, statusCode, status));
-                }
+            }, error -> {
+                aContext.fail(error);
             });
         }
     }
@@ -351,81 +262,41 @@ public class S3ClientIT extends AbstractS3IT {
         LOGGER.info(MessageCodes.VS3_006, myName.getMethodName());
 
         final Async asyncTask = aContext.async();
-        final String[] keys = { TestConstants.PATH_TO_ONE + myTestID, TestConstants.PATH_TO_TWO + myTestID,
+        final String[] keysArray = { TestConstants.PATH_TO_ONE + myTestID, TestConstants.PATH_TO_TWO + myTestID,
             TestConstants.PATH_FROM_ONE + myTestID, TestConstants.PATH_FROM_TWO + myTestID };
 
-        if (createResources(keys, aContext, asyncTask)) {
+        if (createResources(keysArray, aContext, asyncTask)) {
             myClient.list(myTestBucket, list -> {
-                final int statusCode = list.statusCode();
+                if (list.succeeded()) {
+                    final HttpClientResponse response = list.result();
+                    final int statusCode = response.statusCode();
 
-                if (statusCode == HTTP.OK) {
-                    list.bodyHandler(body -> {
-                        try {
-                            final BucketList bucketList = new BucketList(body);
+                    if (statusCode == HTTP.OK) {
+                        response.bodyHandler(body -> {
+                            try {
+                                final BucketList bucketList = new BucketList(body);
 
-                            for (final String key : keys) {
-                                aContext.assertTrue(bucketList.containsKey(key));
+                                for (final String key : keysArray) {
+                                    aContext.assertTrue(bucketList.containsKey(key));
+                                }
+
+                                aContext.assertEquals(bucketList.size(), keysArray.length);
+                                complete(asyncTask);
+                            } catch (final IOException details) {
+                                aContext.fail(details);
                             }
+                        });
+                    } else {
+                        final String keys = StringUtils.toString(keysArray, '|');
+                        final String message = response.statusMessage();
 
-                            aContext.assertEquals(bucketList.size(), keys.length);
-                            complete(asyncTask);
-                        } catch (final IOException details) {
-                            aContext.fail(details);
-                        }
-                    });
+                        aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.LIST, keys, statusCode, message));
+                    }
                 } else {
-                    final String keyValues = StringUtils.toString(keys, '|');
-                    final String status = list.statusMessage();
-
-                    aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.LIST, keyValues, statusCode, status));
+                    aContext.fail(list.cause());
                 }
-            }, exception -> {
-                aContext.fail(exception.getMessage());
-            });
-        }
-    }
-
-    /**
-     * Tests LISTing an S3 bucket.
-     *
-     * @param aContext A testing environment
-     */
-    @SuppressWarnings("checkstyle:Indentation")
-    @Test
-    public void testListExceptionHandlerV2(final TestContext aContext) {
-        LOGGER.info(MessageCodes.VS3_006, myName.getMethodName());
-
-        final Async asyncTask = aContext.async();
-        final String[] keys = { TestConstants.PATH_TO_ONE + myTestID, TestConstants.PATH_TO_TWO + myTestID,
-            TestConstants.PATH_FROM_ONE + myTestID, TestConstants.PATH_FROM_TWO + myTestID };
-
-        if (createResources(keys, aContext, asyncTask)) {
-            myV2SigClient.list(myTestBucket, list -> {
-                final int statusCode = list.statusCode();
-
-                if (statusCode == HTTP.OK) {
-                    list.bodyHandler(body -> {
-                        try {
-                            final BucketList bucketList = new BucketList(body);
-
-                            for (final String key : keys) {
-                                aContext.assertTrue(bucketList.containsKey(key));
-                            }
-
-                            aContext.assertEquals(bucketList.size(), keys.length);
-                            complete(asyncTask);
-                        } catch (final IOException details) {
-                            aContext.fail(details);
-                        }
-                    });
-                } else {
-                    final String keyValues = StringUtils.toString(keys, '|');
-                    final String status = list.statusMessage();
-
-                    aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.LIST, keyValues, statusCode, status));
-                }
-            }, exception -> {
-                aContext.fail(exception.getMessage());
+            }, error -> {
+                aContext.fail(error.getMessage());
             });
         }
     }
@@ -440,74 +311,40 @@ public class S3ClientIT extends AbstractS3IT {
         LOGGER.info(MessageCodes.VS3_006, myName.getMethodName());
 
         final Async asyncTask = aContext.async();
-        final String[] keys = { TestConstants.PATH_TO_ONE + myTestID, TestConstants.PATH_TO_TWO + myTestID,
+        final String[] keysArray = { TestConstants.PATH_TO_ONE + myTestID, TestConstants.PATH_TO_TWO + myTestID,
             TestConstants.PATH_FROM_ONE + myTestID, TestConstants.PATH_FROM_TWO + myTestID };
 
-        if (createResources(keys, aContext, asyncTask)) {
+        if (createResources(keysArray, aContext, asyncTask)) {
             myClient.list(myTestBucket, TestConstants.PATH_FROM, list -> {
-                final int statusCode = list.statusCode();
+                if (list.succeeded()) {
+                    final HttpClientResponse response = list.result();
+                    final int statusCode = response.statusCode();
 
-                if (statusCode == HTTP.OK) {
-                    list.bodyHandler(body -> {
-                        try {
-                            final BucketList bucketList = new BucketList(body);
+                    if (statusCode == HTTP.OK) {
+                        response.bodyHandler(body -> {
+                            try {
+                                final BucketList bucketList = new BucketList(body);
 
-                            aContext.assertEquals(bucketList.size(), 2);
-                            aContext.assertTrue(bucketList.containsKey(keys[2]));
-                            aContext.assertTrue(bucketList.containsKey(keys[3]));
+                                aContext.assertEquals(bucketList.size(), 2);
+                                aContext.assertTrue(bucketList.containsKey(keysArray[2]));
+                                aContext.assertTrue(bucketList.containsKey(keysArray[3]));
 
-                            complete(asyncTask);
-                        } catch (final IOException details) {
-                            aContext.fail(details);
-                        }
-                    });
+                                complete(asyncTask);
+                            } catch (final IOException details) {
+                                aContext.fail(details);
+                            }
+                        });
+                    } else {
+                        final String keys = StringUtils.toString(keysArray, '|');
+                        final String message = response.statusMessage();
+
+                        aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.LIST, keys, statusCode, message));
+                    }
                 } else {
-                    final String keyValues = StringUtils.toString(keys, '|');
-                    final String status = list.statusMessage();
-
-                    aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.LIST, keyValues, statusCode, status));
+                    aContext.fail(list.cause());
                 }
-            });
-        }
-    }
-
-    /**
-     * Tests LISTing with a prefix.
-     *
-     * @param aContext A testing environment
-     */
-    @Test
-    public void testListWithPrefixV2(final TestContext aContext) {
-        LOGGER.info(MessageCodes.VS3_006, myName.getMethodName());
-
-        final Async asyncTask = aContext.async();
-        final String[] keys = { TestConstants.PATH_TO_ONE + myTestID, TestConstants.PATH_TO_TWO + myTestID,
-            TestConstants.PATH_FROM_ONE + myTestID, TestConstants.PATH_FROM_TWO + myTestID };
-
-        if (createResources(keys, aContext, asyncTask)) {
-            myV2SigClient.list(myTestBucket, TestConstants.PATH_FROM, list -> {
-                final int statusCode = list.statusCode();
-
-                if (statusCode == HTTP.OK) {
-                    list.bodyHandler(body -> {
-                        try {
-                            final BucketList bucketList = new BucketList(body);
-
-                            aContext.assertEquals(bucketList.size(), 2);
-                            aContext.assertTrue(bucketList.containsKey(keys[2]));
-                            aContext.assertTrue(bucketList.containsKey(keys[3]));
-
-                            complete(asyncTask);
-                        } catch (final IOException details) {
-                            aContext.fail(details);
-                        }
-                    });
-                } else {
-                    final String keyValues = StringUtils.toString(keys, '|');
-                    final String status = list.statusMessage();
-
-                    aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.LIST, keyValues, statusCode, status));
-                }
+            }, error -> {
+                aContext.fail(error);
             });
         }
     }
@@ -523,79 +360,40 @@ public class S3ClientIT extends AbstractS3IT {
         LOGGER.info(MessageCodes.VS3_006, myName.getMethodName());
 
         final Async asyncTask = aContext.async();
-        final String[] keys = { TestConstants.PATH_TO_ONE + myTestID, TestConstants.PATH_TO_TWO + myTestID,
+        final String[] keysArray = { TestConstants.PATH_TO_ONE + myTestID, TestConstants.PATH_TO_TWO + myTestID,
             TestConstants.PATH_FROM_ONE + myTestID, TestConstants.PATH_FROM_TWO + myTestID };
 
-        if (createResources(keys, aContext, asyncTask)) {
+        if (createResources(keysArray, aContext, asyncTask)) {
             myClient.list(myTestBucket, TestConstants.PATH_FROM, list -> {
-                final int statusCode = list.statusCode();
+                if (list.succeeded()) {
+                    final HttpClientResponse response = list.result();
+                    final int statusCode = response.statusCode();
 
-                if (statusCode == HTTP.OK) {
-                    list.bodyHandler(body -> {
-                        try {
-                            final BucketList bucketList = new BucketList(body);
+                    if (statusCode == HTTP.OK) {
+                        response.bodyHandler(body -> {
+                            try {
+                                final BucketList bucketList = new BucketList(body);
 
-                            aContext.assertEquals(bucketList.size(), 2);
-                            aContext.assertTrue(bucketList.containsKey(keys[2]));
-                            aContext.assertTrue(bucketList.containsKey(keys[3]));
+                                aContext.assertEquals(bucketList.size(), 2);
+                                aContext.assertTrue(bucketList.containsKey(keysArray[2]));
+                                aContext.assertTrue(bucketList.containsKey(keysArray[3]));
 
-                            complete(asyncTask);
-                        } catch (final IOException details) {
-                            aContext.fail(details);
-                        }
-                    });
+                                complete(asyncTask);
+                            } catch (final IOException details) {
+                                aContext.fail(details);
+                            }
+                        });
+                    } else {
+                        final String keys = StringUtils.toString(keysArray, '|');
+                        final String message = response.statusMessage();
+
+                        aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.LIST, keys, statusCode, message));
+                    }
                 } else {
-                    final String keyValues = StringUtils.toString(keys, '|');
-                    final String status = list.statusMessage();
-
-                    aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.LIST, keyValues, statusCode, status));
+                    aContext.fail(list.cause());
                 }
-            }, exception -> {
-                aContext.fail(exception.getMessage());
-            });
-        }
-    }
-
-    /**
-     * Tests LISTing with a prefix.
-     *
-     * @param aContext A testing environment
-     */
-    @SuppressWarnings("checkstyle:Indentation")
-    @Test
-    public void testListWithPrefixExceptionHandlerV2(final TestContext aContext) {
-        LOGGER.info(MessageCodes.VS3_006, myName.getMethodName());
-
-        final Async asyncTask = aContext.async();
-        final String[] keys = { TestConstants.PATH_TO_ONE + myTestID, TestConstants.PATH_TO_TWO + myTestID,
-            TestConstants.PATH_FROM_ONE + myTestID, TestConstants.PATH_FROM_TWO + myTestID };
-
-        if (createResources(keys, aContext, asyncTask)) {
-            myV2SigClient.list(myTestBucket, TestConstants.PATH_FROM, list -> {
-                final int statusCode = list.statusCode();
-
-                if (statusCode == HTTP.OK) {
-                    list.bodyHandler(body -> {
-                        try {
-                            final BucketList bucketList = new BucketList(body);
-
-                            aContext.assertEquals(bucketList.size(), 2);
-                            aContext.assertTrue(bucketList.containsKey(keys[2]));
-                            aContext.assertTrue(bucketList.containsKey(keys[3]));
-
-                            complete(asyncTask);
-                        } catch (final IOException details) {
-                            aContext.fail(details);
-                        }
-                    });
-                } else {
-                    final String keyValues = StringUtils.toString(keys, '|');
-                    final String status = list.statusMessage();
-
-                    aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.LIST, keyValues, statusCode, status));
-                }
-            }, exception -> {
-                aContext.fail(exception.getMessage());
+            }, error -> {
+                aContext.fail(error.getMessage());
             });
         }
     }
@@ -614,52 +412,27 @@ public class S3ClientIT extends AbstractS3IT {
 
         if (createResource(s3Key, aContext, asyncTask)) {
             myClient.get(myTestBucket, s3Key, get -> {
-                final int statusCode = get.statusCode();
+                if (get.succeeded()) {
+                    final HttpClientResponse response = get.result();
+                    final int statusCode = response.statusCode();
 
-                if (statusCode != HTTP.OK) {
-                    aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.GET, s3Key, statusCode, get
-                            .statusMessage()));
+                    if (statusCode != HTTP.OK) {
+                        final String message = response.statusMessage();
+                        aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.GET, s3Key, statusCode, message));
+                    } else {
+                        response.bodyHandler(buffer -> {
+                            if (buffer.length() != myResource.length) {
+                                aContext.fail(LOGGER.getMessage(MessageCodes.VS3_004, buffer.length()));
+                            } else {
+                                complete(asyncTask);
+                            }
+                        });
+                    }
                 } else {
-                    get.bodyHandler(buffer -> {
-                        if (buffer.length() != myResource.length) {
-                            aContext.fail(LOGGER.getMessage(MessageCodes.VS3_004, buffer.length()));
-                        } else {
-                            asyncTask.complete();
-                        }
-                    });
+                    aContext.fail(get.cause());
                 }
-            });
-        }
-    }
-
-    /**
-     * Test for {@link S3Client#get(String, String, Handler)}
-     *
-     * @param aContext A test context
-     */
-    @Test
-    public void testGetV2(final TestContext aContext) {
-        LOGGER.info(MessageCodes.VS3_006, myName.getMethodName());
-
-        final Async asyncTask = aContext.async();
-        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
-
-        if (createResource(s3Key, aContext, asyncTask)) {
-            myV2SigClient.get(myTestBucket, s3Key, get -> {
-                final int statusCode = get.statusCode();
-
-                if (statusCode != HTTP.OK) {
-                    aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.GET, s3Key, statusCode, get
-                            .statusMessage()));
-                } else {
-                    get.bodyHandler(body -> {
-                        if (body.length() != myResource.length) {
-                            aContext.fail(LOGGER.getMessage(MessageCodes.VS3_004, body.length()));
-                        } else {
-                            asyncTask.complete();
-                        }
-                    });
-                }
+            }, error -> {
+                aContext.fail(error);
             });
         }
     }
@@ -679,57 +452,27 @@ public class S3ClientIT extends AbstractS3IT {
 
         if (createResource(s3Key, aContext, asyncTask)) {
             myClient.get(myTestBucket, s3Key, get -> {
-                final int statusCode = get.statusCode();
+                if (get.succeeded()) {
+                    final HttpClientResponse response = get.result();
+                    final int statusCode = response.statusCode();
 
-                if (statusCode != HTTP.OK) {
-                    aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.GET, s3Key, statusCode, get
-                            .statusMessage()));
+                    if (statusCode != HTTP.OK) {
+                        final String message = response.statusMessage();
+                        aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.GET, s3Key, statusCode, message));
+                    } else {
+                        response.bodyHandler(body -> {
+                            if (body.length() != myResource.length) {
+                                aContext.fail(LOGGER.getMessage(MessageCodes.VS3_004, body.length()));
+                            } else {
+                                complete(asyncTask);
+                            }
+                        });
+                    }
                 } else {
-                    get.bodyHandler(body -> {
-                        if (body.length() != myResource.length) {
-                            aContext.fail(LOGGER.getMessage(MessageCodes.VS3_004, body.length()));
-                        } else {
-                            asyncTask.complete();
-                        }
-                    });
+                    aContext.fail(get.cause());
                 }
-            }, exception -> {
-                aContext.fail(exception.getMessage());
-            });
-        }
-    }
-
-    /**
-     * Test for {@link S3Client#get(String, String, Handler)}
-     *
-     * @param aContext A test context
-     */
-    @SuppressWarnings("checkstyle:Indentation")
-    @Test
-    public void testGetExceptionHandlerV2(final TestContext aContext) {
-        LOGGER.info(MessageCodes.VS3_006, myName.getMethodName());
-
-        final Async asyncTask = aContext.async();
-        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
-
-        if (createResource(s3Key, aContext, asyncTask)) {
-            myV2SigClient.get(myTestBucket, s3Key, get -> {
-                final int statusCode = get.statusCode();
-
-                if (statusCode != HTTP.OK) {
-                    aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.GET, s3Key, statusCode, get
-                            .statusMessage()));
-                } else {
-                    get.bodyHandler(body -> {
-                        if (body.length() != myResource.length) {
-                            aContext.fail(LOGGER.getMessage(MessageCodes.VS3_004, body.length()));
-                        } else {
-                            asyncTask.complete();
-                        }
-                    });
-                }
-            }, exception -> {
-                aContext.fail(exception.getMessage());
+            }, error -> {
+                aContext.fail(error.getMessage());
             });
         }
     }
@@ -747,38 +490,21 @@ public class S3ClientIT extends AbstractS3IT {
         final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
 
         myClient.put(myTestBucket, s3Key, Buffer.buffer(myResource), put -> {
-            final int statusCode = put.statusCode();
+            if (put.succeeded()) {
+                final HttpClientResponse response = put.result();
+                final int statusCode = response.statusCode();
 
-            if (statusCode != HTTP.OK) {
-                aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.PUT, s3Key, statusCode, put
-                        .statusMessage()));
+                if (statusCode != HTTP.OK) {
+                    final String message = response.statusMessage();
+                    aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.PUT, s3Key, statusCode, message));
+                } else {
+                    asyncTask.complete();
+                }
             } else {
-                asyncTask.complete();
+                aContext.fail(put.cause());
             }
-        });
-    }
-
-    /**
-     * Testing PUTing data to an S3 object
-     *
-     * @param aContext A testing environment
-     */
-    @Test
-    public void testPutV2(final TestContext aContext) {
-        LOGGER.info(MessageCodes.VS3_006, myName.getMethodName());
-
-        final Async asyncTask = aContext.async();
-        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
-
-        myV2SigClient.put(myTestBucket, s3Key, Buffer.buffer(myResource), put -> {
-            final int statusCode = put.statusCode();
-
-            if (statusCode != HTTP.OK) {
-                aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.PUT, s3Key, statusCode, put
-                        .statusMessage()));
-            } else {
-                asyncTask.complete();
-            }
+        }, error -> {
+            aContext.fail(error);
         });
     }
 
@@ -796,43 +522,21 @@ public class S3ClientIT extends AbstractS3IT {
         final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
 
         myClient.put(myTestBucket, s3Key, Buffer.buffer(myResource), put -> {
-            final int statusCode = put.statusCode();
+            if (put.succeeded()) {
+                final HttpClientResponse response = put.result();
+                final int statusCode = response.statusCode();
 
-            if (statusCode != HTTP.OK) {
-                aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.PUT, s3Key, statusCode, put
-                        .statusMessage()));
+                if (statusCode != HTTP.OK) {
+                    final String message = response.statusMessage();
+                    aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.PUT, s3Key, statusCode, message));
+                } else {
+                    complete(asyncTask);
+                }
             } else {
-                asyncTask.complete();
+                aContext.fail(put.cause());
             }
-        }, exception -> {
-            aContext.fail(exception.getMessage());
-        });
-    }
-
-    /**
-     * Testing PUTing data to an S3 object
-     *
-     * @param aContext A testing environment
-     */
-    @SuppressWarnings("checkstyle:Indentation")
-    @Test
-    public void testPutExceptionHandlerV2(final TestContext aContext) {
-        LOGGER.info(MessageCodes.VS3_006, myName.getMethodName());
-
-        final Async asyncTask = aContext.async();
-        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
-
-        myV2SigClient.put(myTestBucket, s3Key, Buffer.buffer(myResource), put -> {
-            final int statusCode = put.statusCode();
-
-            if (statusCode != HTTP.OK) {
-                aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.PUT, s3Key, statusCode, put
-                        .statusMessage()));
-            } else {
-                asyncTask.complete();
-            }
-        }, exception -> {
-            aContext.fail(exception.getMessage());
+        }, error -> {
+            aContext.fail(error.getMessage());
         });
     }
 
@@ -850,43 +554,25 @@ public class S3ClientIT extends AbstractS3IT {
         final UserMetadata metadata = new UserMetadata(TestConstants.ONE, TestConstants.TWO);
 
         myClient.put(myTestBucket, s3Key, Buffer.buffer(myResource), metadata, put -> {
-            final int statusCode = put.statusCode();
+            if (put.succeeded()) {
+                final HttpClientResponse response = put.result();
+                final int statusCode = response.statusCode();
 
-            if (statusCode != HTTP.OK) {
-                put.bodyHandler(body -> {
-                    aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.PUT, s3Key, statusCode, put
-                            .statusMessage() + System.lineSeparator() + body.toString()));
-                });
+                if (statusCode != HTTP.OK) {
+                    response.bodyHandler(body -> {
+                        final String bodyString = body.toString();
+                        final String message = String.join(EOL, response.statusMessage(), bodyString);
+
+                        aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.PUT, s3Key, statusCode, message));
+                    });
+                } else {
+                    complete(asyncTask);
+                }
             } else {
-                asyncTask.complete();
+                aContext.fail(put.cause());
             }
-        });
-    }
-
-    /**
-     * Test PUTing with user metadata.
-     *
-     * @param aContext A testing context
-     */
-    @Test
-    public void testPutUserMetadataV2(final TestContext aContext) {
-        LOGGER.info(MessageCodes.VS3_006, myName.getMethodName());
-
-        final Async asyncTask = aContext.async();
-        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
-        final UserMetadata metadata = new UserMetadata(TestConstants.ONE, TestConstants.TWO);
-
-        myV2SigClient.put(myTestBucket, s3Key, Buffer.buffer(myResource), metadata, put -> {
-            final int statusCode = put.statusCode();
-
-            if (statusCode != HTTP.OK) {
-                put.bodyHandler(body -> {
-                    aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.PUT, s3Key, statusCode, put
-                            .statusMessage() + System.lineSeparator() + body.toString()));
-                });
-            } else {
-                asyncTask.complete();
-            }
+        }, error -> {
+            aContext.fail(error);
         });
     }
 
@@ -905,49 +591,25 @@ public class S3ClientIT extends AbstractS3IT {
         final UserMetadata metadata = new UserMetadata(TestConstants.ONE, TestConstants.TWO);
 
         myClient.put(myTestBucket, s3Key, Buffer.buffer(myResource), metadata, put -> {
-            final int statusCode = put.statusCode();
+            if (put.succeeded()) {
+                final HttpClientResponse response = put.result();
+                final int statusCode = response.statusCode();
 
-            if (statusCode != HTTP.OK) {
-                put.bodyHandler(body -> {
-                    // We can get a more detailed error message
-                    aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.PUT, s3Key, statusCode, put
-                            .statusMessage() + System.lineSeparator() + body.toString()));
-                });
+                if (statusCode != HTTP.OK) {
+                    response.bodyHandler(body -> {
+                        final String bodyString = body.toString();
+                        final String message = String.join(EOL, response.statusMessage(), bodyString);
+
+                        aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.PUT, s3Key, statusCode, message));
+                    });
+                } else {
+                    complete(asyncTask);
+                }
             } else {
-                asyncTask.complete();
+                aContext.fail(put.cause());
             }
-        }, exception -> {
-            aContext.fail(exception.getMessage());
-        });
-    }
-
-    /**
-     * Test PUTing with user metadata.
-     *
-     * @param aContext A testing context
-     */
-    @SuppressWarnings("checkstyle:Indentation")
-    @Test
-    public void testPutUserMetadataExceptionHandlerV2(final TestContext aContext) {
-        LOGGER.info(MessageCodes.VS3_006, myName.getMethodName());
-
-        final Async asyncTask = aContext.async();
-        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
-        final UserMetadata metadata = new UserMetadata(TestConstants.ONE, TestConstants.TWO);
-
-        myV2SigClient.put(myTestBucket, s3Key, Buffer.buffer(myResource), metadata, put -> {
-            final int statusCode = put.statusCode();
-
-            if (statusCode != HTTP.OK) {
-                put.bodyHandler(body -> {
-                    aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.PUT, s3Key, statusCode, put
-                            .statusMessage() + System.lineSeparator() + body.toString()));
-                });
-            } else {
-                asyncTask.complete();
-            }
-        }, exception -> {
-            aContext.fail(exception.getMessage());
+        }, error -> {
+            aContext.fail(error.getMessage());
         });
     }
 
@@ -966,48 +628,24 @@ public class S3ClientIT extends AbstractS3IT {
         myContext.vertx().fileSystem().open(TEST_FILE.getAbsolutePath(), new OpenOptions(), open -> {
             if (open.succeeded()) {
                 myClient.put(myTestBucket, s3Key, open.result(), put -> {
-                    final int statusCode = put.statusCode();
+                    if (put.succeeded()) {
+                        final HttpClientResponse response = put.result();
+                        final int statusCode = response.statusCode();
 
-                    if (statusCode != HTTP.OK) {
-                        put.bodyHandler(body -> {
-                            aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.PUT, s3Key, statusCode, put
-                                    .statusMessage() + System.lineSeparator() + body.toString()));
-                        });
+                        if (statusCode != HTTP.OK) {
+                            response.bodyHandler(body -> {
+                                final String message = String.join(EOL, response.statusMessage(), body.toString());
+                                aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.PUT, s3Key, statusCode,
+                                        message));
+                            });
+                        } else {
+                            complete(asyncTask);
+                        }
                     } else {
-                        asyncTask.complete();
+                        aContext.fail(put.cause());
                     }
-                });
-            } else {
-                aContext.fail(open.cause());
-            }
-        });
-    }
-
-    /**
-     * Tests PUTing an AsyncFile to S3 bucket.
-     *
-     * @param aContext A testing environment
-     */
-    @Test
-    public void testPutAsyncFileV2(final TestContext aContext) {
-        LOGGER.info(MessageCodes.VS3_006, myName.getMethodName());
-
-        final Async asyncTask = aContext.async();
-        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
-
-        myContext.vertx().fileSystem().open(TEST_FILE.getAbsolutePath(), new OpenOptions(), open -> {
-            if (open.succeeded()) {
-                myV2SigClient.put(myTestBucket, s3Key, open.result(), put -> {
-                    final int statusCode = put.statusCode();
-
-                    if (statusCode != HTTP.OK) {
-                        put.bodyHandler(body -> {
-                            aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.PUT, s3Key, statusCode, put
-                                    .statusMessage() + System.lineSeparator() + body.toString()));
-                        });
-                    } else {
-                        asyncTask.complete();
-                    }
+                }, error -> {
+                    aContext.fail(error);
                 });
             } else {
                 aContext.fail(open.cause());
@@ -1031,49 +669,25 @@ public class S3ClientIT extends AbstractS3IT {
         myContext.vertx().fileSystem().open(TEST_FILE.getAbsolutePath(), new OpenOptions(), open -> {
             if (open.succeeded()) {
                 myClient.put(myTestBucket, s3Key, open.result(), put -> {
-                    final int statusCode = put.statusCode();
+                    if (put.succeeded()) {
+                        final HttpClientResponse response = put.result();
+                        final int statusCode = response.statusCode();
 
-                    if (statusCode != HTTP.OK) {
-                        put.bodyHandler(body -> {
-                            aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.PUT, s3Key, statusCode, put
-                                    .statusMessage() + System.lineSeparator() + body.toString()));
-                        });
+                        if (statusCode != HTTP.OK) {
+                            response.bodyHandler(body -> {
+                                final String message = String.join(EOL, response.statusMessage(), body.toString());
+                                final Object[] messageDetails = new Object[] { HTTP.PUT, s3Key, statusCode, message };
+
+                                aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, messageDetails));
+                            });
+                        } else {
+                            complete(asyncTask);
+                        }
                     } else {
-                        asyncTask.complete();
+                        aContext.fail(put.cause());
                     }
-                });
-            } else {
-                aContext.fail(open.cause());
-            }
-        });
-    }
-
-    /**
-     * Tests PUTing an AsyncFile to S3 bucket.
-     *
-     * @param aContext A testing environment
-     */
-    @SuppressWarnings("checkstyle:Indentation")
-    @Test
-    public void testPutAsyncFileExceptionHandlerV2(final TestContext aContext) {
-        LOGGER.info(MessageCodes.VS3_006, myName.getMethodName());
-
-        final Async asyncTask = aContext.async();
-        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
-
-        myContext.vertx().fileSystem().open(TEST_FILE.getAbsolutePath(), new OpenOptions(), open -> {
-            if (open.succeeded()) {
-                myV2SigClient.put(myTestBucket, s3Key, open.result(), put -> {
-                    final int statusCode = put.statusCode();
-
-                    if (statusCode != HTTP.OK) {
-                        put.bodyHandler(body -> {
-                            aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.PUT, s3Key, statusCode, put
-                                    .statusMessage() + System.lineSeparator() + body.toString()));
-                        });
-                    } else {
-                        asyncTask.complete();
-                    }
+                }, error -> {
+                    aContext.fail(error);
                 });
             } else {
                 aContext.fail(open.cause());
@@ -1097,85 +711,25 @@ public class S3ClientIT extends AbstractS3IT {
         myContext.vertx().fileSystem().open(TEST_FILE.getAbsolutePath(), new OpenOptions(), open -> {
             if (open.succeeded()) {
                 myClient.put(myTestBucket, s3Key, open.result(), metadata, put -> {
-                    final int statusCode = put.statusCode();
+                    if (put.succeeded()) {
+                        final HttpClientResponse response = put.result();
+                        final int statusCode = response.statusCode();
 
-                    if (statusCode != HTTP.OK) {
-                        put.bodyHandler(body -> {
-                            aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.PUT, s3Key, statusCode, put
-                                    .statusMessage() + System.lineSeparator() + body.toString()));
-                        });
+                        if (statusCode != HTTP.OK) {
+                            response.bodyHandler(body -> {
+                                final String message = String.join(EOL, response.statusMessage(), body.toString());
+                                final Object[] messageDetails = new Object[] { HTTP.PUT, s3Key, statusCode, message };
+
+                                aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, messageDetails));
+                            });
+                        } else {
+                            complete(asyncTask);
+                        }
                     } else {
-                        asyncTask.complete();
+                        aContext.fail(put.cause());
                     }
-                });
-            } else {
-                aContext.fail(open.cause());
-            }
-        });
-    }
-
-    /**
-     * Tests PUTing an AsyncFile to S3 bucket.
-     *
-     * @param aContext A testing environment
-     */
-    @Test
-    public void testPutAsyncFileUserMetadataV2(final TestContext aContext) {
-        LOGGER.info(MessageCodes.VS3_006, myName.getMethodName());
-
-        final Async asyncTask = aContext.async();
-        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
-        final UserMetadata metadata = new UserMetadata(TestConstants.THREE, TestConstants.FOUR);
-
-        myContext.vertx().fileSystem().open(TEST_FILE.getAbsolutePath(), new OpenOptions(), open -> {
-            if (open.succeeded()) {
-                myV2SigClient.put(myTestBucket, s3Key, open.result(), metadata, put -> {
-                    final int statusCode = put.statusCode();
-
-                    if (statusCode != HTTP.OK) {
-                        put.bodyHandler(body -> {
-                            aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.PUT, s3Key, statusCode, put
-                                    .statusMessage() + System.lineSeparator() + body.toString()));
-                        });
-                    } else {
-                        asyncTask.complete();
-                    }
-                });
-            } else {
-                aContext.fail(open.cause());
-            }
-        });
-    }
-
-    /**
-     * Tests PUTing an AsyncFile to S3 bucket.
-     *
-     * @param aContext A testing environment
-     */
-    @SuppressWarnings("checkstyle:Indentation")
-    @Test
-    public void testPutAsyncFileUserMetadataExceptionHandlerV2(final TestContext aContext) {
-        LOGGER.info(MessageCodes.VS3_006, myName.getMethodName());
-
-        final Async asyncTask = aContext.async();
-        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
-        final UserMetadata metadata = new UserMetadata(TestConstants.THREE, TestConstants.FOUR);
-
-        myContext.vertx().fileSystem().open(TEST_FILE.getAbsolutePath(), new OpenOptions(), open -> {
-            if (open.succeeded()) {
-                myV2SigClient.put(myTestBucket, s3Key, open.result(), metadata, put -> {
-                    final int statusCode = put.statusCode();
-
-                    if (statusCode != HTTP.OK) {
-                        put.bodyHandler(body -> {
-                            aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.PUT, s3Key, statusCode, put
-                                    .statusMessage() + System.lineSeparator() + body.toString()));
-                        });
-                    } else {
-                        asyncTask.complete();
-                    }
-                }, exception -> {
-                    aContext.fail(exception.getMessage());
+                }, error -> {
+                    aContext.fail(error);
                 });
             } else {
                 aContext.fail(open.cause());
@@ -1197,44 +751,23 @@ public class S3ClientIT extends AbstractS3IT {
 
         if (createResource(s3Key, aContext, asyncTask)) {
             myClient.delete(myTestBucket, s3Key, delete -> {
-                final int statusCode = delete.statusCode();
+                if (delete.succeeded()) {
+                    final HttpClientResponse response = delete.result();
+                    final int statusCode = response.statusCode();
 
-                if (statusCode != HTTP.NO_CONTENT) {
-                    delete.bodyHandler(body -> {
-                        aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.DELETE, s3Key, statusCode, delete
-                                .statusMessage() + System.lineSeparator() + body.toString()));
-                    });
-                } else {
-                    asyncTask.complete();
+                    if (statusCode != HTTP.NO_CONTENT) {
+                        response.bodyHandler(body -> {
+                            final String message = String.join(EOL, response.statusMessage(), body.toString());
+                            final Object[] messageDetails = new Object[] { HTTP.DELETE, s3Key, statusCode, message };
+
+                            aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, messageDetails));
+                        });
+                    } else {
+                        complete(asyncTask);
+                    }
                 }
-            });
-        }
-    }
-
-    /**
-     * Test for {@link S3Client#delete(String, String, Handler)}
-     *
-     * @param aContext A test context
-     */
-    @Test
-    public void testDeleteV2(final TestContext aContext) {
-        LOGGER.info(MessageCodes.VS3_006, myName.getMethodName());
-
-        final Async asyncTask = aContext.async();
-        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
-
-        if (createResource(s3Key, aContext, asyncTask)) {
-            myV2SigClient.delete(myTestBucket, s3Key, delete -> {
-                final int statusCode = delete.statusCode();
-
-                if (statusCode != HTTP.NO_CONTENT) {
-                    delete.bodyHandler(body -> {
-                        aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.DELETE, s3Key, statusCode, delete
-                                .statusMessage() + System.lineSeparator() + body.toString()));
-                    });
-                } else {
-                    asyncTask.complete();
-                }
+            }, error -> {
+                aContext.fail(error);
             });
         }
     }
@@ -1256,18 +789,25 @@ public class S3ClientIT extends AbstractS3IT {
         myContext.vertx().fileSystem().open(TEST_FILE.getAbsolutePath(), new OpenOptions(), open -> {
             if (open.succeeded()) {
                 myClient.put(myTestBucket, s3Key, open.result(), metadata, put -> {
-                    final int statusCode = put.statusCode();
+                    if (put.succeeded()) {
+                        final HttpClientResponse response = put.result();
+                        final int statusCode = response.statusCode();
 
-                    if (statusCode != HTTP.OK) {
-                        put.bodyHandler(body -> {
-                            aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.PUT, s3Key, statusCode, put
-                                    .statusMessage() + System.lineSeparator() + body.toString()));
-                        });
+                        if (statusCode != HTTP.OK) {
+                            response.bodyHandler(body -> {
+                                final String message = String.join(EOL, response.statusMessage(), body.toString());
+                                final Object[] messageDetails = new Object[] { HTTP.PUT, s3Key, statusCode, message };
+
+                                aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, messageDetails));
+                            });
+                        } else {
+                            complete(asyncTask);
+                        }
                     } else {
-                        asyncTask.complete();
+                        aContext.fail(put.cause());
                     }
-                }, exception -> {
-                    aContext.fail(exception.getMessage());
+                }, error -> {
+                    aContext.fail(error.getMessage());
                 });
             } else {
                 aContext.fail(open.cause());
@@ -1290,49 +830,25 @@ public class S3ClientIT extends AbstractS3IT {
 
         if (createResource(s3Key, aContext, asyncTask)) {
             myClient.delete(myTestBucket, s3Key, delete -> {
-                final int statusCode = delete.statusCode();
+                if (delete.succeeded()) {
+                    final HttpClientResponse response = delete.result();
+                    final int statusCode = response.statusCode();
 
-                if (statusCode != HTTP.NO_CONTENT) {
-                    delete.bodyHandler(body -> {
-                        aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.DELETE, s3Key, statusCode, delete
-                                .statusMessage() + System.lineSeparator() + body.toString()));
-                    });
+                    if (statusCode != HTTP.NO_CONTENT) {
+                        response.bodyHandler(body -> {
+                            final String message = String.join(EOL, response.statusMessage(), body.toString());
+                            final Object[] messageDetails = new Object[] { HTTP.DELETE, s3Key, statusCode, message };
+
+                            aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, messageDetails));
+                        });
+                    } else {
+                        complete(asyncTask);
+                    }
                 } else {
-                    asyncTask.complete();
+                    aContext.fail(delete.cause());
                 }
-            }, exception -> {
-                aContext.fail(exception.getMessage());
-            });
-        }
-    }
-
-    /**
-     * Test for {@link S3Client#createDeleteRequest(String, String, Handler)}
-     *
-     * @param aContext A test context
-     */
-    @SuppressWarnings("checkstyle:Indentation")
-    @Test
-    public void testDeleteExceptionHandlerV2(final TestContext aContext) {
-        LOGGER.info(MessageCodes.VS3_006, myName.getMethodName());
-
-        final Async asyncTask = aContext.async();
-        final String s3Key = TestConstants.TEST_KEY_PREFIX + myTestID + TestConstants.TEST_KEY_SUFFIX;
-
-        if (createResource(s3Key, aContext, asyncTask)) {
-            myV2SigClient.delete(myTestBucket, s3Key, delete -> {
-                final int statusCode = delete.statusCode();
-
-                if (statusCode != HTTP.NO_CONTENT) {
-                    delete.bodyHandler(body -> {
-                        aContext.fail(LOGGER.getMessage(MessageCodes.VS3_001, HTTP.DELETE, s3Key, statusCode, delete
-                                .statusMessage() + System.lineSeparator() + body.toString()));
-                    });
-                } else {
-                    asyncTask.complete();
-                }
-            }, exception -> {
-                aContext.fail(exception.getMessage());
+            }, error -> {
+                aContext.fail(error.getMessage());
             });
         }
     }

@@ -1,9 +1,6 @@
 
 package info.freelibrary.vertx.s3;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
 import java.net.MalformedURLException;
 import java.util.UUID;
 
@@ -92,30 +89,6 @@ public class S3ClientTest {
     @Test
     public final void testS3ClientAwsCredentialsHttpClient() {
         new S3Client(new AwsCredentials(getUUID(), getUUID()), VERTX.createHttpClient()).close();
-    }
-
-    /**
-     * Tests setting the use of a version two signature.
-     */
-    @Test
-    public final void testUseV2SignatureTrue() {
-        assertTrue(new S3Client(VERTX).useV2Signature(true).usesV2Signature());
-    }
-
-    /**
-     * Tests that the default signature that's used is a version four signature.
-     */
-    @Test
-    public final void testUseV2SignatureDefaultFalse() {
-        assertFalse(new S3Client(VERTX).usesV2Signature());
-    }
-
-    /**
-     * Tests setting the version two signature use to false.
-     */
-    @Test
-    public final void testUseV2SignatureFalse() {
-        assertFalse(new S3Client(VERTX).useV2Signature(false).usesV2Signature());
     }
 
     /**

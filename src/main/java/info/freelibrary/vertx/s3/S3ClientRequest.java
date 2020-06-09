@@ -1,16 +1,12 @@
 
 package info.freelibrary.vertx.s3;
 
-import static info.freelibrary.vertx.s3.AwsSignatureFactory.Version.V2;
-
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.Optional;
 
-import info.freelibrary.util.Logger;
-import info.freelibrary.util.LoggerFactory;
-
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
@@ -28,74 +24,35 @@ import io.vertx.core.http.StreamPriority;
 @SuppressWarnings({ "PMD.ExcessivePublicCount", "PMD.TooManyMethods", "PMD.AvoidDuplicateLiterals" })
 class S3ClientRequest implements HttpClientRequest {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(S3ClientRequest.class, Constants.BUNDLE_NAME);
-
     /** Prefix for the AWS user metadata keys */
     private static final String AWS_NAME_PREFIX = "x-amz-meta-";
+
+    private static final String AUTH = "Authorization";
 
     /** The underlying S3 HTTP client request */
     private final HttpClientRequest myRequest;
 
-    /** The method of the S3 client request */
-    private final String myMethod;
-
-    /** The S3 bucket for the request */
-    private final String myBucket;
-
-    /** The S3 key for the request */
-    private final String myKey;
-
     /** The AWS S3 credentials */
     private final Optional<AwsCredentials> myCredentials;
-
-    /** Whether to use the older v2 syntax */
-    private boolean isV2Signature;
 
     /**
      * Creates a new S3 client request.
      *
-     * @param aEndpoint An S3 endpoint
-     * @param aMethod An HTTP method
-     * @param aBucket An S3 bucket
-     * @param aKey An S3 key
      * @param aRequest A HttpClientRequest
      */
-    S3ClientRequest(final String aMethod, final String aBucket, final String aKey, final HttpClientRequest aRequest) {
-        this(aMethod, aBucket, aKey, aRequest, null, null, null);
+    S3ClientRequest(final HttpClientRequest aRequest) {
+        this(aRequest, null);
     }
 
     /**
      * Creates a new S3 client request.
      *
-     * @param aEndpoint An S3 endpoint
-     * @param aMethod An HTTP method
-     * @param aBucket An S3 bucket
-     * @param aKey An S3 key
      * @param aRequest A HttpClientRequest
-     * @param aAccessKey An AWS access key
-     * @param aSecretKey An AWS secret key
-     * @param aSessionToken An S3 session token (optional)
+     * @param aCredentials AWS credentials
      */
-    S3ClientRequest(final String aMethod, final String aBucket, final String aKey, final HttpClientRequest aRequest,
-            final String aAccessKey, final String aSecretKey, final String aSessionToken) {
-        myMethod = aMethod;
-        myBucket = aBucket;
-        myKey = aKey;
+    S3ClientRequest(final HttpClientRequest aRequest, final AwsCredentials aCredentials) {
+        myCredentials = Optional.ofNullable(aCredentials);
         myRequest = aRequest;
-
-        if (aAccessKey != null && aSecretKey != null) {
-            if (aSessionToken != null) {
-                myCredentials = Optional.of(new AwsCredentials(aAccessKey, aSecretKey, aSessionToken));
-            } else {
-                myCredentials = Optional.of(new AwsCredentials(aAccessKey, aSecretKey));
-            }
-        } else {
-            if (aAccessKey != null || aSecretKey != null) {
-                LOGGER.warn(MessageCodes.VS3_009);
-            }
-
-            myCredentials = Optional.empty();
-        }
     }
 
     public Optional<AwsCredentials> getCredentials() {
@@ -117,14 +74,6 @@ class S3ClientRequest implements HttpClientRequest {
     @Override
     public String absoluteURI() {
         return myRequest.absoluteURI();
-    }
-
-    @Override
-    @Deprecated
-    @SuppressWarnings("MissingDeprecated")
-    public S3ClientRequest handler(final Handler<HttpClientResponse> aHandler) {
-        myRequest.handler(aHandler);
-        return this;
     }
 
     @Override
@@ -156,30 +105,6 @@ class S3ClientRequest implements HttpClientRequest {
     }
 
     @Override
-    @Deprecated
-    @SuppressWarnings("MissingDeprecated")
-    public S3ClientRequest pause() {
-        myRequest.pause();
-        return this;
-    }
-
-    @Override
-    @Deprecated
-    @SuppressWarnings("MissingDeprecated")
-    public S3ClientRequest resume() {
-        myRequest.resume();
-        return this;
-    }
-
-    @Override
-    @Deprecated
-    @SuppressWarnings("MissingDeprecated")
-    public S3ClientRequest endHandler(final Handler<Void> aEndHandler) {
-        myRequest.endHandler(aEndHandler);
-        return this;
-    }
-
-    @Override
     public boolean isChunked() {
         return myRequest.isChunked();
     }
@@ -207,8 +132,8 @@ class S3ClientRequest implements HttpClientRequest {
     }
 
     @Override
-    public S3ClientRequest putHeader(final String aName, final Iterable<String> aValues) {
-        myRequest.putHeader(aName, aValues);
+    public S3ClientRequest putHeader(final String aName, final Iterable<String> aValueIterable) {
+        myRequest.putHeader(aName, aValueIterable);
         return this;
     }
 
@@ -225,21 +150,13 @@ class S3ClientRequest implements HttpClientRequest {
     }
 
     @Override
-    public S3ClientRequest write(final Buffer aChunk) {
-        myRequest.write(aChunk);
-        return this;
+    public Future<Void> write(final String aChunk) throws IllegalStateException {
+        return myRequest.write(aChunk);
     }
 
     @Override
-    public S3ClientRequest write(final String aChunk) {
-        myRequest.write(aChunk);
-        return this;
-    }
-
-    @Override
-    public S3ClientRequest write(final String aChunk, final String aEncoding) {
-        myRequest.write(aChunk, aEncoding);
-        return this;
+    public Future<Void> write(final String aChunk, final String aEncoding) {
+        return myRequest.write(aChunk, aEncoding);
     }
 
     @Override
@@ -249,38 +166,27 @@ class S3ClientRequest implements HttpClientRequest {
     }
 
     @Override
-    public void end(final String aChunk) {
+    public Future<Void> end(final String aChunk) {
         addAuthorizationHeader(aChunk.getBytes());
-        myRequest.end(aChunk);
+        return myRequest.end(aChunk);
     }
 
     @Override
-    public void end(final String aChunk, final String aEncoding) {
+    public Future<Void> end(final String aChunk, final String aEncoding) {
         addAuthorizationHeader(aChunk.getBytes(Charset.forName(aEncoding)));
-        myRequest.end(aChunk, aEncoding);
+        return myRequest.end(aChunk, aEncoding);
     }
 
     @Override
-    public void end(final Buffer aChunk) {
+    public Future<Void> end(final Buffer aChunk) {
         addAuthorizationHeader(aChunk.getBytes());
-        myRequest.end(aChunk);
+        return myRequest.end(aChunk);
     }
 
     @Override
-    public void end() {
+    public Future<Void> end() {
         addAuthenticationHeader();
-        myRequest.end();
-    }
-
-    /**
-     * Tells the S3 request to use the older, almost obsolete, AWS V2 signature format.
-     *
-     * @param aV2Signature
-     * @return The S3 client request
-     */
-    public S3ClientRequest useV2Signature(final boolean aV2Signature) {
-        isV2Signature = aV2Signature;
-        return this;
+        return myRequest.end();
     }
 
     /**
@@ -299,16 +205,9 @@ class S3ClientRequest implements HttpClientRequest {
      */
     protected S3ClientRequest addAuthorizationHeader(final byte[] aBytes) {
         if (myCredentials.isPresent()) {
+            final AwsSignatureFactory factory = AwsSignatureFactory.getFactory().setHost(URI.create(absoluteURI()));
             final MultiMap headers = headers();
-            final AwsSignatureFactory factory;
             final AwsSignature signature;
-
-            // Get the signature we want; only the latest signature version requires a host
-            if (isV2Signature) {
-                factory = AwsSignatureFactory.getFactory(V2);
-            } else {
-                factory = AwsSignatureFactory.getFactory().setHost(URI.create(absoluteURI()));
-            }
 
             factory.setCredentials(myCredentials.get());
 
@@ -318,19 +217,10 @@ class S3ClientRequest implements HttpClientRequest {
             }
 
             signature = factory.getSignature();
-            headers.add("Authorization", signature.getAuthorization(headers, myMethod, myBucket, myKey, aBytes));
+            headers.add(AUTH, signature.getAuthorization(headers, method().name(), aBytes));
         }
 
         return this;
-    }
-
-    /**
-     * Gets the HTTP method to be used with the request.
-     *
-     * @return The HTTP method to be used with the request
-     */
-    public String getMethod() {
-        return myMethod;
     }
 
     /**
@@ -350,23 +240,6 @@ class S3ClientRequest implements HttpClientRequest {
     @Override
     public HttpConnection connection() {
         return myRequest.connection();
-    }
-
-    @Override
-    @Deprecated
-    public S3ClientRequest connectionHandler(final Handler<HttpConnection> aHandler) {
-        myRequest.connectionHandler(aHandler);
-        return this;
-    }
-
-    @Override
-    public String getHost() {
-        return myRequest.getHost();
-    }
-
-    @Override
-    public String getRawMethod() {
-        return myRequest.getRawMethod();
     }
 
     @Override
@@ -391,29 +264,16 @@ class S3ClientRequest implements HttpClientRequest {
     }
 
     @Override
-    public S3ClientRequest sendHead(final Handler<HttpVersion> aHandler) {
+    public S3ClientRequest sendHead(final Handler<AsyncResult<HttpVersion>> aHandler) {
         addAuthenticationHeader();
         myRequest.sendHead(aHandler);
         return this;
     }
 
     @Override
-    public S3ClientRequest sendHead() {
+    public Future<HttpVersion> sendHead() {
         addAuthenticationHeader();
-        myRequest.sendHead();
-        return this;
-    }
-
-    @Override
-    public S3ClientRequest setHost(final String aHost) {
-        myRequest.setHost(aHost);
-        return this;
-    }
-
-    @Override
-    public S3ClientRequest setRawMethod(final String aMethod) {
-        myRequest.setRawMethod(aMethod);
-        return this;
+        return myRequest.sendHead();
     }
 
     @Override
@@ -423,35 +283,23 @@ class S3ClientRequest implements HttpClientRequest {
     }
 
     @Override
-    @Deprecated
-    @SuppressWarnings("MissingDeprecated")
-    public S3ClientRequest fetch(final long aAmount) {
-        myRequest.fetch(aAmount);
-        return this;
-    }
-
-    @Override
     public StreamPriority getStreamPriority() {
         return myRequest.getStreamPriority();
     }
 
     @Override
-    public S3ClientRequest write(final Buffer aBuffer, final Handler<AsyncResult<Void>> aHandler) {
+    public void write(final Buffer aBuffer, final Handler<AsyncResult<Void>> aHandler) {
         myRequest.write(aBuffer, aHandler);
-        return this;
     }
 
     @Override
-    public S3ClientRequest write(final String aChunk, final Handler<AsyncResult<Void>> aHandler) {
+    public void write(final String aChunk, final Handler<AsyncResult<Void>> aHandler) {
         myRequest.write(aChunk, aHandler);
-        return this;
     }
 
     @Override
-    public S3ClientRequest write(final String aChunk, final String aEncoding,
-            final Handler<AsyncResult<Void>> aHandler) {
+    public void write(final String aChunk, final String aEncoding, final Handler<AsyncResult<Void>> aHandler) {
         myRequest.write(aChunk, aEncoding, aHandler);
-        return this;
     }
 
     @Override
@@ -477,6 +325,58 @@ class S3ClientRequest implements HttpClientRequest {
     @Override
     public S3ClientRequest setMaxRedirects(final int aMaxRedirects) {
         myRequest.setMaxRedirects(aMaxRedirects);
+        return this;
+    }
+
+    @Override
+    public Future<Void> write(final Buffer aBuffer) {
+        return myRequest.write(aBuffer);
+    }
+
+    @Override
+    public boolean isComplete() {
+        return myRequest.isComplete();
+    }
+
+    @Override
+    public HttpClientResponse result() {
+        return myRequest.result();
+    }
+
+    @Override
+    public Throwable cause() {
+        return myRequest.cause();
+    }
+
+    @Override
+    public boolean succeeded() {
+        return myRequest.succeeded();
+    }
+
+    @Override
+    public boolean failed() {
+        return myRequest.failed();
+    }
+
+    @Override
+    public S3ClientRequest setAuthority(final String aAuthority) {
+        myRequest.setAuthority(aAuthority);
+        return this;
+    }
+
+    @Override
+    public String getAuthority() {
+        return myRequest.getAuthority();
+    }
+
+    @Override
+    public boolean reset(final long aCode, final Throwable aCause) {
+        return myRequest.reset(aCode, aCause);
+    }
+
+    @Override
+    public S3ClientRequest onComplete(final Handler<AsyncResult<HttpClientResponse>> aHandler) {
+        myRequest.onComplete(aHandler);
         return this;
     }
 

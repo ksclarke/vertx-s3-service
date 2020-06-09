@@ -13,6 +13,7 @@ import info.freelibrary.util.LoggerFactory;
 
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpClientResponse;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -52,23 +53,28 @@ public class ExamplesIT {
 
         // Do our S3 download
         s3Client.get("presentation-materials", fileName, get -> {
-            final int statusCode = get.statusCode();
+            if (get.succeeded()) {
+                final HttpClientResponse response = get.result();
+                final int statusCode = response.statusCode();
 
-            if (statusCode == HTTP.OK) {
-                get.bodyHandler(body -> {
-                    final Path path = Paths.get(System.getProperty("java.io.tmpdir"), fileName);
+                if (statusCode == HTTP.OK) {
+                    response.bodyHandler(body -> {
+                        final Path path = Paths.get(System.getProperty("java.io.tmpdir"), fileName);
 
-                    // Write our S3 file to our local file system
-                    vertx.fileSystem().writeFile(path.toString(), body, write -> {
-                        if (write.succeeded()) {
-                            promise.complete(path.toFile());
-                        } else {
-                            promise.fail(write.cause());
-                        }
+                        // Write our S3 file to our local file system
+                        vertx.fileSystem().writeFile(path.toString(), body, write -> {
+                            if (write.succeeded()) {
+                                promise.complete(path.toFile());
+                            } else {
+                                promise.fail(write.cause());
+                            }
+                        });
                     });
-                });
+                } else {
+                    promise.fail("Unexpected status code: " + statusCode + " [" + response.statusMessage() + "]");
+                }
             } else {
-                promise.fail(LOGGER.getMessage("Unexpected status code: {} [{}]", statusCode, get.statusMessage()));
+                promise.fail(get.cause());
             }
         }, error -> {
             promise.fail(error);

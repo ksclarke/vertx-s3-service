@@ -42,15 +42,4 @@ public final class AwsSignatureFactoryTest {
         assertEquals(AwsV4Signature.class.getName(), signature.getClass().getName());
     }
 
-    /**
-     * Gets v.2 signature.
-     */
-    @Test
-    public void testGetV2Signature() {
-        final AwsSignature signature = AwsSignatureFactory.getFactory(Version.V2).setCredentials(S3_ACCESS_KEY,
-                S3_SECRET_KEY).getSignature();
-
-        assertEquals(AwsV2Signature.class.getName(), signature.getClass().getName());
-    }
-
 }
