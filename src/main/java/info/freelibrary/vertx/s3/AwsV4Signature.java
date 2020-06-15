@@ -10,6 +10,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Iterator;
 import java.util.Map.Entry;
+import java.util.Optional;
 
 import info.freelibrary.util.I18nRuntimeException;
 
@@ -39,6 +40,8 @@ public class AwsV4Signature implements AwsSignature {
 
     private final AwsCredentials myCredentials;
 
+    private final Optional<String> myRegion;
+
     private final URI myHost;
 
     /**
@@ -49,6 +52,7 @@ public class AwsV4Signature implements AwsSignature {
      */
     public AwsV4Signature(final URI aHost, final AwsCredentials aCredentials) {
         myCredentials = aCredentials;
+        myRegion = Optional.empty();
         myHost = aHost;
     }
 
@@ -57,9 +61,10 @@ public class AwsV4Signature implements AwsSignature {
      *
      * @param aHost An S3 host
      * @param aCredentials An AWS credentials
-     * @param aSessionToken An S3 token session
+     * @param aRegion An S3 region
      */
-    public AwsV4Signature(final URI aHost, final AwsCredentials aCredentials, final String aSessionToken) {
+    public AwsV4Signature(final URI aHost, final AwsCredentials aCredentials, final String aRegion) {
+        myRegion = Optional.ofNullable(aRegion);
         myCredentials = aCredentials;
         myHost = aHost;
     }
@@ -106,6 +111,10 @@ public class AwsV4Signature implements AwsSignature {
             signer.header(X_AMZ_CONTENT_SHA256, sha256Hex);
             aHeaders.add(X_AMZ_CONTENT_SHA256, sha256Hex);
 
+            if (myRegion.isPresent()) {
+                signer.region(myRegion.get());
+            }
+
             return signer.buildS3(request, sha256Hex).getSignature();
         } catch (final NoSuchAlgorithmException details) {
             throw new I18nRuntimeException(details);
@@ -132,5 +141,11 @@ public class AwsV4Signature implements AwsSignature {
         }
 
         return hexString.toString();
+    }
+
+    @Override
+    public void setRegion(final String aRegion) {
+        // TODO Auto-generated method stub
+
     }
 }

@@ -24,7 +24,9 @@ public final class AwsSignatureFactory {
 
     private final Version myVersion;
 
-    private URI myHost;
+    private Optional<URI> myHost;
+
+    private Optional<String> myRegion;
 
     private Optional<AwsCredentials> myCredentials;
 
@@ -58,7 +60,7 @@ public final class AwsSignatureFactory {
      * @return This signature factory
      */
     public AwsSignatureFactory setHost(final URI aHost) {
-        myHost = aHost;
+        myHost = Optional.ofNullable(aHost);
         return this;
     }
 
@@ -67,8 +69,28 @@ public final class AwsSignatureFactory {
      *
      * @return The S3 host
      */
-    public URI getHost() {
-        return myHost;
+    public Optional<URI> getHost() {
+        return myHost == null ? myHost = Optional.empty() : myHost;
+    }
+
+    /**
+     * Sets the region to use when signing requests.
+     *
+     * @param aRegion An AWS region
+     * @return The AWS signature factory
+     */
+    public AwsSignatureFactory setRegion(final String aRegion) {
+        myRegion = Optional.ofNullable(aRegion);
+        return this;
+    }
+
+    /**
+     * Gets the optional signing region.
+     *
+     * @return The optional signing region
+     */
+    public Optional<String> getRegion() {
+        return myRegion == null ? myRegion = Optional.empty() : myRegion;
     }
 
     /**
@@ -142,12 +164,20 @@ public final class AwsSignatureFactory {
     public AwsSignature getSignature() {
         final AwsSignature signature;
 
-        if (myVersion.equals(Version.V2)) {
-            signature = new AwsV2Signature(myCredentials.get());
-        } else if (myVersion.equals(Version.V4)) {
-            signature = new AwsV4Signature(myHost, myCredentials.get());
+        if (myHost.isPresent() && myCredentials.isPresent()) {
+            if (myVersion.equals(Version.V2)) {
+                signature = new AwsV2Signature(myCredentials.get());
+            } else if (myVersion.equals(Version.V4)) {
+                if (myRegion.isPresent()) {
+                    signature = new AwsV4Signature(myHost.get(), myCredentials.get(), myRegion.get());
+                } else {
+                    signature = new AwsV4Signature(myHost.get(), myCredentials.get());
+                }
+            } else {
+                throw new I18nRuntimeException(Constants.BUNDLE_NAME, MessageCodes.VS3_005);
+            }
         } else {
-            throw new I18nRuntimeException(Constants.BUNDLE_NAME, MessageCodes.VS3_005);
+            throw new NullPointerException();
         }
 
         return signature;
