@@ -38,10 +38,10 @@ cache:
   directories:
   - $HOME/.m2
 
-# The only branch we build on is master; all other builds are done on PRs to master
+# The only branch we build on is main; all other builds are done on PRs to main
 branches:
   only:
-  - master
+  - main
 
 notifications:
   email:
