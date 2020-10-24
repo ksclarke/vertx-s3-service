@@ -27,11 +27,7 @@ script:
       -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
 
 after_success:
-  - >
-    mvn -s src/test/resources/settings.xml site -Djava.util.logging.config.file=src/test/resources/logging.properties \
-      -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn site:deploy -B
-  - chmod 755 src/main/tools/travis/*
-  - src/main/tools/travis/get_build_key $encrypted_f9b802c36f4f_key $encrypted_f9b802c36f4f_iv
+  - src/main/tools/travis/get_build_key $encrypted_f14964c1fac1_key $encrypted_f14964c1fac1_iv
   - src/main/tools/travis/deploy
 
 cache:

@@ -1,7 +1,7 @@
 The MIT License (MIT)
 
 Copyright (c) 2009 Anand Gupta
-Modifications from 2016 on copyrighted by Kevin S. Clarke
+Modifications from 2016 on copyrighted by Kevin S. Clarke <ksclarke@ksclarke.io>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
