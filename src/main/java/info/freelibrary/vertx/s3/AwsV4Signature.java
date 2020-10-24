@@ -18,13 +18,16 @@ import io.vertx.core.http.HttpHeaders;
 import uk.co.lucasweb.aws.v4.signer.HttpRequest;
 import uk.co.lucasweb.aws.v4.signer.Signer;
 
+/**
+ * An AWS signature that conforms to the version four specification.
+ */
 public class AwsV4Signature implements AwsSignature {
 
     private static final String DATE_TIME_FORMAT = "yyyyMMdd'T'HHmmss'Z'";
 
     /** The date format used for timestamping requests */
-    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern(DATE_TIME_FORMAT)
-            .withZone(ZoneOffset.UTC);
+    private static final DateTimeFormatter DATE_TIME_FORMATTER =
+            DateTimeFormatter.ofPattern(DATE_TIME_FORMAT).withZone(ZoneOffset.UTC);
 
     private static final String DIGEST_ALGORITHM = "SHA-256";
 
@@ -77,11 +80,9 @@ public class AwsV4Signature implements AwsSignature {
                 final Entry<String, String> entry = iterator.next();
                 final String headerKey = entry.getKey();
 
-                if (headerKey.startsWith(AWS_NAME_PREFIX)) {
-                    signer.header(headerKey, entry.getValue());
-                } else if (headerKey.equalsIgnoreCase(HttpHeaders.CONTENT_MD5.toString())) {
-                    signer.header(headerKey, entry.getValue());
-                } else if (headerKey.equalsIgnoreCase(HttpHeaders.CONTENT_TYPE.toString())) {
+                if (headerKey.startsWith(AWS_NAME_PREFIX) ||
+                        headerKey.equalsIgnoreCase(HttpHeaders.CONTENT_MD5.toString()) ||
+                        headerKey.equalsIgnoreCase(HttpHeaders.CONTENT_TYPE.toString())) {
                     signer.header(headerKey, entry.getValue());
                 }
             }
@@ -108,8 +109,8 @@ public class AwsV4Signature implements AwsSignature {
     private String hashToHex(final byte[] aEncodedHash) {
         final StringBuilder hexString = new StringBuilder();
 
-        for (int index = 0; index < aEncodedHash.length; index++) {
-            final String hex = Integer.toHexString(0xff & aEncodedHash[index]);
+        for (final byte element : aEncodedHash) {
+            final String hex = Integer.toHexString(0xff & element);
 
             if (hex.length() == 1) {
                 hexString.append('0');

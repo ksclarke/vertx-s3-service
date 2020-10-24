@@ -4,6 +4,7 @@ package info.freelibrary.vertx.s3;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.Optional;
+import java.util.function.Function;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -110,13 +111,13 @@ class S3ClientRequest implements HttpClientRequest {
     }
 
     @Override
-    public HttpMethod method() {
-        return myRequest.method();
+    public HttpMethod getMethod() {
+        return myRequest.getMethod();
     }
 
     @Override
-    public String uri() {
-        return myRequest.uri();
+    public String getURI() {
+        return myRequest.getURI();
     }
 
     @Override
@@ -217,7 +218,7 @@ class S3ClientRequest implements HttpClientRequest {
             }
 
             signature = factory.getSignature();
-            headers.add(AUTH, signature.getAuthorization(headers, method().name(), aBytes));
+            headers.add(AUTH, signature.getAuthorization(headers, getMethod().name(), aBytes));
         }
 
         return this;
@@ -264,14 +265,14 @@ class S3ClientRequest implements HttpClientRequest {
     }
 
     @Override
-    public S3ClientRequest sendHead(final Handler<AsyncResult<HttpVersion>> aHandler) {
+    public S3ClientRequest sendHead(final Handler<AsyncResult<Void>> aHandler) {
         addAuthenticationHeader();
         myRequest.sendHead(aHandler);
         return this;
     }
 
     @Override
-    public Future<HttpVersion> sendHead() {
+    public Future<Void> sendHead() {
         addAuthenticationHeader();
         return myRequest.sendHead();
     }
@@ -359,17 +360,6 @@ class S3ClientRequest implements HttpClientRequest {
     }
 
     @Override
-    public S3ClientRequest setAuthority(final String aAuthority) {
-        myRequest.setAuthority(aAuthority);
-        return this;
-    }
-
-    @Override
-    public String getAuthority() {
-        return myRequest.getAuthority();
-    }
-
-    @Override
     public boolean reset(final long aCode, final Throwable aCause) {
         return myRequest.reset(aCode, aCause);
     }
@@ -378,6 +368,77 @@ class S3ClientRequest implements HttpClientRequest {
     public S3ClientRequest onComplete(final Handler<AsyncResult<HttpClientResponse>> aHandler) {
         myRequest.onComplete(aHandler);
         return this;
+    }
+
+    @Override
+    public <U> Future<U> compose(final Function<HttpClientResponse, Future<U>> aSuccessMapper,
+            final Function<Throwable, Future<U>> aFailureMapper) {
+        return myRequest.compose(aSuccessMapper, aFailureMapper);
+    }
+
+    @Override
+    public <U> Future<U> map(final Function<HttpClientResponse, U> aMapper) {
+        return myRequest.map(aMapper);
+    }
+
+    @Override
+    public <V> Future<V> map(final V aValue) {
+        return myRequest.map(aValue);
+    }
+
+    @Override
+    public Future<HttpClientResponse> otherwise(final Function<Throwable, HttpClientResponse> aMapper) {
+        return myRequest.otherwise(aMapper);
+    }
+
+    @Override
+    public Future<HttpClientResponse> otherwise(final HttpClientResponse aValue) {
+        return myRequest.otherwise(aValue);
+    }
+
+    @Override
+    public S3ClientRequest setHost(final String aHost) {
+        return (S3ClientRequest) myRequest.setHost(aHost);
+    }
+
+    @Override
+    public String getHost() {
+        return myRequest.getHost();
+    }
+
+    @Override
+    public S3ClientRequest setPort(final int aPort) {
+        return (S3ClientRequest) myRequest.setPort(aPort);
+    }
+
+    @Override
+    public int getPort() {
+        return myRequest.getPort();
+    }
+
+    @Override
+    public S3ClientRequest setMethod(final HttpMethod aMethod) {
+        return (S3ClientRequest) myRequest.setMethod(aMethod);
+    }
+
+    @Override
+    public S3ClientRequest setURI(final String aURI) {
+        return (S3ClientRequest) myRequest.setURI(aURI);
+    }
+
+    @Override
+    public HttpVersion version() {
+        return myRequest.version();
+    }
+
+    @Override
+    public void connect(final Handler<AsyncResult<HttpClientResponse>> aHandler) {
+        myRequest.connect(aHandler);
+    }
+
+    @Override
+    public Future<HttpClientResponse> connect() {
+        return myRequest.connect();
     }
 
 }

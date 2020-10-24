@@ -11,6 +11,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpMethod;
@@ -54,8 +55,9 @@ public class S3ClientRequestIT {
      */
     @Test
     public final void testConstructorAnon(final TestContext aContext) {
-        final HttpClientRequest httpRequest = myVertx.createHttpClient().request(METHOD, myBucket + PATH_SEP + myKey);
-        final S3ClientRequest request = new S3ClientRequest(httpRequest);
+        final String requestURI = myBucket + PATH_SEP + myKey;
+        final Future<HttpClientRequest> futureRequest = myVertx.createHttpClient().request(METHOD, requestURI);
+        final S3ClientRequest request = new S3ClientRequest(futureRequest.result());
 
         assertTrue(request.getCredentials().isEmpty());
     }
@@ -67,9 +69,10 @@ public class S3ClientRequestIT {
      */
     @Test
     public final void testConstructorWithCreds(final TestContext aContext) {
+        final String requestURI = myBucket + PATH_SEP + myKey;
         final AwsCredentials awsCredentials = new AwsCredentials(myAccessKey, mySecretKey);
-        final HttpClientRequest httpRequest = myVertx.createHttpClient().request(METHOD, myBucket + PATH_SEP + myKey);
-        final S3ClientRequest request = new S3ClientRequest(httpRequest, awsCredentials);
+        final Future<HttpClientRequest> futureRequest = myVertx.createHttpClient().request(METHOD, requestURI);
+        final S3ClientRequest request = new S3ClientRequest(futureRequest.result(), awsCredentials);
 
         assertTrue(request.getCredentials().isPresent());
     }
@@ -81,10 +84,11 @@ public class S3ClientRequestIT {
      */
     @Test
     public final void testGetMethod(final TestContext aContext) {
-        final HttpClientRequest httpRequest = myVertx.createHttpClient().request(METHOD, myBucket + PATH_SEP + myKey);
-        final S3ClientRequest request = new S3ClientRequest(httpRequest);
+        final String requestURI = myBucket + PATH_SEP + myKey;
+        final Future<HttpClientRequest> futureRequest = myVertx.createHttpClient().request(METHOD, requestURI);
+        final S3ClientRequest request = new S3ClientRequest(futureRequest.result());
 
-        assertEquals(METHOD, request.method());
+        assertEquals(METHOD, request.getMethod());
     }
 
 }

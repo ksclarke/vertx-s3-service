@@ -8,12 +8,15 @@ import info.freelibrary.util.I18nRuntimeException;
 import info.freelibrary.util.StringUtils;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpHeaders;
@@ -73,8 +76,7 @@ public class S3Client {
     }
 
     /**
-     * Creates a new S3 client using AWS credentials from a system defined profile and the supplied HttpClient
-     * options.
+     * Creates a new S3 client using AWS credentials from a system defined profile and the supplied HttpClient options.
      *
      * @param aVertx A Vert.x instance from which to create the <code>HttpClient</code>
      * @param aConfig A configuration for the internal HttpClient
@@ -208,7 +210,9 @@ public class S3Client {
      */
     public void head(final String aBucket, final String aKey, final Handler<AsyncResult<HttpClientResponse>> aHandler,
             final Handler<Throwable> aExceptionHandler) {
-        createHeadRequest(aBucket, aKey, aHandler).exceptionHandler(aExceptionHandler).end();
+        createHeadRequest(aBucket, aKey).onComplete(headRequest -> {
+            headRequest.result().onComplete(aHandler).exceptionHandler(aExceptionHandler).end();
+        });
     }
 
     /**
@@ -221,7 +225,9 @@ public class S3Client {
      */
     public void get(final String aBucket, final String aKey, final Handler<AsyncResult<HttpClientResponse>> aHandler,
             final Handler<Throwable> aExceptionHandler) {
-        createGetRequest(aBucket, aKey, aHandler).exceptionHandler(aExceptionHandler).end();
+        createGetRequest(aBucket, aKey).onComplete(getRequest -> {
+            getRequest.result().onComplete(aHandler).exceptionHandler(aExceptionHandler).end();
+        });
     }
 
     /**
@@ -233,7 +239,9 @@ public class S3Client {
      */
     public void list(final String aBucket, final Handler<AsyncResult<HttpClientResponse>> aHandler,
             final Handler<Throwable> aExceptionHandler) {
-        createGetRequest(aBucket, LIST_CMD, aHandler).exceptionHandler(aExceptionHandler).end();
+        createGetRequest(aBucket, LIST_CMD).onComplete(getRequest -> {
+            getRequest.result().onComplete(aHandler).exceptionHandler(aExceptionHandler).end();
+        });
     }
 
     /**
@@ -246,7 +254,9 @@ public class S3Client {
      */
     public void list(final String aBucket, final String aPrefix,
             final Handler<AsyncResult<HttpClientResponse>> aHandler, final Handler<Throwable> aExceptionHandler) {
-        createGetRequest(aBucket, PREFIX_LIST_CMD + aPrefix, aHandler).exceptionHandler(aExceptionHandler).end();
+        createGetRequest(aBucket, PREFIX_LIST_CMD + aPrefix).onComplete(getRequest -> {
+            getRequest.result().onComplete(aHandler).exceptionHandler(aExceptionHandler).end();
+        });
     }
 
     /**
@@ -260,7 +270,9 @@ public class S3Client {
      */
     public void put(final String aBucket, final String aKey, final Buffer aBuffer,
             final Handler<AsyncResult<HttpClientResponse>> aHandler, final Handler<Throwable> aExceptionHandler) {
-        createPutRequest(aBucket, aKey, aHandler).exceptionHandler(aExceptionHandler).end(aBuffer);
+        createPutRequest(aBucket, aKey).onComplete(putRequest -> {
+            putRequest.result().onComplete(aHandler).exceptionHandler(aExceptionHandler).end(aBuffer);
+        });
     }
 
     /**
@@ -275,8 +287,10 @@ public class S3Client {
      */
     public void put(final String aBucket, final String aKey, final Buffer aBuffer, final UserMetadata aMetadata,
             final Handler<AsyncResult<HttpClientResponse>> aHandler, final Handler<Throwable> aExceptionHandler) {
-        createPutRequest(aBucket, aKey, aHandler).exceptionHandler(aExceptionHandler).setUserMetadata(aMetadata).end(
-                aBuffer);
+        createPutRequest(aBucket, aKey).onComplete(putRequest -> {
+            final S3ClientRequest request = putRequest.result().setUserMetadata(aMetadata);
+            request.onComplete(aHandler).exceptionHandler(aExceptionHandler).end(aBuffer);
+        });
     }
 
     /**
@@ -305,23 +319,26 @@ public class S3Client {
      */
     public void put(final String aBucket, final String aKey, final AsyncFile aFile, final UserMetadata aMetadata,
             final Handler<AsyncResult<HttpClientResponse>> aHandler, final Handler<Throwable> aExceptionHandler) {
-        final S3ClientRequest request = createPutRequest(aBucket, aKey, aHandler);
-        final Buffer buffer = Buffer.buffer();
+        createPutRequest(aBucket, aKey).onComplete(putRequest -> {
+            final S3ClientRequest request = putRequest.result();
+            final Buffer buffer = Buffer.buffer();
 
-        if (aMetadata != null) {
-            request.setUserMetadata(aMetadata);
-        }
+            if (aMetadata != null) {
+                request.setUserMetadata(aMetadata);
+            }
 
-        aFile.handler(data -> {
-            buffer.appendBuffer(data);
+            aFile.handler(data -> {
+                buffer.appendBuffer(data);
+            });
+
+            aFile.endHandler(event -> {
+                request.putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(buffer.length()));
+                request.end(buffer);
+            });
+
+            // HELLO this big ones are broken
+            request.onComplete(aHandler).exceptionHandler(aExceptionHandler);
         });
-
-        aFile.endHandler(event -> {
-            request.putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(buffer.length()));
-            request.end(buffer);
-        });
-
-        request.exceptionHandler(aExceptionHandler);
     }
 
     /**
@@ -351,23 +368,25 @@ public class S3Client {
     public void put(final String aBucket, final String aKey, final HttpServerFileUpload aUpload,
             final UserMetadata aMetadata, final Handler<AsyncResult<HttpClientResponse>> aHandler,
             final Handler<Throwable> aExceptionHandler) {
-        final S3ClientRequest request = createPutRequest(aBucket, aKey, aHandler);
-        final Buffer buffer = Buffer.buffer();
+        createPutRequest(aBucket, aKey).onComplete(putRequest -> {
+            final S3ClientRequest request = putRequest.result();
+            final Buffer buffer = Buffer.buffer();
 
-        if (aMetadata != null) {
-            request.setUserMetadata(aMetadata);
-        }
+            if (aMetadata != null) {
+                request.setUserMetadata(aMetadata);
+            }
 
-        aUpload.handler(data -> {
-            buffer.appendBuffer(data);
+            aUpload.handler(data -> {
+                buffer.appendBuffer(data);
+            });
+
+            aUpload.endHandler(event -> {
+                request.putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(buffer.length()));
+                request.end(buffer);
+            });
+
+            request.onComplete(aHandler).exceptionHandler(aExceptionHandler);
         });
-
-        aUpload.endHandler(event -> {
-            request.putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(buffer.length()));
-            request.end(buffer);
-        });
-
-        request.exceptionHandler(aExceptionHandler);
     }
 
     /**
@@ -378,9 +397,11 @@ public class S3Client {
      * @param aHandler A response handler
      * @param aExceptionHandler An exception handler
      */
-    public void delete(final String aBucket, final String aKey,
-            final Handler<AsyncResult<HttpClientResponse>> aHandler, final Handler<Throwable> aExceptionHandler) {
-        createDeleteRequest(aBucket, aKey, aHandler).exceptionHandler(aExceptionHandler).end();
+    public void delete(final String aBucket, final String aKey, final Handler<AsyncResult<HttpClientResponse>> aHandler,
+            final Handler<Throwable> aExceptionHandler) {
+        createDeleteRequest(aBucket, aKey).onComplete(deleteRequest -> {
+            deleteRequest.result().onComplete(aHandler).exceptionHandler(aExceptionHandler).end();
+        });
     }
 
     /**
@@ -388,13 +409,17 @@ public class S3Client {
      *
      * @param aBucket An S3 bucket
      * @param aKey An S3 key
-     * @param aHandler A response handler
      * @return An S3 PUT request
      */
-    private S3ClientRequest createPutRequest(final String aBucket, final String aKey,
-            final Handler<AsyncResult<HttpClientResponse>> aHandler) {
-        return new S3ClientRequest(myHttpClient.request(HttpMethod.PUT, StringUtils.format(REQUEST, aBucket, aKey))
-                .onComplete(aHandler), myCredentials);
+    private Future<S3ClientRequest> createPutRequest(final String aBucket, final String aKey) {
+        final Future<HttpClientRequest> futureRequest = myHttpClient.request(HttpMethod.PUT, getURI(aBucket, aKey));
+        final Promise<S3ClientRequest> promise = Promise.promise();
+
+        futureRequest.onComplete(request -> {
+            promise.complete(new S3ClientRequest(request.result(), myCredentials));
+        });
+
+        return promise.future();
     }
 
     /**
@@ -402,13 +427,17 @@ public class S3Client {
      *
      * @param aBucket An S3 bucket
      * @param aKey An S3 key
-     * @param aHandler A response handler
      * @return A S3 client HEAD request
      */
-    private S3ClientRequest createHeadRequest(final String aBucket, final String aKey,
-            final Handler<AsyncResult<HttpClientResponse>> aHandler) {
-        return new S3ClientRequest(myHttpClient.request(HttpMethod.HEAD, StringUtils.format(REQUEST, aBucket, aKey))
-                .onComplete(aHandler), myCredentials);
+    private Future<S3ClientRequest> createHeadRequest(final String aBucket, final String aKey) {
+        final Future<HttpClientRequest> futureRequest = myHttpClient.request(HttpMethod.HEAD, getURI(aBucket, aKey));
+        final Promise<S3ClientRequest> promise = Promise.promise();
+
+        futureRequest.onComplete(request -> {
+            promise.complete(new S3ClientRequest(request.result(), myCredentials));
+        });
+
+        return promise.future();
     }
 
     /**
@@ -416,13 +445,17 @@ public class S3Client {
      *
      * @param aBucket An S3 bucket
      * @param aKey An S3 key
-     * @param aHandler A response handler
      * @return A S3 client GET request
      */
-    private S3ClientRequest createGetRequest(final String aBucket, final String aKey,
-            final Handler<AsyncResult<HttpClientResponse>> aHandler) {
-        return new S3ClientRequest(myHttpClient.request(HttpMethod.GET, StringUtils.format(REQUEST, aBucket, aKey))
-                .onComplete(aHandler), myCredentials);
+    private Future<S3ClientRequest> createGetRequest(final String aBucket, final String aKey) {
+        final Future<HttpClientRequest> futureRequest = myHttpClient.request(HttpMethod.GET, getURI(aBucket, aKey));
+        final Promise<S3ClientRequest> promise = Promise.promise();
+
+        futureRequest.onComplete(request -> {
+            promise.complete(new S3ClientRequest(request.result(), myCredentials));
+        });
+
+        return promise.future();
     }
 
     /**
@@ -430,13 +463,17 @@ public class S3Client {
      *
      * @param aBucket An S3 bucket
      * @param aKey An S3 key
-     * @param aHandler An S3 handler
      * @return An S3 client request
      */
-    private S3ClientRequest createDeleteRequest(final String aBucket, final String aKey,
-            final Handler<AsyncResult<HttpClientResponse>> aHandler) {
-        return new S3ClientRequest(myHttpClient.request(HttpMethod.DELETE, StringUtils.format(REQUEST, aBucket, aKey))
-                .onComplete(aHandler), myCredentials);
+    private Future<S3ClientRequest> createDeleteRequest(final String aBucket, final String aKey) {
+        final Future<HttpClientRequest> futureRequest = myHttpClient.request(HttpMethod.DELETE, getURI(aBucket, aKey));
+        final Promise<S3ClientRequest> promise = Promise.promise();
+
+        futureRequest.onComplete(request -> {
+            promise.complete(new S3ClientRequest(request.result(), myCredentials));
+        });
+
+        return promise.future();
     }
 
     /**
@@ -444,6 +481,17 @@ public class S3Client {
      */
     public void close() {
         myHttpClient.close();
+    }
+
+    /**
+     * A convenience method for building the request URI.
+     *
+     * @param aBucket An S3 bucket
+     * @param aKey An S3 object key
+     * @return A request URI
+     */
+    private String getURI(final String aBucket, final String aKey) {
+        return StringUtils.format(REQUEST, aBucket, aKey);
     }
 
     /**

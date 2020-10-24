@@ -45,6 +45,9 @@ public class S3ClientFT extends AbstractS3FT {
 
     private static final String PREFIX = "prefix_";
 
+    /**
+     * A test rule to run the tests on the Vert.x context.
+     */
     @Rule
     public final RunTestOnContext myContext = new RunTestOnContext();
 

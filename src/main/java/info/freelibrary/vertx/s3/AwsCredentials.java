@@ -40,6 +40,11 @@ public class AwsCredentials extends uk.co.lucasweb.aws.v4.signer.credentials.Aws
         return super.getSecretKey();
     }
 
+    /**
+     * Indicates whether the credentials are using a session token.
+     *
+     * @return True if credentials are using a session token; else, false
+     */
     public boolean hasSessionToken() {
         return mySessionToken != null;
     }
