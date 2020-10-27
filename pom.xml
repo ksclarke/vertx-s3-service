@@ -3,12 +3,12 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>vertx-super-s3</artifactId>
+  <artifactId>vertx-s3-service</artifactId>
   <packaging>jar</packaging>
   <version>1.3.4-SNAPSHOT</version>
-  <name>Vert.x Super S3</name>
+  <name>Vert.x S3 Service</name>
   <description>An S3 client library for the Vert.x toolkit</description>
-  <url>http://projects.freelibrary.info/vertx-super-s3</url>
+  <url>http://projects.freelibrary.info/vertx-s3-service</url>
 
   <licenses>
     <license>
@@ -18,14 +18,14 @@
   </licenses>
 
   <scm>
-    <connection>scm:git:git@github.com:ksclarke/vertx-super-s3.git</connection>
-    <developerConnection>scm:git:git@github.com:ksclarke/vertx-super-s3.git</developerConnection>
-    <url>git@github.com:ksclarke/vertx-super-s3.git</url>
+    <connection>scm:git:git@github.com:ksclarke/vertx-s3-service.git</connection>
+    <developerConnection>scm:git:git@github.com:ksclarke/vertx-s3-service.git</developerConnection>
+    <url>git@github.com:ksclarke/vertx-s3-service.git</url>
   </scm>
 
   <issueManagement>
     <system>GitHub</system>
-    <url>https://github.com/ksclarke/vertx-super-s3/issues</url>
+    <url>https://github.com/ksclarke/vertx-s3-service/issues</url>
   </issueManagement>
 
   <developers>
@@ -41,19 +41,19 @@
 
   <properties>
     <!-- Dependency versions -->
+    <aws.v4.signature.version>1.3</aws.v4.signature.version>
     <freelib.utils.version>2.1.0</freelib.utils.version>
-    <aws.sdk.version>1.11.759</aws.sdk.version>
     <vertx.version>4.0.0.Beta3</vertx.version>
+    <!-- Keep both Jackson versions separate since they often have their own security issues -->
     <jackson.version> 2.11.3</jackson.version>
     <jackson.databind.version>2.11.3</jackson.databind.version>
-    <aws.v4.signature.version>1.3</aws.v4.signature.version>
 
     <!-- Testing versions -->
     <jaxb.runtime.version>2.4.0-b180830.0438</jaxb.runtime.version>
     <testcontainers.version>1.14.3</testcontainers.version>
     <freelib.maven.version>0.1.2</freelib.maven.version>
     <localstack.version>1.14.3</localstack.version>
-    <mockito.version>3.1.0</mockito.version>
+    <aws.sdk.version>1.11.759</aws.sdk.version>
     <jaxb.version>2.3.0.1</jaxb.version>
 
     <!-- Integration test variables -->
@@ -91,7 +91,13 @@
       <groupId>io.vertx</groupId>
       <artifactId>vertx-codegen</artifactId>
       <version>${vertx.version}</version>
+      <classifier>processor</classifier>
       <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-service-proxy</artifactId>
+      <version>${vertx.version}</version>
     </dependency>
     <dependency>
       <groupId>uk.co.lucasweb</groupId>
@@ -102,12 +108,6 @@
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.vertx</groupId>
-      <artifactId>vertx-service-proxy</artifactId>
-      <version>${vertx.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -226,7 +226,6 @@
             <additionalJOption>-J-Dhttp.agent=maven-javadoc-plugin-${project.name}</additionalJOption>
           </additionalJOptions>
           <links>
-            <link>https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/</link>
             <link>http://vertx.io/docs/apidocs/</link>
           </links>
           <sourcepath>${project.basedir}/src/main/java:${project.basedir}/src/main/generated</sourcepath>
@@ -499,7 +498,7 @@
   <distributionManagement>
     <site>
       <id>s3.site</id>
-      <url>s3://projects.freelibrary.info/vertx-super-s3</url>
+      <url>s3://projects.freelibrary.info/vertx-s3-service</url>
     </site>
   </distributionManagement>
 
