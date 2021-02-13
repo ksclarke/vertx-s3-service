@@ -5,7 +5,7 @@
 
   <artifactId>vertx-s3-service</artifactId>
   <packaging>jar</packaging>
-  <version>1.3.4-SNAPSHOT</version>
+  <version>${revision}</version>
   <name>Vert.x S3 Service</name>
   <description>An S3 client library for the Vert.x toolkit</description>
   <url>http://projects.freelibrary.info/vertx-s3-service</url>
@@ -42,18 +42,18 @@
   <properties>
     <!-- Dependency versions -->
     <aws.v4.signature.version>1.3</aws.v4.signature.version>
-    <freelib.utils.version>2.1.0</freelib.utils.version>
-    <vertx.version>4.0.0.Beta3</vertx.version>
+    <freelib.utils.version>0.0.0</freelib.utils.version>
+    <vertx.version>4.0.2</vertx.version>
+
     <!-- Keep both Jackson versions separate since they often have their own security issues -->
-    <jackson.version> 2.11.3</jackson.version>
-    <jackson.databind.version>2.11.3</jackson.databind.version>
+    <jackson.version> 2.12.1</jackson.version>
+    <jackson.databind.version>2.12.1</jackson.databind.version>
 
     <!-- Testing versions -->
     <jaxb.runtime.version>2.4.0-b180830.0438</jaxb.runtime.version>
-    <testcontainers.version>1.14.3</testcontainers.version>
+    <testcontainers.version>1.15.2</testcontainers.version>
     <freelib.maven.version>0.1.2</freelib.maven.version>
-    <localstack.version>1.14.3</localstack.version>
-    <aws.sdk.version>1.11.759</aws.sdk.version>
+    <aws.sdk.version>1.11.953</aws.sdk.version>
     <jaxb.version>2.3.0.1</jaxb.version>
 
     <!-- Integration test variables -->
@@ -64,6 +64,25 @@
     <docker.maven.plugin.version>0.34.1</docker.maven.plugin.version>
     <codacy.plugin.version>1.2.0</codacy.plugin.version>
   </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>testcontainers-bom</artifactId>
+        <version>${testcontainers.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>io.vertx</groupId>
+        <artifactId>vertx-stack-depchain</artifactId>
+        <version>${vertx.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
   <dependencies>
     <!-- Project dependencies -->
@@ -79,25 +98,27 @@
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-annotations</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
       <version>${jackson.databind.version}</version>
     </dependency>
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-core</artifactId>
-      <version>${vertx.version}</version>
     </dependency>
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-codegen</artifactId>
-      <version>${vertx.version}</version>
       <classifier>processor</classifier>
-      <scope>provided</scope>
+      <!-- <scope>provided</scope> -->
     </dependency>
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-service-proxy</artifactId>
-      <version>${vertx.version}</version>
     </dependency>
     <dependency>
       <groupId>uk.co.lucasweb</groupId>
@@ -118,7 +139,6 @@
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-unit</artifactId>
-      <version>${vertx.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -142,13 +162,11 @@
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>testcontainers</artifactId>
-      <version>${testcontainers.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>localstack</artifactId>
-      <version>${localstack.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -160,6 +178,7 @@
         <artifactId>docker-maven-plugin</artifactId>
         <version>${docker.maven.plugin.version}</version>
         <configuration>
+          <verbose>true</verbose>
           <images>
             <image>
               <name>${project.artifactId}:%l</name>
@@ -249,28 +268,6 @@
       <plugin>
         <artifactId>maven-dependency-plugin</artifactId>
       </plugin>
-      <!-- Makes sure TestContainers doesn't leave unused networks around -->
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>docker-network-prune</id>
-            <phase>post-integration-test</phase>
-            <goals>
-              <goal>exec</goal>
-            </goals>
-            <configuration>
-              <executable>docker</executable>
-              <arguments>
-                <argument>network</argument>
-                <argument>prune</argument>
-                <argument>-f</argument>
-              </arguments>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
     </plugins>
   </build>
 
@@ -325,6 +322,7 @@
                     <test.user>${project.artifactId}</test.user>
                     <vertx.logger-delegate-factory-class-name>io.vertx.core.logging.SLF4JLogDelegateFactory</vertx.logger-delegate-factory-class-name>
                     <container.tag.version>${project.version}</container.tag.version>
+                    <container.image.name>${project.artifactId}</container.image.name>
                   </systemPropertyVariables>
                   <forkCount>1</forkCount><!-- Multiple forks result in multiple containers -->
                   <useSystemClassLoader>false</useSystemClassLoader> <!-- Override parent project setting -->
@@ -389,109 +387,6 @@
         </plugins>
       </build>
     </profile>
-    <!-- Runs code coverage upload on Travis -->
-    <profile>
-      <id>code-coverage</id>
-      <activation>
-        <property>
-          <name>env.CODACY_API_TOKEN</name>
-        </property>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.jacoco</groupId>
-            <artifactId>jacoco-maven-plugin</artifactId>
-            <version>${jacoco.maven.plugin.version}</version>
-            <executions>
-              <execution>
-                <id>default-prepare-agent</id>
-                <goals>
-                  <goal>prepare-agent</goal>
-                </goals>
-                <configuration>
-                  <destFile>${jacoco.dataFile}</destFile>
-                  <propertyName>jacoco.agent.arg</propertyName>
-                  <append>true</append>
-                  <excludes>
-                    <exclude>src/test/java/**/*</exclude>
-                  </excludes>
-                </configuration>
-              </execution>
-              <execution>
-                <id>default-prepare-agent-integration</id>
-                <goals>
-                  <goal>prepare-agent-integration</goal>
-                </goals>
-                <configuration>
-                  <destFile>${jacoco.dataFile}</destFile>
-                  <propertyName>jacoco.agent.arg</propertyName>
-                  <append>true</append>
-                  <excludes>
-                    <exclude>src/test/java/**/*</exclude>
-                  </excludes>
-                </configuration>
-              </execution>
-              <execution>
-                <id>default-report</id>
-                <goals>
-                  <goal>report</goal>
-                </goals>
-                <configuration>
-                  <dataFile>${jacoco.dataFile}</dataFile>
-                  <excludes>
-                    <exclude>src/test/java/**/*</exclude>
-                  </excludes>
-                </configuration>
-              </execution>
-              <execution>
-                <id>integration-report</id>
-                <goals>
-                  <goal>report-integration</goal>
-                </goals>
-                <configuration>
-                  <dataFile>${jacoco.dataFile}</dataFile>
-                  <excludes>
-                    <exclude>src/test/java/**/*</exclude>
-                  </excludes>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>com.gavinmogan</groupId>
-            <artifactId>codacy-maven-plugin</artifactId>
-            <version>${codacy.plugin.version}</version>
-            <configuration>
-              <apiToken>${env.CODACY_API_TOKEN}</apiToken>
-              <projectToken>${env.CODACY_PROJECT_TOKEN}</projectToken>
-              <coverageReportFile>${project.basedir}/target/site/jacoco/jacoco.xml</coverageReportFile>
-              <commit>${env.TRAVIS_COMMIT}</commit>
-              <codacyApiBaseUrl>https://api.codacy.com</codacyApiBaseUrl>
-              <failOnMissingReportFile>false</failOnMissingReportFile>
-            </configuration>
-            <executions>
-              <execution>
-                <id>codacy-upload</id>
-                <phase>verify</phase>
-                <goals>
-                  <goal>coverage</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-site-plugin</artifactId>
-            <version>${maven.site.plugin.version}</version>
-            <configuration>
-              <skip>true</skip>
-              <skipDeploy>true</skipDeploy>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
   </profiles>
 
   <!-- Enables pushing project documentation up to an S3 bucket -->
@@ -506,7 +401,7 @@
   <parent>
     <artifactId>freelib-parent</artifactId>
     <groupId>info.freelibrary</groupId>
-    <version>5.2.1</version>
+    <version>6.6.3</version>
   </parent>
 
 </project>

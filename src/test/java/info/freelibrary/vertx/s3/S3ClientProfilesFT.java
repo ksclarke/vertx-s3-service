@@ -20,7 +20,7 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 @RunWith(VertxUnitRunner.class)
 public class S3ClientProfilesFT extends AbstractS3FT {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(S3ClientProfilesFT.class, Constants.BUNDLE_NAME);
+    private static final Logger LOGGER = LoggerFactory.getLogger(S3ClientProfilesFT.class, MessageCodes.BUNDLE);
 
     private static final String EOL = "\\r?\\n";
 
@@ -60,7 +60,7 @@ public class S3ClientProfilesFT extends AbstractS3FT {
             stdOut = stdOut.replaceAll("\\[ERROR\\]", System.lineSeparator() + "  [ERROR]");
             stdOut = stdOut.replaceAll(TAB, SPACE);
 
-            LOGGER.info(MessageCodes.VS3_013, stdOut);
+            LOGGER.info(MessageCodes.VSS_013, stdOut);
         }
 
         if (result.getExitCode() != 0) {

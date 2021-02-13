@@ -3,31 +3,34 @@
 
 <!--
   To process this file outside of a full build, run:
-    mvn info.freelibrary:freelib-utils:generate-codes -DmessageFiles=src/main/resources/vertx-s3_messages.xml
+    mvn info.freelibrary:freelib-utils:generate-codes
 -->
 
 <properties>
   <entry key="message-class-name">info.freelibrary.vertx.s3.MessageCodes</entry>
 
   <!-- Messages to be stored in the MessageCodes class -->
-  <entry key="VS3-000">{}</entry>
-  <entry key="VS3-001">{} request for '{}' returned '{}': {}</entry>
-  <entry key="VS3-002">Please supply your own S3 access and secret keys for testing</entry>
-  <entry key="VS3-003">The metadata property name cannot be null.</entry>
-  <entry key="VS3-004">Length: {}</entry>
-  <entry key="VS3-005">Tried to create a non-existent type of AWS authentication signature</entry>
-  <entry key="VS3-005">Didn't find expected key: {}</entry>
-  <entry key="VS3-006">Running: {}</entry>
-  <entry key="VS3-007">Expected algorithm not found: {}</entry>
-  <entry key="VS3-008">Invalid key exception: {}</entry>
-  <entry key="VS3-009">Setting AWS credentials requires at least an access key and a secret key</entry>
-  <entry key="VS3-010">No AWS credentials were provided</entry>
-  <entry key="VS3-011">No AWS credentials file found: {}</entry>
-  <entry key="VS3-012">AWS credentials profile found: {}</entry>
-  <entry key="VS3-013">Output from container tests: {}</entry>
-  <entry key="VS3-014">Failed to throw exception on non-existent profile</entry>
-  <entry key="VS3-015">Test GIF stored successfully as: {}/{}</entry>
-  <entry key="VS3-016">Test GIF '{}/{}' successfully removed</entry>
-  <entry key="VS3-017">Unexpected status code: {} {}</entry>
+  <entry key="VSS-000">{}</entry>
+  <entry key="VSS-001">{} request for '{}' returned '{}': {}</entry>
+  <entry key="VSS-002">Please supply your own S3 access and secret keys for testing</entry>
+  <entry key="VSS-003">The metadata property name cannot be null.</entry>
+  <entry key="VSS-004">Length: {}</entry>
+  <entry key="VSS-005">Tried to create a non-existent type of AWS authentication signature</entry>
+  <entry key="VSS-005">Didn't find expected key: {}</entry>
+  <entry key="VSS-006">Running: {}</entry>
+  <entry key="VSS-007">Expected algorithm not found: {}</entry>
+  <entry key="VSS-008">Invalid key exception: {}</entry>
+  <entry key="VSS-009">Setting AWS credentials requires at least an access key and a secret key</entry>
+  <entry key="VSS-010">No AWS credentials were provided</entry>
+  <entry key="VSS-011">No AWS credentials file found: {}</entry>
+  <entry key="VSS-012">AWS credentials profile found: {}</entry>
+  <entry key="VSS-013">Output from container tests: {}</entry>
+  <entry key="VSS-014">Failed to throw exception on non-existent profile</entry>
+  <entry key="VSS-015">Test GIF stored successfully as: {}/{}</entry>
+  <entry key="VSS-016">Test GIF '{}/{}' successfully removed</entry>
+  <entry key="VSS-017">Unexpected status code: {} {}</entry>
+  <entry key="VSS-018">Putting '{}' to S3 bucket named '{}' [contents: {}]</entry>
+  <entry key="VSS-019">Getting '{}' from S3 bucket: {}</entry>
+  <entry key="VSS-020">Retrieved '{}' from S3 bucket: {} [contents: {}]</entry>
 
 </properties>

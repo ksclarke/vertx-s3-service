@@ -1,10 +1,6 @@
 
 package info.freelibrary.vertx.s3;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-
-import info.freelibrary.util.I18nRuntimeException;
 import info.freelibrary.util.StringUtils;
 
 import io.vertx.core.AsyncResult;
@@ -30,7 +26,7 @@ import io.vertx.core.http.HttpServerFileUpload;
 public class S3Client {
 
     /** Default S3 endpoint */
-    public static final String DEFAULT_ENDPOINT = "https://s3.amazonaws.com";
+    public static final S3Endpoint DEFAULT_ENDPOINT = new S3Endpoint("https://s3.amazonaws.com");
 
     private static final String LIST_CMD = "?list-type=2";
 
@@ -93,8 +89,8 @@ public class S3Client {
      * @param aVertx A Vert.x instance from which to create the <code>HttpClient</code>
      * @param aEndpoint An S3 endpoint
      */
-    public S3Client(final Vertx aVertx, final String aEndpoint) {
-        this(new AwsCredentialsProviderChain().getCredentials(), getHttpClient(aVertx, (HttpClientOptions) null));
+    public S3Client(final Vertx aVertx, final S3Endpoint aEndpoint) {
+        this(new AwsCredentialsProviderChain().getCredentials(), getHttpClient(aVertx, getHttpOptions(aEndpoint)));
     }
 
     /**
@@ -105,8 +101,8 @@ public class S3Client {
      * @param aProfile An AWS credentials profile
      * @param aEndpoint An S3 endpoint
      */
-    public S3Client(final Vertx aVertx, final Profile aProfile, final String aEndpoint) {
-        this(aProfile.getCredentials(), getHttpClient(aVertx, (HttpClientOptions) null));
+    public S3Client(final Vertx aVertx, final Profile aProfile, final S3Endpoint aEndpoint) {
+        this(aProfile.getCredentials(), getHttpClient(aVertx, getHttpOptions(aEndpoint)));
     }
 
     /**
@@ -141,10 +137,8 @@ public class S3Client {
      * @param aAccessKey An S3 access key
      * @param aSecretKey An S3 secret key
      * @param aEndpoint An S3 endpoint
-     * @throws MalformedURLException If the supplied endpoint isn't a valid URL
      */
-    public S3Client(final Vertx aVertx, final String aAccessKey, final String aSecretKey, final String aEndpoint)
-            throws MalformedURLException {
+    public S3Client(final Vertx aVertx, final String aAccessKey, final String aSecretKey, final S3Endpoint aEndpoint) {
         this(aVertx, aAccessKey, aSecretKey, null, getHttpOptions(aEndpoint));
     }
 
@@ -171,10 +165,9 @@ public class S3Client {
      * @param aSecretKey An S3 secret key
      * @param aSessionToken An S3 session token
      * @param aEndpoint An S3 endpoint
-     * @throws MalformedURLException If the supplied S3 endpoint isn't a valid URL
      */
     public S3Client(final Vertx aVertx, final String aAccessKey, final String aSecretKey, final String aSessionToken,
-            final String aEndpoint) throws MalformedURLException {
+            final S3Endpoint aEndpoint) {
         this(getCredentials(aAccessKey, aSecretKey, aSessionToken), getHttpClient(aVertx, getHttpOptions(aEndpoint)));
     }
 
@@ -211,7 +204,7 @@ public class S3Client {
     public void head(final String aBucket, final String aKey, final Handler<AsyncResult<HttpClientResponse>> aHandler,
             final Handler<Throwable> aExceptionHandler) {
         createHeadRequest(aBucket, aKey).onComplete(headRequest -> {
-            headRequest.result().onComplete(aHandler).exceptionHandler(aExceptionHandler).end();
+            headRequest.result().response(aHandler).exceptionHandler(aExceptionHandler).end();
         });
     }
 
@@ -226,7 +219,7 @@ public class S3Client {
     public void get(final String aBucket, final String aKey, final Handler<AsyncResult<HttpClientResponse>> aHandler,
             final Handler<Throwable> aExceptionHandler) {
         createGetRequest(aBucket, aKey).onComplete(getRequest -> {
-            getRequest.result().onComplete(aHandler).exceptionHandler(aExceptionHandler).end();
+            getRequest.result().response(aHandler).exceptionHandler(aExceptionHandler).end();
         });
     }
 
@@ -240,7 +233,7 @@ public class S3Client {
     public void list(final String aBucket, final Handler<AsyncResult<HttpClientResponse>> aHandler,
             final Handler<Throwable> aExceptionHandler) {
         createGetRequest(aBucket, LIST_CMD).onComplete(getRequest -> {
-            getRequest.result().onComplete(aHandler).exceptionHandler(aExceptionHandler).end();
+            getRequest.result().response(aHandler).exceptionHandler(aExceptionHandler).end();
         });
     }
 
@@ -255,7 +248,7 @@ public class S3Client {
     public void list(final String aBucket, final String aPrefix,
             final Handler<AsyncResult<HttpClientResponse>> aHandler, final Handler<Throwable> aExceptionHandler) {
         createGetRequest(aBucket, PREFIX_LIST_CMD + aPrefix).onComplete(getRequest -> {
-            getRequest.result().onComplete(aHandler).exceptionHandler(aExceptionHandler).end();
+            getRequest.result().response(aHandler).exceptionHandler(aExceptionHandler).end();
         });
     }
 
@@ -271,7 +264,7 @@ public class S3Client {
     public void put(final String aBucket, final String aKey, final Buffer aBuffer,
             final Handler<AsyncResult<HttpClientResponse>> aHandler, final Handler<Throwable> aExceptionHandler) {
         createPutRequest(aBucket, aKey).onComplete(putRequest -> {
-            putRequest.result().onComplete(aHandler).exceptionHandler(aExceptionHandler).end(aBuffer);
+            putRequest.result().response(aHandler).exceptionHandler(aExceptionHandler).end(aBuffer);
         });
     }
 
@@ -289,7 +282,7 @@ public class S3Client {
             final Handler<AsyncResult<HttpClientResponse>> aHandler, final Handler<Throwable> aExceptionHandler) {
         createPutRequest(aBucket, aKey).onComplete(putRequest -> {
             final S3ClientRequest request = putRequest.result().setUserMetadata(aMetadata);
-            request.onComplete(aHandler).exceptionHandler(aExceptionHandler).end(aBuffer);
+            request.response(aHandler).exceptionHandler(aExceptionHandler).end(aBuffer);
         });
     }
 
@@ -336,8 +329,7 @@ public class S3Client {
                 request.end(buffer);
             });
 
-            // HELLO this big ones are broken
-            request.onComplete(aHandler).exceptionHandler(aExceptionHandler);
+            request.response(aHandler).exceptionHandler(aExceptionHandler);
         });
     }
 
@@ -385,7 +377,7 @@ public class S3Client {
                 request.end(buffer);
             });
 
-            request.onComplete(aHandler).exceptionHandler(aExceptionHandler);
+            request.response(aHandler).exceptionHandler(aExceptionHandler);
         });
     }
 
@@ -400,7 +392,7 @@ public class S3Client {
     public void delete(final String aBucket, final String aKey, final Handler<AsyncResult<HttpClientResponse>> aHandler,
             final Handler<Throwable> aExceptionHandler) {
         createDeleteRequest(aBucket, aKey).onComplete(deleteRequest -> {
-            deleteRequest.result().onComplete(aHandler).exceptionHandler(aExceptionHandler).end();
+            deleteRequest.result().response(aHandler).exceptionHandler(aExceptionHandler).end();
         });
     }
 
@@ -529,34 +521,24 @@ public class S3Client {
             // If someone has submitted an HTTP client config, trust they know what they're doing
             httpClient = aVertx.createHttpClient(aConfig);
         } else {
-            final HttpClientOptions httpOptions;
-            final String host;
-
-            try {
-                host = new URL(S3Client.DEFAULT_ENDPOINT).getHost();
-                httpOptions = new HttpClientOptions().setSsl(true).setDefaultPort(443).setDefaultHost(host);
-                httpClient = aVertx.createHttpClient(httpOptions);
-            } catch (final MalformedURLException details) {
-                throw new I18nRuntimeException(details); // Should not be possible
-            }
+            final HttpClientOptions options = new HttpClientOptions().setSsl(true).setDefaultPort(443);
+            httpClient = aVertx.createHttpClient(options.setDefaultHost(S3Client.DEFAULT_ENDPOINT.getHost()));
         }
 
         return httpClient;
     }
 
     /**
-     * Creates HTTP client options from the supplied endpoint URL.
+     * Creates HTTP client options from the supplied endpoint SafeURL.
      *
      * @param aEndpoint A user supplied S3 endpoint
      * @return HTTP client options
-     * @throws MalformedURLException If the supplied endpoint isn't a valid URL
      */
-    private static HttpClientOptions getHttpOptions(final String aEndpoint) throws MalformedURLException {
+    private static HttpClientOptions getHttpOptions(final S3Endpoint aEndpoint) {
         final HttpClientOptions clientOptions = new HttpClientOptions();
-        final URL url = new URL(aEndpoint);
-        final String protocol = url.getProtocol();
-        final String host = StringUtils.trimToNull(url.getHost());
-        final int port = url.getPort();
+        final String host = StringUtils.trimToNull(aEndpoint.getHost());
+        final String protocol = aEndpoint.getProtocol();
+        final int port = aEndpoint.getPort();
 
         // If there is a supplied host, set it in the client options
         if (host != null) {

@@ -38,8 +38,8 @@ public class AwsCredentialsProviderChain {
 
     static final String SESSION_KEY_FILE_PROPERTY = "aws_session_token";
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AwsCredentialsProviderChain.class,
-            Constants.BUNDLE_NAME);
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger(AwsCredentialsProviderChain.class, MessageCodes.BUNDLE);
 
     private static final String PROFILE_PATTERN = "^\\[{}\\]$";
 
@@ -78,7 +78,7 @@ public class AwsCredentialsProviderChain {
      */
     public AwsCredentials getCredentials() {
         return myProviders.stream().flatMap(provider -> Streams.streamopt(provider.getCredentials())).findFirst()
-                .orElseThrow(() -> new SigningException(LOGGER.getMessage(MessageCodes.VS3_010)));
+                .orElseThrow(() -> new SigningException(LOGGER.getMessage(MessageCodes.VSS_010)));
     }
 
     /**
@@ -96,8 +96,8 @@ public class AwsCredentialsProviderChain {
      * @return An AWS credentials provider
      */
     AwsCredentialsProvider systemPropertiesProvider() {
-        return () -> getAwsCredentials(System.getProperty(ACCESS_KEY_SYSTEM_PROPERTY), System.getProperty(
-                SECRET_KEY_SYSTEM_PROPERTY));
+        return () -> getAwsCredentials(System.getProperty(ACCESS_KEY_SYSTEM_PROPERTY),
+                System.getProperty(SECRET_KEY_SYSTEM_PROPERTY));
     }
 
     /**
@@ -120,7 +120,6 @@ public class AwsCredentialsProviderChain {
                     line = line.trim();
 
                     if (line.matches(StringUtils.format(PROFILE_PATTERN, aProfile))) {
-                        LOGGER.debug(MessageCodes.VS3_013, aProfile);
                         inProfile = true;
                     } else if (line.matches(StringUtils.format(PROFILE_PATTERN, ".*"))) {
                         inProfile = false;
@@ -138,7 +137,7 @@ public class AwsCredentialsProviderChain {
                     }
                 }
             } else {
-                LOGGER.info(MessageCodes.VS3_011, path);
+                LOGGER.info(MessageCodes.VSS_011, path);
             }
         } catch (final IOException details) {
             LOGGER.error(details, details.getMessage());

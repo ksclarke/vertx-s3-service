@@ -4,7 +4,6 @@ package info.freelibrary.vertx.s3;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.Optional;
-import java.util.function.Function;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -335,65 +334,8 @@ class S3ClientRequest implements HttpClientRequest {
     }
 
     @Override
-    public boolean isComplete() {
-        return myRequest.isComplete();
-    }
-
-    @Override
-    public HttpClientResponse result() {
-        return myRequest.result();
-    }
-
-    @Override
-    public Throwable cause() {
-        return myRequest.cause();
-    }
-
-    @Override
-    public boolean succeeded() {
-        return myRequest.succeeded();
-    }
-
-    @Override
-    public boolean failed() {
-        return myRequest.failed();
-    }
-
-    @Override
     public boolean reset(final long aCode, final Throwable aCause) {
         return myRequest.reset(aCode, aCause);
-    }
-
-    @Override
-    public S3ClientRequest onComplete(final Handler<AsyncResult<HttpClientResponse>> aHandler) {
-        myRequest.onComplete(aHandler);
-        return this;
-    }
-
-    @Override
-    public <U> Future<U> compose(final Function<HttpClientResponse, Future<U>> aSuccessMapper,
-            final Function<Throwable, Future<U>> aFailureMapper) {
-        return myRequest.compose(aSuccessMapper, aFailureMapper);
-    }
-
-    @Override
-    public <U> Future<U> map(final Function<HttpClientResponse, U> aMapper) {
-        return myRequest.map(aMapper);
-    }
-
-    @Override
-    public <V> Future<V> map(final V aValue) {
-        return myRequest.map(aValue);
-    }
-
-    @Override
-    public Future<HttpClientResponse> otherwise(final Function<Throwable, HttpClientResponse> aMapper) {
-        return myRequest.otherwise(aMapper);
-    }
-
-    @Override
-    public Future<HttpClientResponse> otherwise(final HttpClientResponse aValue) {
-        return myRequest.otherwise(aValue);
     }
 
     @Override
@@ -439,6 +381,17 @@ class S3ClientRequest implements HttpClientRequest {
     @Override
     public Future<HttpClientResponse> connect() {
         return myRequest.connect();
+    }
+
+    @Override
+    public S3ClientRequest response(final Handler<AsyncResult<HttpClientResponse>> aHandler) {
+        myRequest.response(aHandler);
+        return this;
+    }
+
+    @Override
+    public Future<HttpClientResponse> response() {
+        return myRequest.response();
     }
 
 }

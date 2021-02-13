@@ -60,7 +60,7 @@ public class S3ClientProfilesTest {
     @Test(expected = SigningException.class)
     public final void testS3ClientVertxProfileMissingProfile(final TestContext aContext) {
         new S3Client(VERTX, new Profile(MISSING)).close();
-        aContext.fail(MessageCodes.VS3_014);
+        aContext.fail(MessageCodes.VSS_014);
     }
 
     /**
@@ -71,7 +71,7 @@ public class S3ClientProfilesTest {
     @Test(expected = SigningException.class)
     public final void testS3ClientVertxProfileHttpClientOptionsMissingProfile(final TestContext aContext) {
         new S3Client(VERTX, new Profile(MISSING), new HttpClientOptions()).close();
-        aContext.fail(MessageCodes.VS3_014);
+        aContext.fail(MessageCodes.VSS_014);
     }
 
     /**
@@ -82,6 +82,6 @@ public class S3ClientProfilesTest {
     @Test(expected = SigningException.class)
     public final void testS3ClientVertxProfilePlusEndpointMissingProfile(final TestContext aContext) {
         new S3Client(VERTX, new Profile(MISSING), S3Client.DEFAULT_ENDPOINT).close();
-        aContext.fail(MessageCodes.VS3_014);
+        aContext.fail(MessageCodes.VSS_014);
     }
 }

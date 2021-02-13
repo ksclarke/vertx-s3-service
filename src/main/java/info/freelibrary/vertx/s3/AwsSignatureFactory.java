@@ -145,7 +145,7 @@ public final class AwsSignatureFactory {
                 throw new ConfigurationException();
             }
         } else {
-            throw new I18nRuntimeException(Constants.BUNDLE_NAME, MessageCodes.VS3_005);
+            throw new I18nRuntimeException(Constants.BUNDLE_NAME, MessageCodes.VSS_005);
         }
 
         return signature;
