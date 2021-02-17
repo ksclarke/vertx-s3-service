@@ -17,6 +17,7 @@ import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
+import io.vertx.core.streams.ReadStream;
 
 /**
  * An S3 client request implementation of <code>HttpClientRequest</code>.
@@ -274,6 +275,30 @@ class S3ClientRequest implements HttpClientRequest {
     public Future<Void> sendHead() {
         addAuthenticationHeader();
         return myRequest.sendHead();
+    }
+
+    @Override
+    public Future<HttpClientResponse> send() {
+        addAuthenticationHeader();
+        return myRequest.send();
+    }
+
+    @Override
+    public Future<HttpClientResponse> send(final Buffer aBuffer) {
+        addAuthenticationHeader();
+        return myRequest.send(aBuffer);
+    }
+
+    @Override
+    public Future<HttpClientResponse> send(final ReadStream<Buffer> aBufferStream) {
+        addAuthenticationHeader();
+        return myRequest.send(aBufferStream);
+    }
+
+    @Override
+    public Future<HttpClientResponse> send(final String aString) {
+        addAuthenticationHeader();
+        return myRequest.send(aString);
     }
 
     @Override

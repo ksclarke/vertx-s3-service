@@ -29,7 +29,7 @@ public class S3ClientProfilesTest {
      */
     @Test
     public final void testS3ClientVertxProfile(final TestContext aContext) {
-        new S3Client(VERTX, new Profile(PROFILE)).close();
+        new S3Client(VERTX, new AwsProfile(PROFILE)).close();
     }
 
     /**
@@ -39,7 +39,7 @@ public class S3ClientProfilesTest {
      */
     @Test
     public final void testS3ClientVertxProfileHttpClientOptions(final TestContext aContext) {
-        new S3Client(VERTX, new Profile(PROFILE), new HttpClientOptions()).close();
+        new S3Client(VERTX, new AwsProfile(PROFILE), new HttpClientOptions()).close();
     }
 
     /**
@@ -49,7 +49,7 @@ public class S3ClientProfilesTest {
      */
     @Test
     public final void testS3ClientVertxProfilePlusEndpoint(final TestContext aContext) {
-        new S3Client(VERTX, new Profile(PROFILE), S3Client.DEFAULT_ENDPOINT).close();
+        new S3Client(VERTX, new AwsProfile(PROFILE), S3Client.DEFAULT_ENDPOINT).close();
     }
 
     /**
@@ -59,7 +59,7 @@ public class S3ClientProfilesTest {
      */
     @Test(expected = SigningException.class)
     public final void testS3ClientVertxProfileMissingProfile(final TestContext aContext) {
-        new S3Client(VERTX, new Profile(MISSING)).close();
+        new S3Client(VERTX, new AwsProfile(MISSING)).close();
         aContext.fail(MessageCodes.VSS_014);
     }
 
@@ -70,7 +70,7 @@ public class S3ClientProfilesTest {
      */
     @Test(expected = SigningException.class)
     public final void testS3ClientVertxProfileHttpClientOptionsMissingProfile(final TestContext aContext) {
-        new S3Client(VERTX, new Profile(MISSING), new HttpClientOptions()).close();
+        new S3Client(VERTX, new AwsProfile(MISSING), new HttpClientOptions()).close();
         aContext.fail(MessageCodes.VSS_014);
     }
 
@@ -81,7 +81,7 @@ public class S3ClientProfilesTest {
      */
     @Test(expected = SigningException.class)
     public final void testS3ClientVertxProfilePlusEndpointMissingProfile(final TestContext aContext) {
-        new S3Client(VERTX, new Profile(MISSING), S3Client.DEFAULT_ENDPOINT).close();
+        new S3Client(VERTX, new AwsProfile(MISSING), S3Client.DEFAULT_ENDPOINT).close();
         aContext.fail(MessageCodes.VSS_014);
     }
 }

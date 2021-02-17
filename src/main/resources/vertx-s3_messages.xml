@@ -28,7 +28,7 @@
   <entry key="VSS-014">Failed to throw exception on non-existent profile</entry>
   <entry key="VSS-015">Test GIF stored successfully as: {}/{}</entry>
   <entry key="VSS-016">Test GIF '{}/{}' successfully removed</entry>
-  <entry key="VSS-017">Unexpected status code: {} {}</entry>
+  <entry key="VSS-017">Unexpected status code: {} [{}]</entry>
   <entry key="VSS-018">Putting '{}' to S3 bucket named '{}' [contents: {}]</entry>
   <entry key="VSS-019">Getting '{}' from S3 bucket: {}</entry>
   <entry key="VSS-020">Retrieved '{}' from S3 bucket: {} [contents: {}]</entry>

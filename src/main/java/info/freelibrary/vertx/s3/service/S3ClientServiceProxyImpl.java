@@ -2,7 +2,7 @@
 package info.freelibrary.vertx.s3.service;
 
 import info.freelibrary.vertx.s3.AwsCredentials;
-import info.freelibrary.vertx.s3.Profile;
+import info.freelibrary.vertx.s3.AwsProfile;
 import info.freelibrary.vertx.s3.S3Endpoint;
 
 import io.vertx.core.Vertx;
@@ -36,7 +36,7 @@ public class S3ClientServiceProxyImpl extends S3ClientServiceImpl implements S3C
      * @param aProfile An AWS credentials profile
      * @param aAddress A Vert.x event bus address
      */
-    public S3ClientServiceProxyImpl(final Vertx aVertx, final Profile aProfile, final String aAddress) {
+    public S3ClientServiceProxyImpl(final Vertx aVertx, final AwsProfile aProfile, final String aAddress) {
         super(aVertx, aProfile);
 
         myServiceBinder = new ServiceBinder(aVertx);

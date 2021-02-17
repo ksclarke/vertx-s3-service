@@ -4,13 +4,13 @@ package info.freelibrary.vertx.s3.service;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+import info.freelibrary.util.HTTP;
 import info.freelibrary.util.Logger;
 import info.freelibrary.util.LoggerFactory;
 
 import info.freelibrary.vertx.s3.AwsCredentials;
-import info.freelibrary.vertx.s3.HTTP;
 import info.freelibrary.vertx.s3.MessageCodes;
-import info.freelibrary.vertx.s3.Profile;
+import info.freelibrary.vertx.s3.AwsProfile;
 import info.freelibrary.vertx.s3.S3Client;
 import info.freelibrary.vertx.s3.S3Endpoint;
 
@@ -45,7 +45,7 @@ public class S3ClientServiceImpl implements S3ClientService {
      * @param aVertx A Vert.x instance
      * @param aProfile An AWS credentials profile
      */
-    public S3ClientServiceImpl(final Vertx aVertx, final Profile aProfile) {
+    public S3ClientServiceImpl(final Vertx aVertx, final AwsProfile aProfile) {
         if (aProfile == null) {
             myS3Client = new S3Client(aVertx);
         } else {

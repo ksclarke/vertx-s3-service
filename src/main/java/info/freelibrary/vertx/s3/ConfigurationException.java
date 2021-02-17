@@ -26,7 +26,7 @@ public class ConfigurationException extends I18nRuntimeException {
      * @param aMessageKey An I18n MessageCodes key
      */
     public ConfigurationException(final String aMessageKey) {
-        super(Constants.BUNDLE_NAME, aMessageKey);
+        super(MessageCodes.BUNDLE, aMessageKey);
     }
 
     /**
@@ -36,6 +36,6 @@ public class ConfigurationException extends I18nRuntimeException {
      * @param aDetailsArray Additional details about the configuration exception
      */
     public ConfigurationException(final String aMessageKey, final Object... aDetailsArray) {
-        super(Constants.BUNDLE_NAME, aMessageKey, aDetailsArray);
+        super(MessageCodes.BUNDLE, aMessageKey, aDetailsArray);
     }
 }

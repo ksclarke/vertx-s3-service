@@ -14,7 +14,7 @@ import io.vertx.core.json.JsonObject;
 @DataObject
 public class S3Endpoint extends info.freelibrary.util.SafeURL {
 
-    private static final String URL = "SafeURL";
+    private static final String URL = "URL";
 
     /**
      * Creates a new S3 endpoint from the supplied SafeURL.
@@ -26,7 +26,7 @@ public class S3Endpoint extends info.freelibrary.util.SafeURL {
     }
 
     /**
-     * Creates a new S3 endpoint from the JSON object. The JSON object should just contain one property: SafeURL.
+     * Creates a new S3 endpoint from the JSON object. The JSON object should just contain one property: URL.
      *
      * @param aJsonObject A JSON encapsulation of the S3 endpoint
      * @throws MalformedUrlRuntimeException If the value in the supplied JsonObject isn't a valid SafeURL
@@ -36,7 +36,7 @@ public class S3Endpoint extends info.freelibrary.util.SafeURL {
     }
 
     /**
-     * Creates a new S3 endpoint from a SafeURL supplied in string form.
+     * Creates a new S3 endpoint from a URL supplied in string form.
      *
      * @param aString An S3 endpoint SafeURL in string form
      * @throws MalformedUrlRuntimeException If the supplied string isn't a valid SafeURL

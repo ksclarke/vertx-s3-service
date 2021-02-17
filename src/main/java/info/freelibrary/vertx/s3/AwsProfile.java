@@ -4,7 +4,7 @@ package info.freelibrary.vertx.s3;
 /**
  * A AWS profile defined in the system credentials file.
  */
-public class Profile {
+public class AwsProfile {
 
     private final String myProfileName;
 
@@ -13,7 +13,7 @@ public class Profile {
      *
      * @param aProfileName A name of a profile from the system credentials file
      */
-    public Profile(final String aProfileName) {
+    public AwsProfile(final String aProfileName) {
         myProfileName = aProfileName;
     }
 

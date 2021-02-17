@@ -3,21 +3,20 @@ package info.freelibrary.vertx.s3;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.util.UUID;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.S3Object;
 
+import info.freelibrary.util.HTTP;
 import info.freelibrary.util.Logger;
 import info.freelibrary.util.LoggerFactory;
 
-import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.OpenOptions;
@@ -33,13 +32,9 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 @RunWith(VertxUnitRunner.class)
 public class S3ClientFT extends AbstractS3FT {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(S3ClientFT.class, Constants.BUNDLE_NAME);
+    private static final Logger LOGGER = LoggerFactory.getLogger(S3ClientFT.class, MessageCodes.BUNDLE);
 
     private static final String TEST_FILE = "src/test/resources/green.gif";
-
-    private static final String CONTENT_LENGTH = "Content-Length";
-
-    private static final Vertx VERTX = Vertx.vertx();
 
     private static final String PREFIX = "prefix_";
 
@@ -49,7 +44,11 @@ public class S3ClientFT extends AbstractS3FT {
     @Rule
     public final RunTestOnContext myContext = new RunTestOnContext();
 
+    private S3Client myTestClient;
+
     private String myBucket;
+
+    private String myKey;
 
     /**
      * Sets up the test about to be run.
@@ -58,19 +57,34 @@ public class S3ClientFT extends AbstractS3FT {
      */
     @Before
     public void setUp(final TestContext aContext) {
+        myTestClient = new S3Client(myContext.vertx(), myAccessKey, mySecretKey, myEndpoint);
         myBucket = UUID.randomUUID().toString();
+        myKey = UUID.randomUUID().toString();
+
+        if (!myS3Client.doesBucketExistV2(myBucket)) {
+            myS3Client.createBucket(myBucket);
+        }
     }
 
     /**
-     * Tears down any remaining test artifacts.
+     * Tests the HEAD request that returns a future.
      *
      * @param aContext A test context
      */
-    @After
-    public void tearDown(final TestContext aContext) {
-        if (myS3Client.listObjectsV2(myBucket).getObjectSummaries().size() == 0) {
-            myS3Client.deleteBucket(myBucket);
-        }
+    @Test
+    public final void testHeadBucketKey(final TestContext aContext) {
+        final Async asyncTask = aContext.async();
+
+        putGIF(myKey);
+
+        myTestClient.head(myBucket, myKey).onComplete(head -> {
+            if (head.succeeded()) {
+                aContext.assertEquals("85", head.result().get(HTTP.Header.CONTENT_LENGTH));
+                complete(asyncTask);
+            } else {
+                aContext.fail(head.cause());
+            }
+        });
     }
 
     /**
@@ -79,20 +93,19 @@ public class S3ClientFT extends AbstractS3FT {
      * @param aContext A test context
      */
     @Test
-    public final void testHeadBucketKeyWithHandler(final TestContext aContext) throws MalformedURLException {
-        final S3Client s3Client = new S3Client(VERTX, myAccessKey, mySecretKey, myEndpoint);
-        final String key = UUID.randomUUID().toString();
+    @SuppressWarnings("deprecation")
+    public final void testHeadBucketKeyWithHandler(final TestContext aContext) {
         final Async asyncTask = aContext.async();
 
-        storeGIF(key);
+        putGIF(myKey);
 
-        s3Client.head(myBucket, key, head -> {
+        myTestClient.head(myBucket, myKey, head -> {
             if (head.succeeded()) {
                 final HttpClientResponse response = head.result();
                 final int statusCode = response.statusCode();
 
                 if (statusCode == HTTP.OK) {
-                    aContext.assertEquals(85, Integer.parseInt(response.getHeader(CONTENT_LENGTH)));
+                    aContext.assertEquals(85, Integer.parseInt(response.getHeader(HTTP.Header.CONTENT_LENGTH)));
                     complete(asyncTask);
                 } else {
                     aContext.fail(LOGGER.getMessage(MessageCodes.VSS_017, statusCode, response.statusMessage()));
@@ -100,11 +113,29 @@ public class S3ClientFT extends AbstractS3FT {
             } else {
                 aContext.fail(head.cause());
             }
-
-            removeGIF(key);
         }, error -> {
-            removeGIF(key);
             aContext.fail(error);
+        });
+    }
+
+    /**
+     * Tests the GET request that returns a future.
+     *
+     * @param aContext A test context
+     */
+    @Test
+    public final void testGetBucketKey(final TestContext aContext) {
+        final Async asyncTask = aContext.async();
+
+        putGIF(myKey);
+
+        myTestClient.get(myBucket, myKey).onComplete(get -> {
+            if (get.succeeded()) {
+                aContext.assertEquals(85, get.result().length());
+                complete(asyncTask);
+            } else {
+                aContext.fail(get.cause());
+            }
         });
     }
 
@@ -114,14 +145,13 @@ public class S3ClientFT extends AbstractS3FT {
      * @param aContext A test context
      */
     @Test
-    public final void testGetBucketKeyWithHandler(final TestContext aContext) throws MalformedURLException {
-        final S3Client s3Client = new S3Client(VERTX, myAccessKey, mySecretKey, myEndpoint);
-        final String key = UUID.randomUUID().toString();
+    @SuppressWarnings("deprecation")
+    public final void testGetBucketKeyWithHandler(final TestContext aContext) {
         final Async asyncTask = aContext.async();
 
-        storeGIF(key);
+        putGIF(myKey);
 
-        s3Client.get(myBucket, key, get -> {
+        myTestClient.get(myBucket, myKey, get -> {
             if (get.succeeded()) {
                 final HttpClientResponse response = get.result();
                 final int statusCode = response.statusCode();
@@ -129,20 +159,15 @@ public class S3ClientFT extends AbstractS3FT {
                 if (statusCode == HTTP.OK) {
                     response.bodyHandler(body -> {
                         aContext.assertEquals(85, body.length());
-
-                        removeGIF(key);
                         complete(asyncTask);
                     });
                 } else {
-                    removeGIF(key);
                     aContext.fail(LOGGER.getMessage(MessageCodes.VSS_017, statusCode, response.statusMessage()));
                 }
             } else {
-                removeGIF(key);
                 aContext.fail(get.cause());
             }
         }, error -> {
-            removeGIF(key);
             aContext.fail(error);
         });
     }
@@ -153,14 +178,34 @@ public class S3ClientFT extends AbstractS3FT {
      * @param aContext A testing context
      */
     @Test
-    public final void testListBucketWithHandler(final TestContext aContext) throws MalformedURLException {
-        final S3Client s3Client = new S3Client(VERTX, myAccessKey, mySecretKey, myEndpoint);
-        final String key = UUID.randomUUID().toString();
+    public final void testListBucket(final TestContext aContext) {
         final Async asyncTask = aContext.async();
 
-        storeGIF(key);
+        putGIF(myKey);
 
-        s3Client.list(myBucket, list -> {
+        myTestClient.list(myBucket).onComplete(list -> {
+            if (list.succeeded()) {
+                aContext.assertEquals(1, list.result().size());
+                complete(asyncTask);
+            } else {
+                aContext.fail(list.cause());
+            }
+        });
+    }
+
+    /**
+     * Tests listing the supplied bucket.
+     *
+     * @param aContext A testing context
+     */
+    @Test
+    @SuppressWarnings("deprecation")
+    public final void testListBucketWithHandler(final TestContext aContext) {
+        final Async asyncTask = aContext.async();
+
+        putGIF(myKey);
+
+        myTestClient.list(myBucket, list -> {
             if (list.succeeded()) {
                 final HttpClientResponse response = list.result();
                 final int statusCode = response.statusCode();
@@ -171,26 +216,45 @@ public class S3ClientFT extends AbstractS3FT {
                             final BucketList bucketList = new BucketList(body);
 
                             aContext.assertEquals(1, bucketList.size());
-                            aContext.assertTrue(bucketList.containsKey(key));
+                            aContext.assertTrue(bucketList.containsKey(myKey));
 
                             complete(asyncTask);
                         } catch (final IOException details) {
                             aContext.fail(details);
-                        } finally {
-                            removeGIF(key);
                         }
                     });
                 } else {
-                    removeGIF(key);
                     aContext.fail(LOGGER.getMessage(MessageCodes.VSS_017, statusCode, response.statusMessage()));
                 }
             } else {
-                removeGIF(key);
                 aContext.fail(list.cause());
             }
         }, error -> {
-            removeGIF(key);
             aContext.fail(error);
+        });
+    }
+
+    /**
+     * Tests listing the supplied bucket.
+     *
+     * @param aContext A testing context
+     */
+    @Test
+    public final void testListBucketPrefix(final TestContext aContext) {
+        final String prefixedKey1 = PREFIX + UUID.randomUUID().toString();
+        final String prefixedKey2 = PREFIX + UUID.randomUUID().toString();
+        final Async asyncTask = aContext.async();
+
+        putGIF(prefixedKey1);
+        putGIF(prefixedKey2);
+
+        myTestClient.list(myBucket, PREFIX).onComplete(list -> {
+            if (list.succeeded()) {
+                aContext.assertEquals(2, list.result().size());
+                complete(asyncTask);
+            } else {
+                aContext.fail(list.cause());
+            }
         });
     }
 
@@ -200,17 +264,16 @@ public class S3ClientFT extends AbstractS3FT {
      * @param aContext A test context
      */
     @Test
-    public final void testListBucketPrefixWithHandler(final TestContext aContext) throws MalformedURLException {
-        final S3Client s3Client = new S3Client(VERTX, myAccessKey, mySecretKey, myEndpoint);
+    @SuppressWarnings("deprecation")
+    public final void testListBucketPrefixWithHandler(final TestContext aContext) {
+        final String prefixedKey1 = PREFIX + UUID.randomUUID().toString();
         final String prefixedKey2 = PREFIX + UUID.randomUUID().toString();
-        final String key = UUID.randomUUID().toString();
-        final String prefixedKey1 = PREFIX + key;
         final Async asyncTask = aContext.async();
 
-        storeGIF(prefixedKey1);
-        storeGIF(prefixedKey2);
+        putGIF(prefixedKey1);
+        putGIF(prefixedKey2);
 
-        s3Client.list(myBucket, PREFIX, list -> {
+        myTestClient.list(myBucket, PREFIX, list -> {
             if (list.succeeded()) {
                 final HttpClientResponse response = list.result();
                 final int statusCode = response.statusCode();
@@ -227,49 +290,57 @@ public class S3ClientFT extends AbstractS3FT {
                             complete(asyncTask);
                         } catch (final IOException details) {
                             aContext.fail(details);
-                        } finally {
-                            removeGIF(prefixedKey1);
-                            removeGIF(prefixedKey2);
                         }
                     });
                 } else {
-                    removeGIF(prefixedKey1);
-                    removeGIF(prefixedKey2);
                     aContext.fail(LOGGER.getMessage(MessageCodes.VSS_017, statusCode, response.statusMessage()));
                 }
             } else {
-                removeGIF(prefixedKey1);
-                removeGIF(prefixedKey2);
                 aContext.fail(list.cause());
             }
         }, error -> {
-            removeGIF(prefixedKey1);
-            removeGIF(prefixedKey2);
             aContext.fail(error);
         });
     }
 
     /**
-     * Tests putting a Buffer.
+     * Tests putting a buffer using a future.
      *
      * @param aContext A test context
      */
     @Test
-    public final void testPutBucketKeyBufferHandler(final TestContext aContext) throws MalformedURLException {
-        final S3Client s3Client = new S3Client(VERTX, myAccessKey, mySecretKey, myEndpoint);
+    public final void testPutBucketKeyBuffer(final TestContext aContext) {
         final Buffer buffer = myContext.vertx().fileSystem().readFileBlocking(TEST_FILE);
-        final String key = UUID.randomUUID().toString();
         final Async asyncTask = aContext.async();
 
-        myS3Client.createBucket(myBucket);
+        myTestClient.put(myBucket, myKey, buffer).onComplete(put -> {
+            if (put.succeeded()) {
+                aContext.assertTrue(myS3Client.doesObjectExist(myBucket, myKey));
+                complete(asyncTask);
+            } else {
+                aContext.fail(put.cause());
+            }
+        });
+    }
 
-        s3Client.put(myBucket, key, buffer, put -> {
+    /**
+     * Tests putting a buffer using handlers.
+     *
+     * @param aContext A test context
+     */
+    @Test
+    @SuppressWarnings("deprecation")
+    public final void testPutBucketKeyBufferHandler(final TestContext aContext) {
+        final Buffer buffer = myContext.vertx().fileSystem().readFileBlocking(TEST_FILE);
+        final Async asyncTask = aContext.async();
+
+        myTestClient.put(myBucket, myKey, buffer, put -> {
             if (put.succeeded()) {
                 final HttpClientResponse response = put.result();
                 final int statusCode = response.statusCode();
 
                 if (statusCode == HTTP.OK) {
-                    aContext.assertTrue(gifIsFound(key));
+                    aContext.assertTrue(myS3Client.doesObjectExist(myBucket, myKey));
                     complete(asyncTask);
                 } else {
                     aContext.fail(LOGGER.getMessage(MessageCodes.VSS_017, statusCode, response.statusMessage()));
@@ -277,11 +348,37 @@ public class S3ClientFT extends AbstractS3FT {
             } else {
                 aContext.fail(put.cause());
             }
-
-            removeGIF(key);
         }, error -> {
-            removeGIF(key);
             aContext.fail(error);
+        });
+    }
+
+    /**
+     * Tests putting a buffer with metadata using a future.
+     *
+     * @param aContext A test context
+     */
+    @Test
+    public final void testPutBucketKeyBufferUserMetadata(final TestContext aContext) {
+        final Buffer buffer = myContext.vertx().fileSystem().readFileBlocking(TEST_FILE);
+        final UserMetadata metadata = getTestUserMetadata();
+        final Async asyncTask = aContext.async();
+
+        myTestClient.put(myBucket, myKey, buffer, metadata).onComplete(put -> {
+            if (put.succeeded()) {
+                aContext.assertTrue(myS3Client.doesObjectExist(myBucket, myKey));
+
+                if (!asyncTask.isCompleted()) {
+                    final ObjectMetadata objMetadata = myS3Client.getObjectMetadata(myBucket, myKey);
+                    final String metadataValue = objMetadata.getUserMetaDataOf(metadata.getName(0));
+
+                    aContext.assertEquals(metadata.getValue(metadata.getName(0)), metadataValue);
+                }
+
+                complete(asyncTask);
+            } else {
+                aContext.fail(put.cause());
+            }
         });
     }
 
@@ -291,26 +388,22 @@ public class S3ClientFT extends AbstractS3FT {
      * @param aContext A test context
      */
     @Test
-    public final void testPutBucketKeyBufferUserMetadataHandler(final TestContext aContext)
-            throws MalformedURLException {
-        final S3Client s3Client = new S3Client(VERTX, myAccessKey, mySecretKey, myEndpoint);
+    @SuppressWarnings("deprecation")
+    public final void testPutBucketKeyBufferUserMetadataHandler(final TestContext aContext) {
         final Buffer buffer = myContext.vertx().fileSystem().readFileBlocking(TEST_FILE);
         final UserMetadata metadata = getTestUserMetadata();
-        final String key = UUID.randomUUID().toString();
         final Async asyncTask = aContext.async();
 
-        myS3Client.createBucket(myBucket);
-
-        s3Client.put(myBucket, key, buffer, metadata, put -> {
+        myTestClient.put(myBucket, myKey, buffer, metadata, put -> {
             if (put.succeeded()) {
                 final HttpClientResponse response = put.result();
                 final int statusCode = response.statusCode();
 
                 if (statusCode == HTTP.OK) {
-                    aContext.assertTrue(gifIsFound(key));
+                    aContext.assertTrue(myS3Client.doesObjectExist(myBucket, myKey));
 
                     if (!asyncTask.isCompleted()) {
-                        final ObjectMetadata objMetadata = myS3Client.getObjectMetadata(myBucket, key);
+                        final ObjectMetadata objMetadata = myS3Client.getObjectMetadata(myBucket, myKey);
                         final String metadataValue = objMetadata.getUserMetaDataOf(metadata.getName(0));
 
                         aContext.assertEquals(metadata.getValue(metadata.getName(0)), metadataValue);
@@ -323,35 +416,49 @@ public class S3ClientFT extends AbstractS3FT {
             } else {
                 aContext.fail(put.cause());
             }
-
-            removeGIF(key);
         }, error -> {
-            removeGIF(key);
             aContext.fail(error);
         });
     }
 
     /**
-     * Tests putting an AsyncFile.
+     * Tests putting an AsyncFile using a future.
      *
      * @param aContext A test context
      */
     @Test
-    public final void testPutBucketKeyAsyncFileHandler(final TestContext aContext) throws MalformedURLException {
-        final S3Client s3Client = new S3Client(VERTX, myAccessKey, mySecretKey, myEndpoint);
+    public final void testPutBucketKeyAsyncFile(final TestContext aContext) {
         final AsyncFile file = myContext.vertx().fileSystem().openBlocking(TEST_FILE, new OpenOptions());
-        final String key = UUID.randomUUID().toString();
         final Async asyncTask = aContext.async();
 
-        myS3Client.createBucket(myBucket);
+        myTestClient.put(myBucket, myKey, file).onComplete(put -> {
+            if (put.succeeded()) {
+                aContext.assertTrue(myS3Client.doesObjectExist(myBucket, myKey));
+                complete(asyncTask);
+            } else {
+                aContext.fail(put.cause());
+            }
+        });
+    }
 
-        s3Client.put(myBucket, key, file, put -> {
+    /**
+     * Tests putting an AsyncFile using handlers.
+     *
+     * @param aContext A test context
+     */
+    @Test
+    @SuppressWarnings("deprecation")
+    public final void testPutBucketKeyAsyncFileHandler(final TestContext aContext) {
+        final AsyncFile file = myContext.vertx().fileSystem().openBlocking(TEST_FILE, new OpenOptions());
+        final Async asyncTask = aContext.async();
+
+        myTestClient.put(myBucket, myKey, file, put -> {
             if (put.succeeded()) {
                 final HttpClientResponse response = put.result();
                 final int statusCode = response.statusCode();
 
                 if (statusCode == HTTP.OK) {
-                    aContext.assertTrue(gifIsFound(key));
+                    aContext.assertTrue(myS3Client.doesObjectExist(myBucket, myKey));
                     complete(asyncTask);
                 } else {
                     aContext.fail(LOGGER.getMessage(MessageCodes.VSS_017, statusCode, response.statusMessage()));
@@ -359,11 +466,38 @@ public class S3ClientFT extends AbstractS3FT {
             } else {
                 aContext.fail(put.cause());
             }
-
-            removeGIF(key);
         }, error -> {
-            removeGIF(key);
             aContext.fail(error);
+        });
+    }
+
+    /**
+     * Tests putting an AsyncFile with metadata using a future.
+     *
+     * @param aContext A test context
+     */
+    @Test
+    public final void testPutBucketKeyAsyncFileMetadata(final TestContext aContext) {
+        final AsyncFile file = myContext.vertx().fileSystem().openBlocking(TEST_FILE, new OpenOptions());
+        final UserMetadata metadata = getTestUserMetadata();
+        final Async asyncTask = aContext.async();
+
+        myTestClient.put(myBucket, myKey, file, metadata).onComplete(put -> {
+            if (put.succeeded()) {
+                aContext.assertTrue(myS3Client.doesObjectExist(myBucket, myKey));
+
+                if (!asyncTask.isCompleted()) {
+                    final S3Object s3Obj = myS3Client.getObject(myBucket, myKey);
+                    final String name = metadata.getName(0);
+                    final String value = metadata.getValue(0);
+
+                    aContext.assertEquals(value, s3Obj.getObjectMetadata().getUserMetaDataOf(name));
+                }
+
+                complete(asyncTask);
+            } else {
+                aContext.fail(put.cause());
+            }
         });
     }
 
@@ -373,26 +507,22 @@ public class S3ClientFT extends AbstractS3FT {
      * @param aContext A test context
      */
     @Test
-    public final void testPutBucketKeyAsyncFileUserMetadataHandler(final TestContext aContext)
-            throws MalformedURLException {
-        final S3Client s3Client = new S3Client(VERTX, myAccessKey, mySecretKey, myEndpoint);
+    @SuppressWarnings("deprecation")
+    public final void testPutBucketKeyAsyncFileUserMetadataHandler(final TestContext aContext) {
         final AsyncFile file = myContext.vertx().fileSystem().openBlocking(TEST_FILE, new OpenOptions());
         final UserMetadata metadata = getTestUserMetadata();
-        final String key = UUID.randomUUID().toString();
         final Async asyncTask = aContext.async();
 
-        myS3Client.createBucket(myBucket);
-
-        s3Client.put(myBucket, key, file, metadata, put -> {
+        myTestClient.put(myBucket, myKey, file, metadata, put -> {
             if (put.succeeded()) {
                 final HttpClientResponse response = put.result();
                 final int statusCode = response.statusCode();
 
                 if (statusCode == HTTP.OK) {
-                    aContext.assertTrue(gifIsFound(key));
+                    aContext.assertTrue(myS3Client.doesObjectExist(myBucket, myKey));
 
                     if (!asyncTask.isCompleted()) {
-                        final ObjectMetadata objMetadata = myS3Client.getObjectMetadata(myBucket, key);
+                        final ObjectMetadata objMetadata = myS3Client.getObjectMetadata(myBucket, myKey);
                         final String metadataValue = objMetadata.getUserMetaDataOf(metadata.getName(0));
 
                         aContext.assertEquals(metadata.getValue(metadata.getName(0)), metadataValue);
@@ -403,10 +533,7 @@ public class S3ClientFT extends AbstractS3FT {
                     aContext.fail(LOGGER.getMessage(MessageCodes.VSS_017, statusCode, response.statusMessage()));
                 }
             }
-
-            removeGIF(key);
         }, error -> {
-            removeGIF(key);
             aContext.fail(error);
         });
     }
@@ -417,20 +544,40 @@ public class S3ClientFT extends AbstractS3FT {
      * @param aContext A test context
      */
     @Test
-    public final void testDeleteBucketKeyHandler(final TestContext aContext) throws MalformedURLException {
-        final S3Client s3Client = new S3Client(VERTX, myAccessKey, mySecretKey, myEndpoint);
-        final String key = UUID.randomUUID().toString();
+    public final void testDeleteBucketKey(final TestContext aContext) {
         final Async asyncTask = aContext.async();
 
-        storeGIF(key);
+        putGIF(myKey);
 
-        s3Client.delete(myBucket, key, delete -> {
+        myTestClient.delete(myBucket, myKey).onComplete(deletion -> {
+            if (deletion.failed()) {
+                aContext.fail(deletion.cause());
+            } else {
+                aContext.assertFalse(myS3Client.doesObjectExist(myBucket, myKey));
+                complete(asyncTask);
+            }
+        });
+    }
+
+    /**
+     * Tests deleting an object.
+     *
+     * @param aContext A test context
+     */
+    @Test
+    @SuppressWarnings("deprecation")
+    public final void testDeleteBucketKeyHandler(final TestContext aContext) {
+        final Async asyncTask = aContext.async();
+
+        putGIF(myKey);
+
+        myTestClient.delete(myBucket, myKey, delete -> {
             if (delete.succeeded()) {
                 final HttpClientResponse response = delete.result();
                 final int statusCode = response.statusCode();
 
                 if (statusCode == HTTP.NO_CONTENT) {
-                    aContext.assertFalse(gifIsFound(key));
+                    aContext.assertFalse(myS3Client.doesObjectExist(myBucket, myKey));
                     complete(asyncTask);
                 } else {
                     response.bodyHandler(body -> {
@@ -438,46 +585,23 @@ public class S3ClientFT extends AbstractS3FT {
                     });
 
                     aContext.fail(LOGGER.getMessage(MessageCodes.VSS_017, statusCode, response.statusMessage()));
-                    removeGIF(key);
                 }
             } else {
                 aContext.fail(delete.cause());
-                removeGIF(key);
             }
         }, error -> {
-            removeGIF(key);
             aContext.fail(error);
         });
     }
 
     /**
-     * Stores a test GIF in our S3 compatible test environment.
+     * PUTs a test artifact into an S3 bucket.
+     *
+     * @param aKey The S3 object key of the artifact
      */
-    private void storeGIF(final String aKey) {
-        if (!myS3Client.doesBucketExistV2(myBucket)) {
-            myS3Client.createBucket(myBucket);
-        }
-
+    public void putGIF(final String aKey) {
         myS3Client.putObject(myBucket, aKey, new File(TEST_FILE));
         LOGGER.debug(MessageCodes.VSS_015, myBucket, aKey);
-    }
-
-    /**
-     * Remove a GIF we've put in the bucket. This isn't strictly necessary since the bucket is an in-memory thing that
-     * goes away once the container is shutdown, but we'll do it anyway.
-     */
-    private void removeGIF(final String aKey) {
-        myS3Client.deleteObject(myBucket, aKey);
-        LOGGER.debug(MessageCodes.VSS_016, myBucket, aKey);
-    }
-
-    /**
-     * Checks to see that our test GIF exists.
-     *
-     * @return True if the test GIF exists; else, false
-     */
-    private boolean gifIsFound(final String aKey) {
-        return myS3Client.doesObjectExist(myBucket, aKey);
     }
 
     /**

@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -65,6 +66,7 @@ public class S3ClientServiceImplFT extends AbstractS3FT {
      * @param aContext A testing context
      */
     @Test
+    @Ignore
     public void testS3ClientServiceImplVertx(final TestContext aContext) {
         final S3ClientService service = new S3ClientServiceImpl(myTestContext.vertx());
         final Async asyncTask = aContext.async();
@@ -91,6 +93,7 @@ public class S3ClientServiceImplFT extends AbstractS3FT {
      * @param aContext A testing context
      */
     @Test
+    @Ignore
     public void testS3ClientServiceImplVertxProfile(final TestContext aContext) {
 
     }
@@ -101,6 +104,7 @@ public class S3ClientServiceImplFT extends AbstractS3FT {
      * @param aContext A testing context
      */
     @Test
+    @Ignore
     public void testPutJSON(final TestContext aContext) {
         final AwsCredentials credentials = new AwsCredentials(myAccessKey, mySecretKey);
         final S3ClientService service = new S3ClientServiceImpl(myTestContext.vertx(), credentials, myEndpoint);
@@ -122,6 +126,7 @@ public class S3ClientServiceImplFT extends AbstractS3FT {
      * @param aContext A testing context
      */
     @Test
+    @Ignore
     public void testGetJSON(final TestContext aContext) throws SdkClientException, AmazonServiceException {
         final String content = new JsonObject().put(TestConstants.ID, myKey).encodePrettily();
         final AwsCredentials credentials = new AwsCredentials(myAccessKey, mySecretKey);

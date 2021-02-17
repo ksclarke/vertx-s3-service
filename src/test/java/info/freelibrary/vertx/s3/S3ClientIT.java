@@ -1,8 +1,6 @@
 
 package info.freelibrary.vertx.s3;
 
-import static info.freelibrary.vertx.s3.Constants.BUNDLE_NAME;
-
 import java.io.IOException;
 import java.util.UUID;
 
@@ -15,6 +13,7 @@ import org.junit.runner.RunWith;
 
 import com.amazonaws.AmazonClientException;
 
+import info.freelibrary.util.HTTP;
 import info.freelibrary.util.Logger;
 import info.freelibrary.util.LoggerFactory;
 import info.freelibrary.util.StringUtils;
@@ -36,7 +35,7 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 @RunWith(VertxUnitRunner.class)
 public class S3ClientIT extends AbstractS3IT {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(S3ClientIT.class, BUNDLE_NAME);
+    private static final Logger LOGGER = LoggerFactory.getLogger(S3ClientIT.class, MessageCodes.BUNDLE);
 
     private static final String EOL = System.lineSeparator();
 
@@ -61,11 +60,11 @@ public class S3ClientIT extends AbstractS3IT {
     @Before
     public void setUp(final TestContext aContext) {
         final S3Endpoint endpoint = new S3Endpoint(myRegion.getServiceEndpoint(TestConstants.S3_SERVICE));
-        final Profile profile = new Profile(TestConstants.TEST_PROFILE);
+        final AwsProfile awsProfile = new AwsProfile(TestConstants.TEST_PROFILE);
         final Vertx vertx = myContext.vertx();
 
         myTestID = UUID.randomUUID().toString();
-        myClient = new S3Client(vertx, profile, endpoint);
+        myClient = new S3Client(vertx, awsProfile, endpoint);
 
         super.setUp(aContext);
     }
@@ -144,10 +143,10 @@ public class S3ClientIT extends AbstractS3IT {
                     final int statusCode = response.statusCode();
 
                     if (statusCode != HTTP.OK) {
-                        final String message = response.statusMessage();
-                        aContext.fail(LOGGER.getMessage(MessageCodes.VSS_001, HTTP.HEAD, s3Key, statusCode, message));
+                        aContext.fail(LOGGER.getMessage(MessageCodes.VSS_001, HTTP.Method.HEAD, s3Key, statusCode,
+                                response.statusMessage()));
                     } else {
-                        final String contentLength = response.getHeader(HTTP.CONTENT_LENGTH);
+                        final String contentLength = response.getHeader(HTTP.Header.CONTENT_LENGTH);
 
                         aContext.assertNotNull(contentLength);
                         aContext.assertTrue(Integer.parseInt(contentLength) > 0);
@@ -183,10 +182,10 @@ public class S3ClientIT extends AbstractS3IT {
                     final int statusCode = response.statusCode();
 
                     if (statusCode != HTTP.OK) {
-                        final String message = response.statusMessage();
-                        aContext.fail(LOGGER.getMessage(MessageCodes.VSS_001, HTTP.HEAD, s3Key, statusCode, message));
+                        aContext.fail(LOGGER.getMessage(MessageCodes.VSS_001, HTTP.Method.HEAD, s3Key, statusCode,
+                                response.statusMessage()));
                     } else {
-                        final String contentLength = response.getHeader(HTTP.CONTENT_LENGTH);
+                        final String contentLength = response.getHeader(HTTP.Header.CONTENT_LENGTH);
 
                         aContext.assertNotNull(contentLength);
                         aContext.assertTrue(Integer.parseInt(contentLength) > 0);
@@ -237,10 +236,8 @@ public class S3ClientIT extends AbstractS3IT {
                             }
                         });
                     } else {
-                        final String keys = StringUtils.toString(keysArray, '|');
-                        final String message = response.statusMessage();
-
-                        aContext.fail(LOGGER.getMessage(MessageCodes.VSS_001, HTTP.LIST, keys, statusCode, message));
+                        aContext.fail(LOGGER.getMessage(MessageCodes.VSS_001, HTTP.Method.LIST,
+                                StringUtils.toString(keysArray, '|'), statusCode, response.statusMessage()));
                     }
                 } else {
                     aContext.fail(list.cause());
@@ -287,10 +284,8 @@ public class S3ClientIT extends AbstractS3IT {
                             }
                         });
                     } else {
-                        final String keys = StringUtils.toString(keysArray, '|');
-                        final String message = response.statusMessage();
-
-                        aContext.fail(LOGGER.getMessage(MessageCodes.VSS_001, HTTP.LIST, keys, statusCode, message));
+                        aContext.fail(LOGGER.getMessage(MessageCodes.VSS_001, HTTP.Method.LIST,
+                                StringUtils.toString(keysArray, '|'), statusCode, response.statusMessage()));
                     }
                 } else {
                     aContext.fail(list.cause());
@@ -335,10 +330,8 @@ public class S3ClientIT extends AbstractS3IT {
                             }
                         });
                     } else {
-                        final String keys = StringUtils.toString(keysArray, '|');
-                        final String message = response.statusMessage();
-
-                        aContext.fail(LOGGER.getMessage(MessageCodes.VSS_001, HTTP.LIST, keys, statusCode, message));
+                        aContext.fail(LOGGER.getMessage(MessageCodes.VSS_001, HTTP.Method.LIST,
+                                StringUtils.toString(keysArray, '|'), statusCode, response.statusMessage()));
                     }
                 } else {
                     aContext.fail(list.cause());
@@ -384,10 +377,8 @@ public class S3ClientIT extends AbstractS3IT {
                             }
                         });
                     } else {
-                        final String keys = StringUtils.toString(keysArray, '|');
-                        final String message = response.statusMessage();
-
-                        aContext.fail(LOGGER.getMessage(MessageCodes.VSS_001, HTTP.LIST, keys, statusCode, message));
+                        aContext.fail(LOGGER.getMessage(MessageCodes.VSS_001, HTTP.Method.LIST,
+                                StringUtils.toString(keysArray, '|'), statusCode, response.statusMessage()));
                     }
                 } else {
                     aContext.fail(list.cause());
@@ -417,8 +408,8 @@ public class S3ClientIT extends AbstractS3IT {
                     final int statusCode = response.statusCode();
 
                     if (statusCode != HTTP.OK) {
-                        final String message = response.statusMessage();
-                        aContext.fail(LOGGER.getMessage(MessageCodes.VSS_001, HTTP.GET, s3Key, statusCode, message));
+                        aContext.fail(LOGGER.getMessage(MessageCodes.VSS_001, HTTP.Method.GET, s3Key, statusCode,
+                                response.statusMessage()));
                     } else {
                         response.bodyHandler(buffer -> {
                             if (buffer.length() != myResource.length) {
@@ -457,8 +448,8 @@ public class S3ClientIT extends AbstractS3IT {
                     final int statusCode = response.statusCode();
 
                     if (statusCode != HTTP.OK) {
-                        final String message = response.statusMessage();
-                        aContext.fail(LOGGER.getMessage(MessageCodes.VSS_001, HTTP.GET, s3Key, statusCode, message));
+                        aContext.fail(LOGGER.getMessage(MessageCodes.VSS_001, HTTP.Method.GET, s3Key, statusCode,
+                                response.statusMessage()));
                     } else {
                         response.bodyHandler(body -> {
                             if (body.length() != myResource.length) {
@@ -495,8 +486,8 @@ public class S3ClientIT extends AbstractS3IT {
                 final int statusCode = response.statusCode();
 
                 if (statusCode != HTTP.OK) {
-                    final String message = response.statusMessage();
-                    aContext.fail(LOGGER.getMessage(MessageCodes.VSS_001, HTTP.PUT, s3Key, statusCode, message));
+                    aContext.fail(LOGGER.getMessage(MessageCodes.VSS_001, HTTP.Method.PUT, s3Key, statusCode,
+                            response.statusMessage()));
                 } else {
                     asyncTask.complete();
                 }
@@ -527,8 +518,8 @@ public class S3ClientIT extends AbstractS3IT {
                 final int statusCode = response.statusCode();
 
                 if (statusCode != HTTP.OK) {
-                    final String message = response.statusMessage();
-                    aContext.fail(LOGGER.getMessage(MessageCodes.VSS_001, HTTP.PUT, s3Key, statusCode, message));
+                    aContext.fail(LOGGER.getMessage(MessageCodes.VSS_001, HTTP.Method.PUT, s3Key, statusCode,
+                            response.statusMessage()));
                 } else {
                     complete(asyncTask);
                 }
@@ -560,10 +551,8 @@ public class S3ClientIT extends AbstractS3IT {
 
                 if (statusCode != HTTP.OK) {
                     response.bodyHandler(body -> {
-                        final String bodyString = body.toString();
-                        final String message = String.join(EOL, response.statusMessage(), bodyString);
-
-                        aContext.fail(LOGGER.getMessage(MessageCodes.VSS_001, HTTP.PUT, s3Key, statusCode, message));
+                        aContext.fail(LOGGER.getMessage(MessageCodes.VSS_001, HTTP.Method.PUT, s3Key, statusCode,
+                                String.join(EOL, response.statusMessage(), body.toString())));
                     });
                 } else {
                     complete(asyncTask);
@@ -597,10 +586,8 @@ public class S3ClientIT extends AbstractS3IT {
 
                 if (statusCode != HTTP.OK) {
                     response.bodyHandler(body -> {
-                        final String bodyString = body.toString();
-                        final String message = String.join(EOL, response.statusMessage(), bodyString);
-
-                        aContext.fail(LOGGER.getMessage(MessageCodes.VSS_001, HTTP.PUT, s3Key, statusCode, message));
+                        aContext.fail(LOGGER.getMessage(MessageCodes.VSS_001, HTTP.Method.PUT, s3Key, statusCode,
+                                String.join(EOL, response.statusMessage(), body.toString())));
                     });
                 } else {
                     complete(asyncTask);
@@ -634,9 +621,8 @@ public class S3ClientIT extends AbstractS3IT {
 
                         if (statusCode != HTTP.OK) {
                             response.bodyHandler(body -> {
-                                final String message = String.join(EOL, response.statusMessage(), body.toString());
-                                aContext.fail(
-                                        LOGGER.getMessage(MessageCodes.VSS_001, HTTP.PUT, s3Key, statusCode, message));
+                                aContext.fail(LOGGER.getMessage(MessageCodes.VSS_001, HTTP.Method.PUT, s3Key,
+                                        statusCode, String.join(EOL, response.statusMessage(), body.toString())));
                             });
                         } else {
                             complete(asyncTask);
@@ -676,9 +662,9 @@ public class S3ClientIT extends AbstractS3IT {
                         if (statusCode != HTTP.OK) {
                             response.bodyHandler(body -> {
                                 final String message = String.join(EOL, response.statusMessage(), body.toString());
-                                final Object[] messageDetails = new Object[] { HTTP.PUT, s3Key, statusCode, message };
+                                final Object[] details = new Object[] { HTTP.Method.PUT, s3Key, statusCode, message };
 
-                                aContext.fail(LOGGER.getMessage(MessageCodes.VSS_001, messageDetails));
+                                aContext.fail(LOGGER.getMessage(MessageCodes.VSS_001, details));
                             });
                         } else {
                             complete(asyncTask);
@@ -718,9 +704,9 @@ public class S3ClientIT extends AbstractS3IT {
                         if (statusCode != HTTP.OK) {
                             response.bodyHandler(body -> {
                                 final String message = String.join(EOL, response.statusMessage(), body.toString());
-                                final Object[] messageDetails = new Object[] { HTTP.PUT, s3Key, statusCode, message };
+                                final Object[] details = new Object[] { HTTP.Method.PUT, s3Key, statusCode, message };
 
-                                aContext.fail(LOGGER.getMessage(MessageCodes.VSS_001, messageDetails));
+                                aContext.fail(LOGGER.getMessage(MessageCodes.VSS_001, details));
                             });
                         } else {
                             complete(asyncTask);
@@ -758,9 +744,9 @@ public class S3ClientIT extends AbstractS3IT {
                     if (statusCode != HTTP.NO_CONTENT) {
                         response.bodyHandler(body -> {
                             final String message = String.join(EOL, response.statusMessage(), body.toString());
-                            final Object[] messageDetails = new Object[] { HTTP.DELETE, s3Key, statusCode, message };
+                            final Object[] details = new Object[] { HTTP.Method.DELETE, s3Key, statusCode, message };
 
-                            aContext.fail(LOGGER.getMessage(MessageCodes.VSS_001, messageDetails));
+                            aContext.fail(LOGGER.getMessage(MessageCodes.VSS_001, details));
                         });
                     } else {
                         complete(asyncTask);
@@ -796,9 +782,9 @@ public class S3ClientIT extends AbstractS3IT {
                         if (statusCode != HTTP.OK) {
                             response.bodyHandler(body -> {
                                 final String message = String.join(EOL, response.statusMessage(), body.toString());
-                                final Object[] messageDetails = new Object[] { HTTP.PUT, s3Key, statusCode, message };
+                                final Object[] details = new Object[] { HTTP.Method.PUT, s3Key, statusCode, message };
 
-                                aContext.fail(LOGGER.getMessage(MessageCodes.VSS_001, messageDetails));
+                                aContext.fail(LOGGER.getMessage(MessageCodes.VSS_001, details));
                             });
                         } else {
                             complete(asyncTask);
@@ -837,9 +823,9 @@ public class S3ClientIT extends AbstractS3IT {
                     if (statusCode != HTTP.NO_CONTENT) {
                         response.bodyHandler(body -> {
                             final String message = String.join(EOL, response.statusMessage(), body.toString());
-                            final Object[] messageDetails = new Object[] { HTTP.DELETE, s3Key, statusCode, message };
+                            final Object[] details = new Object[] { HTTP.Method.DELETE, s3Key, statusCode, message };
 
-                            aContext.fail(LOGGER.getMessage(MessageCodes.VSS_001, messageDetails));
+                            aContext.fail(LOGGER.getMessage(MessageCodes.VSS_001, details));
                         });
                     } else {
                         complete(asyncTask);
@@ -855,7 +841,7 @@ public class S3ClientIT extends AbstractS3IT {
 
     @Override
     public Logger getLogger() {
-        return LoggerFactory.getLogger(S3ClientIT.class, BUNDLE_NAME);
+        return LoggerFactory.getLogger(S3ClientIT.class, MessageCodes.BUNDLE);
     }
 
     private boolean createResource(final String aResource, final TestContext aContext, final Async aAsync) {

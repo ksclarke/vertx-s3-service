@@ -4,7 +4,7 @@ package info.freelibrary.vertx.s3.service;
 import java.util.List;
 
 import info.freelibrary.vertx.s3.AwsCredentials;
-import info.freelibrary.vertx.s3.Profile;
+import info.freelibrary.vertx.s3.AwsProfile;
 import info.freelibrary.vertx.s3.S3Endpoint;
 
 import io.vertx.codegen.annotations.ProxyClose;
@@ -40,7 +40,7 @@ public interface S3ClientService {
      * @return The S3 client service
      */
     static S3ClientService createFromProfile(final Vertx aVertx, final String aProfileName) {
-        return new S3ClientServiceImpl(aVertx, new Profile(aProfileName));
+        return new S3ClientServiceImpl(aVertx, new AwsProfile(aProfileName));
     }
 
     /**
@@ -77,7 +77,7 @@ public interface S3ClientService {
      */
     static S3ClientService createProxyFromProfile(final Vertx aVertx, final String aProfileName,
             final String aAddress) {
-        return new S3ClientServiceProxyImpl(aVertx, new Profile(aProfileName), aAddress);
+        return new S3ClientServiceProxyImpl(aVertx, new AwsProfile(aProfileName), aAddress);
     }
 
     /**

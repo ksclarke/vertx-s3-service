@@ -8,6 +8,7 @@ import java.nio.file.Paths;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import info.freelibrary.util.HTTP;
 import info.freelibrary.util.Logger;
 import info.freelibrary.util.LoggerFactory;
 
@@ -24,7 +25,7 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 @RunWith(VertxUnitRunner.class)
 public class ExamplesIT {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ExamplesIT.class, Constants.BUNDLE_NAME);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ExamplesIT.class, MessageCodes.BUNDLE);
 
     /**
      * A simple (somewhat contrived) GET example.
@@ -36,7 +37,7 @@ public class ExamplesIT {
     public void testExample1(final TestContext aContext) {
         final Async asyncTask = aContext.async(); // Remove this from the docs
         final Vertx vertx = Vertx.vertx();
-        final S3Client s3Client = new S3Client(vertx, new Profile("vertx-s3"));
+        final S3Client s3Client = new S3Client(vertx, new AwsProfile("vertx-s3"));
         final String fileName = "ucla-library-logo.png";
         final Promise<File> promise = Promise.promise();
 
