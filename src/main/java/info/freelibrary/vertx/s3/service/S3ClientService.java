@@ -1,11 +1,9 @@
 
 package info.freelibrary.vertx.s3.service;
 
-import java.util.List;
-
 import info.freelibrary.vertx.s3.AwsCredentials;
 import info.freelibrary.vertx.s3.AwsProfile;
-import info.freelibrary.vertx.s3.S3Endpoint;
+import info.freelibrary.vertx.s3.S3ClientOptions;
 
 import io.vertx.codegen.annotations.ProxyClose;
 import io.vertx.codegen.annotations.ProxyGen;
@@ -44,16 +42,27 @@ public interface S3ClientService {
     }
 
     /**
+     * Creates a new S3 client service using the supplied Vert.x instance and AWS credentials profile.
+     *
+     * @param aVertx A Vert.x instance
+     * @param aCredentials AWS credentials
+     * @return The S3 client service
+     */
+    static S3ClientService createFromCreds(final Vertx aVertx, final AwsCredentials aCredentials) {
+        return new S3ClientServiceImpl(aVertx, aCredentials);
+    }
+
+    /**
      * Creates a new S3 client service using the supplied Vert.x instance, AWS credentials, and S3 endpoint.
      *
      * @param aVertx A Vert.x instance
      * @param aCredentials AWS credentials
-     * @param aEndpoint An S3 endpoint
+     * @param aConfig An S3 client config
      * @return The S3 client service
      */
     static S3ClientService createCustom(final Vertx aVertx, final AwsCredentials aCredentials,
-            final S3Endpoint aEndpoint) {
-        return new S3ClientServiceImpl(aVertx, aCredentials, aEndpoint);
+            final S3ClientOptions aConfig) {
+        return new S3ClientServiceImpl(aVertx, aCredentials, aConfig);
     }
 
     /**
@@ -81,18 +90,31 @@ public interface S3ClientService {
     }
 
     /**
+     * Creates a new S3 client service proxy using the supplied Vert.x instance and AWS credentials.
+     *
+     * @param aVertx A Vert.x instance
+     * @param aCredentials AWS credentials
+     * @param aAddress An address on the event bus
+     * @return The S3 client service
+     */
+    static S3ClientService createProxyFromCreds(final Vertx aVertx, final AwsCredentials aCredentials,
+            final String aAddress) {
+        return new S3ClientServiceProxyImpl(aVertx, aCredentials, aAddress);
+    }
+
+    /**
      * Creates a new S3 client service proxy using the supplied Vert.x instance, AWS credentials, S3 endpoint, and an
      * address on the event bus.
      *
      * @param aVertx A Vert.x instance
      * @param aCredentials AWS credentials
-     * @param aEndpoint An S3 endpoint
+     * @param aConfig An S3 client config
      * @param aAddress An address on the event bus
      * @return The S3 client service
      */
     static S3ClientService createCustomProxy(final Vertx aVertx, final AwsCredentials aCredentials,
-            final S3Endpoint aEndpoint, final String aAddress) {
-        return new S3ClientServiceProxyImpl(aVertx, aCredentials, aEndpoint, aAddress);
+            final S3ClientOptions aConfig, final String aAddress) {
+        return new S3ClientServiceProxyImpl(aVertx, aCredentials, aConfig, aAddress);
     }
 
     /**
@@ -113,25 +135,6 @@ public interface S3ClientService {
      * @param aResult The result of the GET
      */
     void getJSON(String aBucket, String aKey, Handler<AsyncResult<JsonObject>> aResult);
-
-    /**
-     * Puts a list of bytes to the S3 bucket.
-     *
-     * @param aBucket An S3 bucket
-     * @param aKey A key for the list of bytes
-     * @param aBytesList A list of bytes
-     * @param aResult The result of the PUT
-     */
-    void putBytes(String aBucket, String aKey, List<Byte> aBytesList, Handler<AsyncResult<Void>> aResult);
-
-    /**
-     * Gets a list of bytes from the S3 client service.
-     *
-     * @param aBucket An S3 bucket
-     * @param aKey A key for the list of bytes
-     * @param aResult The result of the GET
-     */
-    void getBytes(String aBucket, String aKey, Handler<AsyncResult<List<Byte>>> aResult);
 
     /**
      * Puts a file to the S3 bucket.

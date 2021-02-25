@@ -7,7 +7,7 @@
 -->
 
 <properties>
-  <entry key="message-class-name">info.freelibrary.vertx.s3.MessageCodes</entry>
+  <entry key="message-class-name">info.freelibrary.vertx.s3.util.MessageCodes</entry>
 
   <!-- Messages to be stored in the MessageCodes class -->
   <entry key="VSS-000">{}</entry>

@@ -3,8 +3,10 @@ package info.freelibrary.vertx.s3;
 
 import info.freelibrary.util.I18nRuntimeException;
 
+import info.freelibrary.vertx.s3.util.MessageCodes;
+
 /**
- * An I18n aware configuration exception.
+ * A vertx-s3-service configuration exception.
  */
 public class ConfigurationException extends I18nRuntimeException {
 
@@ -23,16 +25,16 @@ public class ConfigurationException extends I18nRuntimeException {
     /**
      * Creates a new configuration exception from the supplied I18n message key.
      *
-     * @param aMessageKey An I18n MessageCodes key
+     * @param aMessageKey A vertx-s3-service message key
      */
     public ConfigurationException(final String aMessageKey) {
         super(MessageCodes.BUNDLE, aMessageKey);
     }
 
     /**
-     * Creates a new configuration exception from the supplied I18n message key and additional details.
+     * Creates a new configuration exception from the supplied message key and additional details.
      *
-     * @param aMessageKey An I18n MessageCodes key
+     * @param aMessageKey A vertx-s3-service message key
      * @param aDetailsArray Additional details about the configuration exception
      */
     public ConfigurationException(final String aMessageKey, final Object... aDetailsArray) {

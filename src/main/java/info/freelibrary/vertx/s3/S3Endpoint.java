@@ -1,48 +1,42 @@
 
 package info.freelibrary.vertx.s3;
 
-import java.net.URL;
+import static info.freelibrary.util.Constants.COLON;
+import static info.freelibrary.util.Constants.SLASH;
 
-import info.freelibrary.util.MalformedUrlRuntimeException;
+import java.net.URI;
 
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
 
 /**
- * An S3 endpoint in SafeURL form.
+ * An S3 endpoint.
  */
 @DataObject
-public class S3Endpoint extends info.freelibrary.util.SafeURL {
+public class S3Endpoint {
 
-    private static final String URL = "URL";
+    public static final String PROPERTY = "endpoint";
+
+    private static final String SCHEME_DELIM = COLON + SLASH + SLASH;
+
+    private final URI myURI;
 
     /**
-     * Creates a new S3 endpoint from the supplied SafeURL.
+     * Creates a new S3 endpoint from the supplied URI.
      *
-     * @param aURL A SafeURL representing the S3 endpoint
+     * @param aURI A URI representing the S3 endpoint
      */
-    public S3Endpoint(final URL aURL) {
-        super(aURL);
+    public S3Endpoint(final URI aURI) {
+        myURI = aURI;
     }
 
     /**
-     * Creates a new S3 endpoint from the JSON object. The JSON object should just contain one property: URL.
+     * Creates a new S3 endpoint from a URI supplied in string form.
      *
-     * @param aJsonObject A JSON encapsulation of the S3 endpoint
-     * @throws MalformedUrlRuntimeException If the value in the supplied JsonObject isn't a valid SafeURL
+     * @param aString An S3 endpoint URI in string form
      */
-    public S3Endpoint(final JsonObject aJsonObject) throws MalformedUrlRuntimeException {
-        super(aJsonObject.getString(URL));
-    }
-
-    /**
-     * Creates a new S3 endpoint from a URL supplied in string form.
-     *
-     * @param aString An S3 endpoint SafeURL in string form
-     * @throws MalformedUrlRuntimeException If the supplied string isn't a valid SafeURL
-     */
-    public S3Endpoint(final String aString) throws MalformedUrlRuntimeException {
-        super(aString);
+    public S3Endpoint(final String aString) {
+        myURI = URI.create(aString);
     }
 
     /**
@@ -51,11 +45,44 @@ public class S3Endpoint extends info.freelibrary.util.SafeURL {
      * @param aProtocol A protocol (i.e., "http" or "https")
      * @param aHost A host
      * @param aFile A file
-     * @throws MalformedUrlRuntimeException If the supplied values don't combine to form a valid SafeURL
      */
-    public S3Endpoint(final String aProtocol, final String aHost, final String aFile)
-            throws MalformedUrlRuntimeException {
-        super(aProtocol, aHost, aFile);
+    public S3Endpoint(final String aProtocol, final String aHost, final String aFile) {
+        myURI = URI.create(aProtocol + SCHEME_DELIM + aHost + SLASH + aFile);
+    }
+
+    /**
+     * Creates a new endpoint from a JSON serialization.
+     */
+    @SuppressWarnings("unused")
+    private S3Endpoint(final JsonObject aJsonObject) {
+        myURI = URI.create(aJsonObject.getString(PROPERTY));
+    }
+
+    /**
+     * Gets the host of this S3 endpoint.
+     *
+     * @return The S3 endpoint host
+     */
+    public String getHost() {
+        return myURI.getHost();
+    }
+
+    /**
+     * Gets the protocol of this S3 endpoint.
+     *
+     * @return The S3 endpoint protocol
+     */
+    public String getProtocol() {
+        return myURI.getScheme();
+    }
+
+    /**
+     * Gets the port of this S3 endpoint.
+     *
+     * @return The S3 endpoint port
+     */
+    public int getPort() {
+        return myURI.getPort();
     }
 
     /**
@@ -64,6 +91,7 @@ public class S3Endpoint extends info.freelibrary.util.SafeURL {
      * @return A JSON object representation of the AWS credentials
      */
     public JsonObject toJson() {
-        return new JsonObject().put(URL, toString());
+        return new JsonObject().put(PROPERTY, toString());
     }
+
 }

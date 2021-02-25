@@ -17,6 +17,7 @@ import com.amazonaws.services.s3.model.S3Object;
 
 import info.freelibrary.vertx.s3.AbstractS3FT;
 import info.freelibrary.vertx.s3.AwsCredentials;
+import info.freelibrary.vertx.s3.S3ClientOptions;
 import info.freelibrary.vertx.s3.TestConstants;
 
 import io.vertx.core.json.JsonObject;
@@ -66,7 +67,6 @@ public class S3ClientServiceImplFT extends AbstractS3FT {
      * @param aContext A testing context
      */
     @Test
-    @Ignore
     public void testS3ClientServiceImplVertx(final TestContext aContext) {
         final S3ClientService service = new S3ClientServiceImpl(myTestContext.vertx());
         final Async asyncTask = aContext.async();
@@ -88,26 +88,15 @@ public class S3ClientServiceImplFT extends AbstractS3FT {
     }
 
     /**
-     * Tests the constructor that takes an AWS credentials profile.
-     *
-     * @param aContext A testing context
-     */
-    @Test
-    @Ignore
-    public void testS3ClientServiceImplVertxProfile(final TestContext aContext) {
-
-    }
-
-    /**
      * Tests putting a resource to S3.
      *
      * @param aContext A testing context
      */
     @Test
-    @Ignore
     public void testPutJSON(final TestContext aContext) {
         final AwsCredentials credentials = new AwsCredentials(myAccessKey, mySecretKey);
-        final S3ClientService service = new S3ClientServiceImpl(myTestContext.vertx(), credentials, myEndpoint);
+        final S3ClientOptions config = new S3ClientOptions().setEndpoint(myEndpoint);
+        final S3ClientService service = new S3ClientServiceImpl(myTestContext.vertx(), credentials, config);
         final Async asyncTask = aContext.async();
 
         service.putJSON(myBucket, myKey, new JsonObject().put(TestConstants.ID, myKey), put -> {
@@ -130,7 +119,8 @@ public class S3ClientServiceImplFT extends AbstractS3FT {
     public void testGetJSON(final TestContext aContext) throws SdkClientException, AmazonServiceException {
         final String content = new JsonObject().put(TestConstants.ID, myKey).encodePrettily();
         final AwsCredentials credentials = new AwsCredentials(myAccessKey, mySecretKey);
-        final S3ClientService service = new S3ClientServiceImpl(myTestContext.vertx(), credentials, myEndpoint);
+        final S3ClientOptions config = new S3ClientOptions().setEndpoint(myEndpoint);
+        final S3ClientService service = new S3ClientServiceImpl(myTestContext.vertx(), credentials, config);
         final Async asyncTask = aContext.async();
 
         // PUT the object that we test into our test S3 bucket

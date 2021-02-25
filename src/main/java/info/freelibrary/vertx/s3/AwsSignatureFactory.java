@@ -6,6 +6,8 @@ import java.util.Optional;
 
 import info.freelibrary.util.I18nRuntimeException;
 
+import info.freelibrary.vertx.s3.util.MessageCodes;
+
 /**
  * An AWS signature factory from which S3 authentication signatures can be created.
  */

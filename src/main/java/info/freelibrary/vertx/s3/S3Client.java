@@ -9,19 +9,15 @@ import info.freelibrary.util.StringUtils;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.file.AsyncFile;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServerFileUpload;
 import io.vertx.core.streams.ReadStream;
 
 /**
@@ -31,13 +27,11 @@ import io.vertx.core.streams.ReadStream;
 public class S3Client {
 
     /** Default S3 endpoint */
-    public static final S3Endpoint DEFAULT_ENDPOINT = new S3Endpoint("https://s3.amazonaws.com");
+    static final S3Endpoint DEFAULT_ENDPOINT = new S3Endpoint("https://s3.amazonaws.com");
 
     private static final String LIST_CMD = "?list-type=2";
 
     private static final String PREFIX_LIST_CMD = "?list-type=2&prefix=";
-
-    private static final String HTTP_PROTOCOL = "http";
 
     private static final String REQUEST = "/{}/{}";
 
@@ -48,143 +42,75 @@ public class S3Client {
     private final HttpClient myHttpClient;
 
     /**
-     * Creates a new S3 client from the supplied AWS credentials and HttpClient.
-     *
-     * @param aCredentials AWS credentials for the S3Client
-     * @param aHttpClient A Vert.x HttpClient to use from the S3Client
-     */
-    protected S3Client(final AwsCredentials aCredentials, final HttpClient aHttpClient) {
-        myCredentials = aCredentials;
-        myHttpClient = aHttpClient;
-    }
-
-    /**
      * Creates a new S3 client using system defined AWS credentials and the default S3 endpoint.
      *
      * @param aVertx A Vert.x instance from which to create the <code>HttpClient</code>
      */
     public S3Client(final Vertx aVertx) {
-        this(new AwsCredentialsProviderChain().getCredentials(), getHttpClient(aVertx, (HttpClientOptions) null));
-    }
-
-    /**
-     * Creates a new S3 client using AWS credentials from a system defined profile and the default S3 endpoint.
-     *
-     * @param aProfile The name of a profile in the system AWS credentials
-     * @param aVertx A Vert.x instance from which to create the <code>HttpClient</code>
-     */
-    public S3Client(final Vertx aVertx, final AwsProfile aProfile) {
-        this(aProfile.getCredentials(), getHttpClient(aVertx, (HttpClientOptions) null));
-    }
-
-    /**
-     * Creates a new S3 client using AWS credentials from a system defined profile and the supplied HttpClient options.
-     *
-     * @param aVertx A Vert.x instance from which to create the <code>HttpClient</code>
-     * @param aConfig A configuration for the internal HttpClient
-     * @param aProfile An AWS credentials profile
-     */
-    public S3Client(final Vertx aVertx, final AwsProfile aProfile, final HttpClientOptions aConfig) {
-        this(aProfile.getCredentials(), getHttpClient(aVertx, aConfig));
-    }
-
-    /**
-     * Creates a new S3 client using AWS credentials from a system defined profile and the supplied S3
-     * <a href="https://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region">endpoint</a>.
-     *
-     * @param aVertx A Vert.x instance from which to create the <code>HttpClient</code>
-     * @param aProfile An AWS credentials profile
-     * @param aEndpoint An S3 endpoint
-     */
-    public S3Client(final Vertx aVertx, final AwsProfile aProfile, final S3Endpoint aEndpoint) {
-        this(aProfile.getCredentials(), getHttpClient(aVertx, getHttpOptions(aEndpoint)));
+        this(new AwsCredentialsProviderChain().getCredentials(), getHttpClient(aVertx, (S3ClientOptions) null));
     }
 
     /**
      * Creates a new S3 client using system defined AWS credentials and the supplied HttpClient options.
      *
-     * @param aVertx A Vert.x instance from which to create the <code>HttpClient</code>
+     * @param aVertx A Vert.x instance from which to create the S3 client
      * @param aConfig A configuration for the internal HttpClient
      */
-    public S3Client(final Vertx aVertx, final HttpClientOptions aConfig) {
+    public S3Client(final Vertx aVertx, final S3ClientOptions aConfig) {
         this(new AwsCredentialsProviderChain().getCredentials(), getHttpClient(aVertx, aConfig));
     }
 
     /**
-     * Creates a new S3 client using system defined AWS credentials and the supplied S3
-     * <a href="https://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region">endpoint</a>.
+     * Creates a new S3 client using AWS credentials from a system defined profile and the default S3 endpoint.
      *
-     * @param aVertx A Vert.x instance from which to create the <code>HttpClient</code>
-     * @param aEndpoint An S3 endpoint
+     * @param aVertx A Vert.x instance from which to create the S3 client
+     * @param aProfile The name of a profile in the system AWS credentials
      */
-    public S3Client(final Vertx aVertx, final S3Endpoint aEndpoint) {
-        this(new AwsCredentialsProviderChain().getCredentials(), getHttpClient(aVertx, getHttpOptions(aEndpoint)));
+    public S3Client(final Vertx aVertx, final AwsProfile aProfile) {
+        this(aProfile.getCredentials(), getHttpClient(aVertx, (S3ClientOptions) null));
     }
 
     /**
-     * Creates a new S3 client using the supplied access and secret keys.
+     * Creates a new S3 client using AWS credentials from a system defined profile and the supplied S3 client options.
      *
-     * @param aVertx A Vert.x instance from which to create the <code>HttpClient</code>
-     * @param aAccessKey An S3 access key
-     * @param aSecretKey An S3 secret key
+     * @param aVertx A Vert.x instance from which to create the S3 client
+     * @param aProfile An AWS credentials profile
+     * @param aConfig An S3 client configuration
      */
-    public S3Client(final Vertx aVertx, final String aAccessKey, final String aSecretKey) {
-        this(aVertx, aAccessKey, aSecretKey, null, (HttpClientOptions) null);
+    public S3Client(final Vertx aVertx, final AwsProfile aProfile, final S3ClientOptions aConfig) {
+        this(aProfile.getCredentials(), getHttpClient(aVertx, aConfig));
     }
 
     /**
-     * Creates a new S3 client using the supplied access key, secret key, and HttpClient options.
+     * Creates a new S3 client using the supplied AWS credentials.
      *
-     * @param aVertx A Vert.x instance from which to create the <code>HttpClient</code>
-     * @param aAccessKey An S3 access key
-     * @param aSecretKey An S3 secret key
-     * @param aConfig A configuration for the internal HttpClient
+     * @param aVertx A Vert.x instance from which to create the S3 client
+     * @param aCredentials AWS credentials
      */
-    public S3Client(final Vertx aVertx, final String aAccessKey, final String aSecretKey,
-            final HttpClientOptions aConfig) {
-        this(aVertx, aAccessKey, aSecretKey, null, aConfig);
+    public S3Client(final Vertx aVertx, final AwsCredentials aCredentials) {
+        this(aCredentials, getHttpClient(aVertx, (S3ClientOptions) null));
     }
 
     /**
-     * Creates a new S3 client using the supplied access key, secret key, and S3
-     * <a href="https://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region">endpoint</a>.
+     * Creates a new S3 client using the supplied AWS credentials and the supplied S3 client options.
      *
-     * @param aVertx A Vert.x instance from which to create the <code>HttpClient</code>
-     * @param aAccessKey An S3 access key
-     * @param aSecretKey An S3 secret key
-     * @param aEndpoint An S3 endpoint
+     * @param aVertx A Vert.x instance from which to create the S3 client
+     * @param aCredentials AWS credentials
+     * @param aConfig An S3 client configuration
      */
-    public S3Client(final Vertx aVertx, final String aAccessKey, final String aSecretKey, final S3Endpoint aEndpoint) {
-        this(aVertx, aAccessKey, aSecretKey, null, getHttpOptions(aEndpoint));
+    public S3Client(final Vertx aVertx, final AwsCredentials aCredentials, final S3ClientOptions aConfig) {
+        this(aCredentials, getHttpClient(aVertx, aConfig));
     }
 
     /**
-     * Creates a new S3 client using the supplied access key, secret key, session token, and HttpClient options.
+     * Creates a new S3 client from the supplied AWS credentials and HttpClient.
      *
-     * @param aVertx A Vert.x instance from which to create the <code>HttpClient</code>
-     * @param aAccessKey An S3 access key
-     * @param aSecretKey An S3 secret key
-     * @param aSessionToken An S3 session token
-     * @param aConfig A configuration of HTTP options to use when connecting
+     * @param aCredentials AWS credentials for the S3Client
+     * @param aHttpClient A Vert.x HttpClient to use from the S3Client
      */
-    public S3Client(final Vertx aVertx, final String aAccessKey, final String aSecretKey, final String aSessionToken,
-            final HttpClientOptions aConfig) {
-        this(getCredentials(aAccessKey, aSecretKey, aSessionToken), getHttpClient(aVertx, aConfig));
-    }
-
-    /**
-     * Creates a new S3 client using the supplied access key, secret key, session token, and S3
-     * <a href="https://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region">endpoint</a>.
-     *
-     * @param aVertx A Vert.x instance from which to create the <code>HttpClient</code>
-     * @param aAccessKey An S3 access key
-     * @param aSecretKey An S3 secret key
-     * @param aSessionToken An S3 session token
-     * @param aEndpoint An S3 endpoint
-     */
-    public S3Client(final Vertx aVertx, final String aAccessKey, final String aSecretKey, final String aSessionToken,
-            final S3Endpoint aEndpoint) {
-        this(getCredentials(aAccessKey, aSecretKey, aSessionToken), getHttpClient(aVertx, getHttpOptions(aEndpoint)));
+    private S3Client(final AwsCredentials aCredentials, final HttpClient aHttpClient) {
+        myCredentials = aCredentials;
+        myHttpClient = aHttpClient;
     }
 
     /**
@@ -213,9 +139,7 @@ public class S3Client {
      * @param aKey An S3 key
      * @param aHandler A response handler
      * @param aExceptionHandler An exception handler
-     * @deprecated
      */
-    @Deprecated
     public void delete(final String aBucket, final String aKey, final Handler<AsyncResult<HttpClientResponse>> aHandler,
             final Handler<Throwable> aExceptionHandler) {
         createDeleteRequest(aBucket, aKey).onComplete(deleteRequest -> {
@@ -249,9 +173,7 @@ public class S3Client {
      * @param aKey An S3 key
      * @param aHandler A response handler
      * @param aExceptionHandler An exception handler
-     * @deprecated
      */
-    @Deprecated
     public void get(final String aBucket, final String aKey, final Handler<AsyncResult<HttpClientResponse>> aHandler,
             final Handler<Throwable> aExceptionHandler) {
         createGetRequest(aBucket, aKey).onComplete(getRequest -> {
@@ -264,14 +186,14 @@ public class S3Client {
      *
      * @param aBucket An S3 bucket
      * @param aKey An S3 key
-     * @return A future with the HEAD buffer
+     * @return A future with the response headers
      */
-    public Future<MultiMap> head(final String aBucket, final String aKey) {
+    public Future<HttpHeaders> head(final String aBucket, final String aKey) {
         return createHeadRequest(aBucket, aKey).compose(request -> request.send().compose(response -> {
             final int statusCode = response.statusCode();
 
             if (statusCode == HTTP.OK) {
-                return Future.succeededFuture(response.headers());
+                return Future.succeededFuture(new HttpHeaders(response.headers()));
             } else {
                 return Future.failedFuture(new UnexpectedStatusException(statusCode, response.statusMessage()));
             }
@@ -285,9 +207,7 @@ public class S3Client {
      * @param aKey An S3 key
      * @param aHandler A response handler
      * @param aExceptionHandler An exception handler
-     * @deprecated
      */
-    @Deprecated
     public void head(final String aBucket, final String aKey, final Handler<AsyncResult<HttpClientResponse>> aHandler,
             final Handler<Throwable> aExceptionHandler) {
         createHeadRequest(aBucket, aKey).onComplete(headRequest -> {
@@ -329,9 +249,7 @@ public class S3Client {
      * @param aBucket A bucket from which to get a listing
      * @param aHandler A response handler
      * @param aExceptionHandler An exception handler
-     * @deprecated
      */
-    @Deprecated
     public void list(final String aBucket, final Handler<AsyncResult<HttpClientResponse>> aHandler,
             final Handler<Throwable> aExceptionHandler) {
         createGetRequest(aBucket, LIST_CMD).onComplete(getRequest -> {
@@ -376,64 +294,11 @@ public class S3Client {
      * @param aPrefix A prefix to use to limit which objects are listed
      * @param aHandler A response handler
      * @param aExceptionHandler An exception handler
-     * @deprecated
      */
-    @Deprecated
     public void list(final String aBucket, final String aPrefix,
             final Handler<AsyncResult<HttpClientResponse>> aHandler, final Handler<Throwable> aExceptionHandler) {
         createGetRequest(aBucket, PREFIX_LIST_CMD + aPrefix).onComplete(getRequest -> {
             getRequest.result().response(aHandler).exceptionHandler(aExceptionHandler).end();
-        });
-    }
-
-    /**
-     * Uploads the file contents to S3.
-     *
-     * @param aBucket An S3 bucket
-     * @param aKey An S3 key
-     * @param aFile A file to upload
-     * @param aHandler A response handler for the upload
-     * @param aExceptionHandler An exception handler
-     * @deprecated
-     */
-    @Deprecated
-    public void put(final String aBucket, final String aKey, final AsyncFile aFile,
-            final Handler<AsyncResult<HttpClientResponse>> aHandler, final Handler<Throwable> aExceptionHandler) {
-        put(aBucket, aKey, aFile, null, aHandler, aExceptionHandler);
-    }
-
-    /**
-     * Uploads the file contents to S3. Logs any exceptions.
-     *
-     * @param aBucket An S3 bucket
-     * @param aKey An S3 key
-     * @param aFile A file to upload
-     * @param aMetadata User metadata to set on the S3 object
-     * @param aHandler A response handler for the upload
-     * @param aExceptionHandler An exception handler for the upload
-     * @deprecated
-     */
-    @Deprecated
-    public void put(final String aBucket, final String aKey, final AsyncFile aFile, final UserMetadata aMetadata,
-            final Handler<AsyncResult<HttpClientResponse>> aHandler, final Handler<Throwable> aExceptionHandler) {
-        createPutRequest(aBucket, aKey).onComplete(putRequest -> {
-            final S3ClientRequest request = putRequest.result();
-            final Buffer buffer = Buffer.buffer();
-
-            if (aMetadata != null) {
-                request.setUserMetadata(aMetadata);
-            }
-
-            aFile.handler(data -> {
-                buffer.appendBuffer(data);
-            });
-
-            aFile.endHandler(event -> {
-                request.putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(buffer.length()));
-                request.end(buffer);
-            });
-
-            request.response(aHandler).exceptionHandler(aExceptionHandler);
         });
     }
 
@@ -445,12 +310,12 @@ public class S3Client {
      * @param aBuffer A buffer to PUT
      * @return A future indicating when the buffer has been uploaded
      */
-    public Future<Void> put(final String aBucket, final String aKey, final Buffer aBuffer) {
+    public Future<HttpHeaders> put(final String aBucket, final String aKey, final Buffer aBuffer) {
         return createPutRequest(aBucket, aKey).compose(request -> request.send(aBuffer).compose(response -> {
             final int statusCode = response.statusCode();
 
             if (statusCode == HTTP.OK) {
-                return Future.succeededFuture();
+                return Future.succeededFuture(new HttpHeaders(response.headers()));
             } else {
                 return Future.failedFuture(new UnexpectedStatusException(statusCode, response.statusMessage()));
             }
@@ -465,9 +330,7 @@ public class S3Client {
      * @param aBuffer A data buffer
      * @param aHandler A response handler
      * @param aExceptionHandler An exception handler
-     * @deprecated
      */
-    @Deprecated
     public void put(final String aBucket, final String aKey, final Buffer aBuffer,
             final Handler<AsyncResult<HttpClientResponse>> aHandler, final Handler<Throwable> aExceptionHandler) {
         createPutRequest(aBucket, aKey).onComplete(putRequest -> {
@@ -484,14 +347,14 @@ public class S3Client {
      * @param aMetadata A metadata object
      * @return A future indicating when the buffer has been uploaded
      */
-    public Future<Void> put(final String aBucket, final String aKey, final Buffer aBuffer,
+    public Future<HttpHeaders> put(final String aBucket, final String aKey, final Buffer aBuffer,
             final UserMetadata aMetadata) {
         final Future<S3ClientRequest> futurePut = createPutRequest(aBucket, aKey);
         return futurePut.compose(request -> request.setUserMetadata(aMetadata).send(aBuffer).compose(response -> {
             final int statusCode = response.statusCode();
 
             if (statusCode == HTTP.OK) {
-                return Future.succeededFuture();
+                return Future.succeededFuture(new HttpHeaders(response.headers()));
             } else {
                 return Future.failedFuture(new UnexpectedStatusException(statusCode, response.statusMessage()));
             }
@@ -505,11 +368,9 @@ public class S3Client {
      * @param aKey An S3 key
      * @param aBuffer A data buffer
      * @param aMetadata User metadata that should be set on the S3 object
-     * @param aHandler A response handler
+     * @param aHandler An upload response handler
      * @param aExceptionHandler An exception handler
-     * @deprecated
      */
-    @Deprecated
     public void put(final String aBucket, final String aKey, final Buffer aBuffer, final UserMetadata aMetadata,
             final Handler<AsyncResult<HttpClientResponse>> aHandler, final Handler<Throwable> aExceptionHandler) {
         createPutRequest(aBucket, aKey).onComplete(putRequest -> {
@@ -526,12 +387,12 @@ public class S3Client {
      * @param aReadStream A stream from which to read the buffer
      * @return A future indicating when the buffer has been uploaded
      */
-    public Future<Void> put(final String aBucket, final String aKey, final ReadStream<Buffer> aReadStream) {
+    public Future<HttpHeaders> put(final String aBucket, final String aKey, final ReadStream<Buffer> aReadStream) {
         return createPutRequest(aBucket, aKey).compose(request -> request.send(aReadStream).compose(response -> {
             final int statusCode = response.statusCode();
 
             if (statusCode == HTTP.OK) {
-                return Future.succeededFuture();
+                return Future.succeededFuture(new HttpHeaders(response.headers()));
             } else {
                 return Future.failedFuture(new UnexpectedStatusException(statusCode, response.statusMessage()));
             }
@@ -543,15 +404,13 @@ public class S3Client {
      *
      * @param aBucket An S3 bucket
      * @param aKey An S3 key
-     * @param aUpload An HttpServerFileUpload
+     * @param aReadStream A stream from which to read the content to be sent
      * @param aHandler An upload response handler
      * @param aExceptionHandler An exception handler
-     * @deprecated
      */
-    @Deprecated
-    public void put(final String aBucket, final String aKey, final HttpServerFileUpload aUpload,
-            final Handler<HttpClientResponse> aHandler, final Handler<Throwable> aExceptionHandler) {
-        put(aBucket, aKey, aUpload, aHandler, aExceptionHandler);
+    public void put(final String aBucket, final String aKey, final ReadStream<Buffer> aReadStream,
+            final Handler<AsyncResult<HttpClientResponse>> aHandler, final Handler<Throwable> aExceptionHandler) {
+        put(aBucket, aKey, aReadStream, null, aHandler, aExceptionHandler);
     }
 
     /**
@@ -563,14 +422,14 @@ public class S3Client {
      * @param aMetadata A metadata object
      * @return A future indicating when the buffer has been uploaded
      */
-    public Future<Void> put(final String aBucket, final String aKey, final ReadStream<Buffer> aReadStream,
+    public Future<HttpHeaders> put(final String aBucket, final String aKey, final ReadStream<Buffer> aReadStream,
             final UserMetadata aMetadata) {
         final Future<S3ClientRequest> futurePut = createPutRequest(aBucket, aKey);
         return futurePut.compose(request -> request.setUserMetadata(aMetadata).send(aReadStream).compose(response -> {
             final int statusCode = response.statusCode();
 
             if (statusCode == HTTP.OK) {
-                return Future.succeededFuture();
+                return Future.succeededFuture(new HttpHeaders(response.headers()));
             } else {
                 return Future.failedFuture(new UnexpectedStatusException(statusCode, response.statusMessage()));
             }
@@ -582,34 +441,23 @@ public class S3Client {
      *
      * @param aBucket An S3 bucket
      * @param aKey An S3 key
-     * @param aUpload An HttpServerFileUpload
+     * @param aReadStream A stream from which to read the content to be sent
      * @param aMetadata User metadata to set on the uploaded S3 object
      * @param aHandler An upload response handler
      * @param aExceptionHandler An upload exception handler
-     * @deprecated
      */
-    @Deprecated
-    public void put(final String aBucket, final String aKey, final HttpServerFileUpload aUpload,
+    public void put(final String aBucket, final String aKey, final ReadStream<Buffer> aReadStream,
             final UserMetadata aMetadata, final Handler<AsyncResult<HttpClientResponse>> aHandler,
             final Handler<Throwable> aExceptionHandler) {
         createPutRequest(aBucket, aKey).onComplete(putRequest -> {
             final S3ClientRequest request = putRequest.result();
-            final Buffer buffer = Buffer.buffer();
 
             if (aMetadata != null) {
                 request.setUserMetadata(aMetadata);
             }
 
-            aUpload.handler(data -> {
-                buffer.appendBuffer(data);
-            });
-
-            aUpload.endHandler(event -> {
-                request.putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(buffer.length()));
-                request.end(buffer);
-            });
-
             request.response(aHandler).exceptionHandler(aExceptionHandler);
+            request.send(aReadStream);
         });
     }
 
@@ -626,7 +474,7 @@ public class S3Client {
      * @param aHandler A connection handler
      * @return This S3 client
      */
-    public S3Client connectionHandler(final Handler<HttpConnection> aHandler) {
+    S3Client connectionHandler(final Handler<HttpConnection> aHandler) {
         myHttpClient.connectionHandler(aHandler);
         return this;
     }
@@ -715,38 +563,16 @@ public class S3Client {
     }
 
     /**
-     * A convenience method to get AWS credentials for some supplied information.
-     *
-     * @param aAccessKey An S3 access key
-     * @param aSecretKey An S3 secret key
-     * @param aSessionToken A token from an existing session
-     * @return AWS credentials representing the supplied information
-     */
-    private static AwsCredentials getCredentials(final String aAccessKey, final String aSecretKey,
-            final String aSessionToken) {
-        final AwsCredentials credentials;
-
-        if (aSessionToken != null) {
-            credentials = new AwsCredentials(aAccessKey, aSecretKey, aSessionToken);
-        } else {
-            credentials = new AwsCredentials(aAccessKey, aSecretKey);
-        }
-
-        return credentials;
-    }
-
-    /**
      * A convenience method to create a new HttpClient for use by our S3 client.
      *
      * @param aVertx A Vert.x instance
-     * @param aConfig A HttpClient configuration
+     * @param aConfig A S3 client configuration
      * @return A newly created HttpClient
      */
-    private static HttpClient getHttpClient(final Vertx aVertx, final HttpClientOptions aConfig) {
+    private static HttpClient getHttpClient(final Vertx aVertx, final S3ClientOptions aConfig) {
         final HttpClient httpClient;
 
         if (aConfig != null && aConfig.getDefaultHost() != null && aConfig.getDefaultPort() != -1) {
-            // If someone has submitted an HTTP client config, trust they know what they're doing
             httpClient = aVertx.createHttpClient(aConfig);
         } else {
             final HttpClientOptions options = new HttpClientOptions().setSsl(true).setDefaultPort(443);
@@ -756,42 +582,4 @@ public class S3Client {
         return httpClient;
     }
 
-    /**
-     * Creates HTTP client options from the supplied endpoint SafeURL.
-     *
-     * @param aEndpoint A user supplied S3 endpoint
-     * @return HTTP client options
-     */
-    private static HttpClientOptions getHttpOptions(final S3Endpoint aEndpoint) {
-        final HttpClientOptions clientOptions = new HttpClientOptions();
-        final String host = StringUtils.trimToNull(aEndpoint.getHost());
-        final String protocol = aEndpoint.getProtocol();
-        final int port = aEndpoint.getPort();
-
-        // If there is a supplied host, set it in the client options
-        if (host != null) {
-            clientOptions.setDefaultHost(host);
-        }
-
-        // An exception has been thrown if there is no protocol
-        if (protocol.equals(HTTP_PROTOCOL)) {
-            clientOptions.setSsl(false);
-
-            if (port != -1) {
-                clientOptions.setDefaultPort(port);
-            } else {
-                clientOptions.setDefaultPort(80);
-            }
-        } else {
-            clientOptions.setSsl(true);
-
-            if (port != -1) {
-                clientOptions.setDefaultPort(port);
-            } else {
-                clientOptions.setDefaultPort(443);
-            }
-        }
-
-        return clientOptions;
-    }
 }

@@ -10,6 +10,8 @@ import info.freelibrary.util.Logger;
 import info.freelibrary.util.LoggerFactory;
 import info.freelibrary.util.StringUtils;
 
+import info.freelibrary.vertx.s3.util.MessageCodes;
+
 /**
  * S3 user metadata.
  */

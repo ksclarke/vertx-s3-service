@@ -47,7 +47,6 @@
 
     <!-- Keep both Jackson versions separate since they often have their own security issues -->
     <jackson.version> 2.12.1</jackson.version>
-    <jackson.databind.version>2.12.1</jackson.databind.version>
 
     <!-- Testing versions -->
     <jaxb.runtime.version>2.4.0-b180830.0438</jaxb.runtime.version>
@@ -104,7 +103,7 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <version>${jackson.databind.version}</version>
+      <version>${jackson.version}</version>
     </dependency>
     <dependency>
       <groupId>io.vertx</groupId>
@@ -112,9 +111,13 @@
     </dependency>
     <dependency>
       <groupId>io.vertx</groupId>
+      <artifactId>vertx-lang-ruby</artifactId>
+      <version>4.0.0-milestone4</version>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
       <artifactId>vertx-codegen</artifactId>
       <classifier>processor</classifier>
-      <!-- <scope>provided</scope> -->
     </dependency>
     <dependency>
       <groupId>io.vertx</groupId>
@@ -172,7 +175,36 @@
   </dependencies>
 
   <build>
+    <pluginManagement>
+      <plugins>
+        <!-- Added to process codegen annotations before project's source code is compiled -->
+        <plugin>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <configuration>
+            <useIncrementalCompilation>false</useIncrementalCompilation>
+            <generatedSourcesDirectory>src/main/generated</generatedSourcesDirectory>
+            <generatedTestSourcesDirectory>src/test/generated</generatedTestSourcesDirectory>
+          </configuration>
+          <executions>
+            <execution>
+              <id>default-compile</id>
+              <configuration>
+                <annotationProcessors>
+                  <annotationProcessor>io.vertx.codegen.CodeGenProcessor</annotationProcessor>
+                </annotationProcessors>
+                <compilerArgs>
+                  <arg>-Acodegen.output=${project.basedir}/src/main/generated</arg>
+                </compilerArgs>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+    </pluginManagement>
     <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+      </plugin>
       <plugin>
         <groupId>io.fabric8</groupId>
         <artifactId>docker-maven-plugin</artifactId>

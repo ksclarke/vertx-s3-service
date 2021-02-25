@@ -1,6 +1,8 @@
 
 package info.freelibrary.vertx.s3;
 
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.UUID;
@@ -16,6 +18,8 @@ import com.amazonaws.services.s3.model.S3Object;
 import info.freelibrary.util.HTTP;
 import info.freelibrary.util.Logger;
 import info.freelibrary.util.LoggerFactory;
+
+import info.freelibrary.vertx.s3.util.MessageCodes;
 
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
@@ -57,7 +61,9 @@ public class S3ClientFT extends AbstractS3FT {
      */
     @Before
     public void setUp(final TestContext aContext) {
-        myTestClient = new S3Client(myContext.vertx(), myAccessKey, mySecretKey, myEndpoint);
+        final AwsCredentials creds = new AwsCredentials(myAccessKey, mySecretKey);
+
+        myTestClient = new S3Client(myContext.vertx(), creds, new S3ClientOptions().setEndpoint(myEndpoint));
         myBucket = UUID.randomUUID().toString();
         myKey = UUID.randomUUID().toString();
 
@@ -79,7 +85,7 @@ public class S3ClientFT extends AbstractS3FT {
 
         myTestClient.head(myBucket, myKey).onComplete(head -> {
             if (head.succeeded()) {
-                aContext.assertEquals("85", head.result().get(HTTP.Header.CONTENT_LENGTH));
+                aContext.assertEquals("85", head.result().get(HttpHeaders.CONTENT_LENGTH));
                 complete(asyncTask);
             } else {
                 aContext.fail(head.cause());
@@ -93,7 +99,6 @@ public class S3ClientFT extends AbstractS3FT {
      * @param aContext A test context
      */
     @Test
-    @SuppressWarnings("deprecation")
     public final void testHeadBucketKeyWithHandler(final TestContext aContext) {
         final Async asyncTask = aContext.async();
 
@@ -105,7 +110,7 @@ public class S3ClientFT extends AbstractS3FT {
                 final int statusCode = response.statusCode();
 
                 if (statusCode == HTTP.OK) {
-                    aContext.assertEquals(85, Integer.parseInt(response.getHeader(HTTP.Header.CONTENT_LENGTH)));
+                    aContext.assertEquals(85, Integer.parseInt(response.getHeader(HttpHeaders.CONTENT_LENGTH)));
                     complete(asyncTask);
                 } else {
                     aContext.fail(LOGGER.getMessage(MessageCodes.VSS_017, statusCode, response.statusMessage()));
@@ -145,7 +150,6 @@ public class S3ClientFT extends AbstractS3FT {
      * @param aContext A test context
      */
     @Test
-    @SuppressWarnings("deprecation")
     public final void testGetBucketKeyWithHandler(final TestContext aContext) {
         final Async asyncTask = aContext.async();
 
@@ -199,7 +203,6 @@ public class S3ClientFT extends AbstractS3FT {
      * @param aContext A testing context
      */
     @Test
-    @SuppressWarnings("deprecation")
     public final void testListBucketWithHandler(final TestContext aContext) {
         final Async asyncTask = aContext.async();
 
@@ -264,7 +267,6 @@ public class S3ClientFT extends AbstractS3FT {
      * @param aContext A test context
      */
     @Test
-    @SuppressWarnings("deprecation")
     public final void testListBucketPrefixWithHandler(final TestContext aContext) {
         final String prefixedKey1 = PREFIX + UUID.randomUUID().toString();
         final String prefixedKey2 = PREFIX + UUID.randomUUID().toString();
@@ -316,6 +318,11 @@ public class S3ClientFT extends AbstractS3FT {
         myTestClient.put(myBucket, myKey, buffer).onComplete(put -> {
             if (put.succeeded()) {
                 aContext.assertTrue(myS3Client.doesObjectExist(myBucket, myKey));
+
+                if (!asyncTask.isCompleted()) {
+                    assertTrue(put.result().contains(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
+                }
+
                 complete(asyncTask);
             } else {
                 aContext.fail(put.cause());
@@ -329,7 +336,6 @@ public class S3ClientFT extends AbstractS3FT {
      * @param aContext A test context
      */
     @Test
-    @SuppressWarnings("deprecation")
     public final void testPutBucketKeyBufferHandler(final TestContext aContext) {
         final Buffer buffer = myContext.vertx().fileSystem().readFileBlocking(TEST_FILE);
         final Async asyncTask = aContext.async();
@@ -375,6 +381,10 @@ public class S3ClientFT extends AbstractS3FT {
                     aContext.assertEquals(metadata.getValue(metadata.getName(0)), metadataValue);
                 }
 
+                if (!asyncTask.isCompleted()) {
+                    assertTrue(put.result().contains(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
+                }
+
                 complete(asyncTask);
             } else {
                 aContext.fail(put.cause());
@@ -388,7 +398,6 @@ public class S3ClientFT extends AbstractS3FT {
      * @param aContext A test context
      */
     @Test
-    @SuppressWarnings("deprecation")
     public final void testPutBucketKeyBufferUserMetadataHandler(final TestContext aContext) {
         final Buffer buffer = myContext.vertx().fileSystem().readFileBlocking(TEST_FILE);
         final UserMetadata metadata = getTestUserMetadata();
@@ -434,6 +443,11 @@ public class S3ClientFT extends AbstractS3FT {
         myTestClient.put(myBucket, myKey, file).onComplete(put -> {
             if (put.succeeded()) {
                 aContext.assertTrue(myS3Client.doesObjectExist(myBucket, myKey));
+
+                if (!asyncTask.isCompleted()) {
+                    assertTrue(put.result().contains(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
+                }
+
                 complete(asyncTask);
             } else {
                 aContext.fail(put.cause());
@@ -447,7 +461,6 @@ public class S3ClientFT extends AbstractS3FT {
      * @param aContext A test context
      */
     @Test
-    @SuppressWarnings("deprecation")
     public final void testPutBucketKeyAsyncFileHandler(final TestContext aContext) {
         final AsyncFile file = myContext.vertx().fileSystem().openBlocking(TEST_FILE, new OpenOptions());
         final Async asyncTask = aContext.async();
@@ -494,6 +507,10 @@ public class S3ClientFT extends AbstractS3FT {
                     aContext.assertEquals(value, s3Obj.getObjectMetadata().getUserMetaDataOf(name));
                 }
 
+                if (!asyncTask.isCompleted()) {
+                    assertTrue(put.result().contains(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
+                }
+
                 complete(asyncTask);
             } else {
                 aContext.fail(put.cause());
@@ -507,7 +524,6 @@ public class S3ClientFT extends AbstractS3FT {
      * @param aContext A test context
      */
     @Test
-    @SuppressWarnings("deprecation")
     public final void testPutBucketKeyAsyncFileUserMetadataHandler(final TestContext aContext) {
         final AsyncFile file = myContext.vertx().fileSystem().openBlocking(TEST_FILE, new OpenOptions());
         final UserMetadata metadata = getTestUserMetadata();
@@ -565,7 +581,6 @@ public class S3ClientFT extends AbstractS3FT {
      * @param aContext A test context
      */
     @Test
-    @SuppressWarnings("deprecation")
     public final void testDeleteBucketKeyHandler(final TestContext aContext) {
         final Async asyncTask = aContext.async();
 

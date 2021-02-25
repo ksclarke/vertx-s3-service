@@ -3,10 +3,17 @@ package info.freelibrary.vertx.s3;
 
 import info.freelibrary.util.I18nException;
 
+import info.freelibrary.vertx.s3.util.MessageCodes;
+
 /**
  * An exception thrown when an S3 interaction has an unexpected response.
  */
 public class UnexpectedStatusException extends I18nException {
+
+    /**
+     * The <code>serialVersionUID</code> of UnexpectedStatusException.
+     */
+    private static final long serialVersionUID = 8120662372258955206L;
 
     /**
      * A status code related to the exception.
@@ -33,12 +40,4 @@ public class UnexpectedStatusException extends I18nException {
         return myStatusCode;
     }
 
-    /**
-     * Checks whether this exception has a status code associated with it.
-     *
-     * @return True if there is a status code associated with the exception; else, false
-     */
-    public boolean hasStatusCode() {
-        return myStatusCode != -1;
-    }
 }

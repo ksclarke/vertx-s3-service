@@ -14,6 +14,8 @@ import info.freelibrary.util.Logger;
 import info.freelibrary.util.LoggerFactory;
 import info.freelibrary.util.StringUtils;
 
+import info.freelibrary.vertx.s3.util.MessageCodes;
+
 import uk.co.lucasweb.aws.v4.signer.SigningException;
 import uk.co.lucasweb.aws.v4.signer.functional.Streams;
 

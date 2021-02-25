@@ -1,18 +1,15 @@
 
 package info.freelibrary.vertx.s3.service;
 
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-
 import info.freelibrary.util.HTTP;
 import info.freelibrary.util.Logger;
 import info.freelibrary.util.LoggerFactory;
 
 import info.freelibrary.vertx.s3.AwsCredentials;
-import info.freelibrary.vertx.s3.MessageCodes;
 import info.freelibrary.vertx.s3.AwsProfile;
 import info.freelibrary.vertx.s3.S3Client;
-import info.freelibrary.vertx.s3.S3Endpoint;
+import info.freelibrary.vertx.s3.S3ClientOptions;
+import info.freelibrary.vertx.s3.util.MessageCodes;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
@@ -36,7 +33,7 @@ public class S3ClientServiceImpl implements S3ClientService {
      * @param aVertx A Vert.x instance
      */
     public S3ClientServiceImpl(final Vertx aVertx) {
-        this(aVertx, null);
+        this(aVertx, (AwsProfile) null);
     }
 
     /**
@@ -54,21 +51,24 @@ public class S3ClientServiceImpl implements S3ClientService {
     }
 
     /**
+     * Creates a new S3 client service using the supplied AWS credentials.
+     *
+     * @param aVertx A Vert.x instance
+     * @param aCredentials AWS credentials
+     */
+    public S3ClientServiceImpl(final Vertx aVertx, final AwsCredentials aCredentials) {
+        myS3Client = new S3Client(aVertx, aCredentials);
+    }
+
+    /**
      * Creates a new S3 client service using the supplied AWS credentials and S3 endpoint.
      *
      * @param aVertx A Vert.x instance
      * @param aCredentials AWS credentials
-     * @param aEndpoint An S3 endpoint
+     * @param aConfig A S3 client configuration
      */
-    public S3ClientServiceImpl(final Vertx aVertx, final AwsCredentials aCredentials, final S3Endpoint aEndpoint) {
-        final String accessKey = aCredentials.getAccessKey();
-        final String secretKey = aCredentials.getSecretKey();
-
-        if (aCredentials.hasSessionToken()) {
-            myS3Client = new S3Client(aVertx, accessKey, secretKey, aCredentials.getSessionToken(), aEndpoint);
-        } else {
-            myS3Client = new S3Client(aVertx, accessKey, secretKey, aEndpoint);
-        }
+    public S3ClientServiceImpl(final Vertx aVertx, final AwsCredentials aCredentials, final S3ClientOptions aConfig) {
+        myS3Client = new S3Client(aVertx, aCredentials, aConfig);
     }
 
     @Override
@@ -107,41 +107,6 @@ public class S3ClientServiceImpl implements S3ClientService {
 
                         LOGGER.debug(MessageCodes.VSS_020, aKey, aBucket, json.encode());
                         promise.complete(json);
-                    });
-                } else {
-                    promise.fail(new IllegalStateException(Integer.toString(response.statusCode())));
-                }
-            } else {
-                promise.fail(get.cause());
-            }
-        }, exception -> {
-            promise.fail(exception);
-        });
-    }
-
-    @Override
-    public void putBytes(final String aBucket, final String aKey, final List<Byte> aBytesList,
-            final Handler<AsyncResult<Void>> aResult) {
-
-    }
-
-    @Override
-    public void getBytes(final String aBucket, final String aKey, final Handler<AsyncResult<List<Byte>>> aResult) {
-        final Promise<List<Byte>> promise = Promise.promise();
-
-        promise.future().onComplete(aResult);
-        LOGGER.debug(MessageCodes.VSS_019, aKey, aBucket);
-
-        myS3Client.get(aBucket, aKey, get -> {
-            if (get.succeeded()) {
-                final HttpClientResponse response = get.result();
-
-                if (HTTP.OK == response.statusCode()) {
-                    response.body(body -> {
-                        final byte[] bytes = body.result().getBytes();
-
-                        LOGGER.debug(MessageCodes.VSS_020, aKey, aBucket, new String(bytes, StandardCharsets.UTF_8));
-                        promise.complete();
                     });
                 } else {
                     promise.fail(new IllegalStateException(Integer.toString(response.statusCode())));

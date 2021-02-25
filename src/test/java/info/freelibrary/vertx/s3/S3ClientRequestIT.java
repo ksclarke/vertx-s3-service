@@ -1,6 +1,7 @@
 
 package info.freelibrary.vertx.s3;
 
+import static info.freelibrary.util.Constants.SLASH;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -9,8 +10,6 @@ import java.util.UUID;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import info.freelibrary.util.HTTP;
 
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -38,7 +37,7 @@ public class S3ClientRequestIT {
      */
     @Before
     public void setUp() {
-        myURI = String.join(HTTP.Syntax.SLASH, UUID.randomUUID().toString(), UUID.randomUUID().toString());
+        myURI = String.join(SLASH, UUID.randomUUID().toString(), UUID.randomUUID().toString());
         myAccessKey = UUID.randomUUID().toString();
         mySecretKey = UUID.randomUUID().toString();
         myVertx = Vertx.vertx();
