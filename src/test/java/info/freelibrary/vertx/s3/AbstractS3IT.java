@@ -98,6 +98,7 @@ public abstract class AbstractS3IT {
         final String endpoint = myRegion.getServiceEndpoint("s3");
         final String regionName = myRegion.getName();
 
+        System.out.println("-----------> " + endpoint + " " + regionName);
         builder.setEndpointConfiguration(new EndpointConfiguration(endpoint, regionName));
 
         myS3Client = builder.build();

@@ -50,7 +50,7 @@ public class S3ClientProfilesTest {
      */
     @Test
     public final void testS3ClientVertxProfilePlusEndpoint(final TestContext aContext) {
-        final S3ClientOptions config = new S3ClientOptions().setEndpoint(S3Client.DEFAULT_ENDPOINT);
+        final S3ClientOptions config = new S3ClientOptions().setEndpoint(S3Endpoint.US_EAST_1);
         new S3Client(VERTX, new AwsProfile(PROFILE), config).close();
     }
 
@@ -83,8 +83,7 @@ public class S3ClientProfilesTest {
      */
     @Test(expected = SigningException.class)
     public final void testS3ClientVertxProfilePlusEndpointMissingProfile(final TestContext aContext) {
-        final S3ClientOptions config = new S3ClientOptions().setEndpoint(S3Client.DEFAULT_ENDPOINT);
-        new S3Client(VERTX, new AwsProfile(MISSING), config).close();
+        new S3Client(VERTX, new AwsProfile(MISSING), new S3ClientOptions().setEndpoint(S3Endpoint.US_EAST_1)).close();
         aContext.fail(MessageCodes.VSS_014);
     }
 }

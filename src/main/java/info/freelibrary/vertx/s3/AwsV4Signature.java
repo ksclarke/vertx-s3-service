@@ -83,7 +83,12 @@ public class AwsV4Signature implements AwsSignature {
                 if (headerKey.startsWith(AWS_NAME_PREFIX) ||
                         headerKey.equalsIgnoreCase(HttpHeaders.CONTENT_MD5.toString()) ||
                         headerKey.equalsIgnoreCase(HttpHeaders.CONTENT_TYPE.toString())) {
-                    signer.header(headerKey, entry.getValue());
+                    if (headerKey.equals(HttpHeaders.CONTENT_LENGTH)) {
+                        signer.header("Content-Length", entry.getValue());
+                    } else {
+                        System.out.println(headerKey + " = " + entry.getValue());
+                        signer.header(headerKey, entry.getValue());
+                    }
                 }
             }
 

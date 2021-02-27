@@ -42,7 +42,7 @@ public abstract class AbstractS3FT {
     protected static AmazonS3 myS3Client;
 
     /* An S3 endpoint */
-    protected static S3Endpoint myEndpoint;
+    protected static LocalStackEndpoint myEndpoint;
 
     /* A network alias for the LocalStack S3 service */
     private static final String S3_ALIAS = "s3.localstack";
@@ -84,7 +84,7 @@ public abstract class AbstractS3FT {
         myCredentialsProvider = s3Container.getDefaultCredentialsProvider();
         builder = AmazonS3ClientBuilder.standard().withCredentials(myCredentialsProvider);
         builder.withClientConfiguration(s3ClientConfig).setEndpointConfiguration(myEndpointConfig);
-        myEndpoint = new S3Endpoint(myEndpointConfig.getServiceEndpoint());
+        myEndpoint = new LocalStackEndpoint(myEndpointConfig.getServiceEndpoint());
         credentials = myCredentialsProvider.getCredentials();
         myAccessKey = credentials.getAWSAccessKeyId();
         mySecretKey = credentials.getAWSSecretKey();

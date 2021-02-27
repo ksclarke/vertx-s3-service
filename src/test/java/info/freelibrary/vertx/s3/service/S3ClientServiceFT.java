@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -61,6 +62,7 @@ public class S3ClientServiceFT extends AbstractS3FT {
      * @param aContext A test context
      */
     @Test
+    @Ignore
     public final void testCreateFromCreds(final TestContext aContext) {
         final AwsCredentials creds = new AwsCredentials(myAccessKey, mySecretKey);
         final S3ClientOptions config = new S3ClientOptions().setEndpoint(myEndpoint);
@@ -83,6 +85,7 @@ public class S3ClientServiceFT extends AbstractS3FT {
      * @param aContext A test context
      */
     @Test
+    @Ignore
     public final void testCreateProxyFromCreds(final TestContext aContext) {
         final AwsCredentials creds = new AwsCredentials(myAccessKey, mySecretKey);
         final S3ClientOptions config = new S3ClientOptions().setEndpoint(myEndpoint);
@@ -103,6 +106,7 @@ public class S3ClientServiceFT extends AbstractS3FT {
      * Tests putting a JSON document to the S3 service.
      */
     @Test
+    @Ignore
     public final void testPutJSON() {
 
     }

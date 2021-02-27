@@ -440,7 +440,7 @@ public class S3ClientFT extends AbstractS3FT {
         final AsyncFile file = myContext.vertx().fileSystem().openBlocking(TEST_FILE, new OpenOptions());
         final Async asyncTask = aContext.async();
 
-        myTestClient.put(myBucket, myKey, file).onComplete(put -> {
+        myTestClient.put(myBucket, myKey, file, TEST_FILE.length()).onComplete(put -> {
             if (put.succeeded()) {
                 aContext.assertTrue(myS3Client.doesObjectExist(myBucket, myKey));
 
@@ -465,7 +465,7 @@ public class S3ClientFT extends AbstractS3FT {
         final AsyncFile file = myContext.vertx().fileSystem().openBlocking(TEST_FILE, new OpenOptions());
         final Async asyncTask = aContext.async();
 
-        myTestClient.put(myBucket, myKey, file, put -> {
+        myTestClient.put(myBucket, myKey, file, TEST_FILE.length(), put -> {
             if (put.succeeded()) {
                 final HttpClientResponse response = put.result();
                 final int statusCode = response.statusCode();
@@ -495,7 +495,7 @@ public class S3ClientFT extends AbstractS3FT {
         final UserMetadata metadata = getTestUserMetadata();
         final Async asyncTask = aContext.async();
 
-        myTestClient.put(myBucket, myKey, file, metadata).onComplete(put -> {
+        myTestClient.put(myBucket, myKey, file, TEST_FILE.length(), metadata).onComplete(put -> {
             if (put.succeeded()) {
                 aContext.assertTrue(myS3Client.doesObjectExist(myBucket, myKey));
 
@@ -529,7 +529,7 @@ public class S3ClientFT extends AbstractS3FT {
         final UserMetadata metadata = getTestUserMetadata();
         final Async asyncTask = aContext.async();
 
-        myTestClient.put(myBucket, myKey, file, metadata, put -> {
+        myTestClient.put(myBucket, myKey, file, TEST_FILE.length(), metadata, put -> {
             if (put.succeeded()) {
                 final HttpClientResponse response = put.result();
                 final int statusCode = response.statusCode();

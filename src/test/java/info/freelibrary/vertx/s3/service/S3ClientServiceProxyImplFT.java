@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -24,6 +25,9 @@ import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.RunTestOnContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 
+/**
+ * Tests usage of the S3 client service proxy.
+ */
 @RunWith(VertxUnitRunner.class)
 public class S3ClientServiceProxyImplFT extends AbstractS3FT {
 
@@ -58,12 +62,21 @@ public class S3ClientServiceProxyImplFT extends AbstractS3FT {
         myS3Client.deleteBucket(myBucket);
     }
 
+    /**
+     * Tests closing the service proxy.
+     */
     @Test
     public final void testClose() {
 
     }
 
+    /**
+     * Tests constructing a S3 client service proxy from the supplied address.
+     *
+     * @param aContext A test context
+     */
     @Test
+    @Ignore
     public final void testS3ClientServiceProxyImplVertxString(final TestContext aContext) {
         final S3ClientService service = new S3ClientServiceProxyImpl(myTestContext.vertx(), ADDRESS);
         final Async asyncTask = aContext.async();
@@ -84,7 +97,13 @@ public class S3ClientServiceProxyImplFT extends AbstractS3FT {
         });
     }
 
+    /**
+     * Tests constructing a S3 client service proxy from the supplied address.
+     *
+     * @param aContext A test context
+     */
     @Test
+    @Ignore
     public final void testS3ClientServiceProxyImplVertxString2(final TestContext aContext) {
         final S3ClientService service = new S3ClientServiceProxyImpl(myTestContext.vertx(), ADDRESS);
         final Async asyncTask = aContext.async();
@@ -102,16 +121,25 @@ public class S3ClientServiceProxyImplFT extends AbstractS3FT {
         });
     }
 
+    /**
+     * Tests constructing an S3 client service proxy with a profile and an address.
+     */
     @Test
     public final void testS3ClientServiceProxyImplVertxAwsProfileString() {
 
     }
 
+    /**
+     * Tests constructing an S3 client service proxy with credentials and an address.
+     */
     @Test
     public final void testS3ClientServiceProxyImplVertxAwsCredentialsString() {
 
     }
 
+    /**
+     * Tests constructing an S3 client service proxy with credentials, client options, and an address.
+     */
     @Test
     public final void testS3ClientServiceProxyImplVertxAwsCredentialsS3ClientOptionsString() {
 

@@ -28,12 +28,4 @@ public class S3ClientTest {
     public final void testS3ClientVertxHttpClientOptions() {
         new S3Client(VERTX, new S3ClientOptions()).close();
     }
-
-    /**
-     * Tests constructor that takes an S3 endpoint.
-     */
-    @Test
-    public final void testS3ClientVertxString() {
-        new S3Client(VERTX, new S3ClientOptions().setEndpoint(S3Client.DEFAULT_ENDPOINT)).close();
-    }
 }

@@ -32,5 +32,7 @@
   <entry key="VSS-018">Putting '{}' to S3 bucket named '{}' [contents: {}]</entry>
   <entry key="VSS-019">Getting '{}' from S3 bucket: {}</entry>
   <entry key="VSS-020">Retrieved '{}' from S3 bucket: {} [contents: {}]</entry>
+  <entry key="VSS-021">Error details from {}'s PUT response: {}</entry>
+  <entry key="VSS-022">Unexpected error: {}</entry>
 
 </properties>

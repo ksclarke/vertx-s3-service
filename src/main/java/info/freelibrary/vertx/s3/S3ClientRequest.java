@@ -28,8 +28,6 @@ class S3ClientRequest implements HttpClientRequest {
     /** Prefix for the AWS user metadata keys */
     private static final String AWS_NAME_PREFIX = "x-amz-meta-";
 
-    private static final String AUTH = "Authorization";
-
     /** The underlying S3 HTTP client request */
     private final HttpClientRequest myRequest;
 
@@ -218,7 +216,7 @@ class S3ClientRequest implements HttpClientRequest {
             }
 
             signature = factory.getSignature();
-            headers.add(AUTH, signature.getAuthorization(headers, getMethod().name(), aBytes));
+            headers.add(HttpHeaders.AUTHORIZATION, signature.getAuthorization(headers, getMethod().name(), aBytes));
         }
 
         return this;

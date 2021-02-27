@@ -2,9 +2,16 @@
 package info.freelibrary.vertx.s3;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 import info.freelibrary.util.HTTP;
+import info.freelibrary.util.Logger;
+import info.freelibrary.util.LoggerFactory;
 import info.freelibrary.util.StringUtils;
+import info.freelibrary.util.XmlUtils;
+
+import info.freelibrary.vertx.s3.util.MessageCodes;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -13,7 +20,6 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpConnection;
@@ -26,14 +32,15 @@ import io.vertx.core.streams.ReadStream;
 @SuppressWarnings("PMD.TooManyMethods")
 public class S3Client {
 
-    /** Default S3 endpoint */
-    static final S3Endpoint DEFAULT_ENDPOINT = new S3Endpoint("https://s3.amazonaws.com");
+    private static final Logger LOGGER = LoggerFactory.getLogger(S3Client.class, MessageCodes.BUNDLE);
 
     private static final String LIST_CMD = "?list-type=2";
 
     private static final String PREFIX_LIST_CMD = "?list-type=2&prefix=";
 
     private static final String REQUEST = "/{}/{}";
+
+    private static final String EOL = System.lineSeparator();
 
     /** AWS credentials */
     private final AwsCredentials myCredentials;
@@ -311,15 +318,18 @@ public class S3Client {
      * @return A future indicating when the buffer has been uploaded
      */
     public Future<HttpHeaders> put(final String aBucket, final String aKey, final Buffer aBuffer) {
-        return createPutRequest(aBucket, aKey).compose(request -> request.send(aBuffer).compose(response -> {
-            final int statusCode = response.statusCode();
+        return createPutRequest(aBucket, aKey)
+                .compose(request -> request.putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(aBuffer.length()))
+                        .send(aBuffer).compose(response -> {
+                            final int statusCode = response.statusCode();
 
-            if (statusCode == HTTP.OK) {
-                return Future.succeededFuture(new HttpHeaders(response.headers()));
-            } else {
-                return Future.failedFuture(new UnexpectedStatusException(statusCode, response.statusMessage()));
-            }
-        }));
+                            if (statusCode == HTTP.OK) {
+                                return Future.succeededFuture(new HttpHeaders(response.headers()));
+                            } else {
+                                return Future.failedFuture(
+                                        new UnexpectedStatusException(statusCode, response.statusMessage()));
+                            }
+                        }));
     }
 
     /**
@@ -334,7 +344,9 @@ public class S3Client {
     public void put(final String aBucket, final String aKey, final Buffer aBuffer,
             final Handler<AsyncResult<HttpClientResponse>> aHandler, final Handler<Throwable> aExceptionHandler) {
         createPutRequest(aBucket, aKey).onComplete(putRequest -> {
-            putRequest.result().response(aHandler).exceptionHandler(aExceptionHandler).end(aBuffer);
+            final String length = String.valueOf(aBuffer.length());
+            putRequest.result().putHeader(HttpHeaders.CONTENT_LENGTH, length).response(aHandler)
+                    .exceptionHandler(aExceptionHandler).end(aBuffer);
         });
     }
 
@@ -350,15 +362,17 @@ public class S3Client {
     public Future<HttpHeaders> put(final String aBucket, final String aKey, final Buffer aBuffer,
             final UserMetadata aMetadata) {
         final Future<S3ClientRequest> futurePut = createPutRequest(aBucket, aKey);
-        return futurePut.compose(request -> request.setUserMetadata(aMetadata).send(aBuffer).compose(response -> {
-            final int statusCode = response.statusCode();
+        final String length = String.valueOf(aBuffer.length());
+        return futurePut.compose(request -> request.putHeader(HttpHeaders.CONTENT_LENGTH, length)
+                .setUserMetadata(aMetadata).send(aBuffer).compose(response -> {
+                    final int statusCode = response.statusCode();
 
-            if (statusCode == HTTP.OK) {
-                return Future.succeededFuture(new HttpHeaders(response.headers()));
-            } else {
-                return Future.failedFuture(new UnexpectedStatusException(statusCode, response.statusMessage()));
-            }
-        }));
+                    if (statusCode == HTTP.OK) {
+                        return Future.succeededFuture(new HttpHeaders(response.headers()));
+                    } else {
+                        return Future.failedFuture(new UnexpectedStatusException(statusCode, response.statusMessage()));
+                    }
+                }));
     }
 
     /**
@@ -375,6 +389,8 @@ public class S3Client {
             final Handler<AsyncResult<HttpClientResponse>> aHandler, final Handler<Throwable> aExceptionHandler) {
         createPutRequest(aBucket, aKey).onComplete(putRequest -> {
             final S3ClientRequest request = putRequest.result().setUserMetadata(aMetadata);
+
+            request.putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(aBuffer.length()));
             request.response(aHandler).exceptionHandler(aExceptionHandler).end(aBuffer);
         });
     }
@@ -385,18 +401,38 @@ public class S3Client {
      * @param aBucket An S3 bucket
      * @param aKey An S3 object key
      * @param aReadStream A stream from which to read the buffer
+     * @param aContentLength The length of the content being streamed
      * @return A future indicating when the buffer has been uploaded
      */
-    public Future<HttpHeaders> put(final String aBucket, final String aKey, final ReadStream<Buffer> aReadStream) {
-        return createPutRequest(aBucket, aKey).compose(request -> request.send(aReadStream).compose(response -> {
-            final int statusCode = response.statusCode();
+    public Future<HttpHeaders> put(final String aBucket, final String aKey, final ReadStream<Buffer> aReadStream,
+            final long aContentLength) {
+        final Future<S3ClientRequest> futurePut = createPutRequest(aBucket, aKey);
+        final String length = String.valueOf(aContentLength);
+        return futurePut.compose(
+                request -> request.putHeader(HttpHeaders.CONTENT_LENGTH, length).send(aReadStream).compose(response -> {
+                    final int statusCode = response.statusCode();
 
-            if (statusCode == HTTP.OK) {
-                return Future.succeededFuture(new HttpHeaders(response.headers()));
-            } else {
-                return Future.failedFuture(new UnexpectedStatusException(statusCode, response.statusMessage()));
-            }
-        }));
+                    if (statusCode == HTTP.OK) {
+                        return Future.succeededFuture(new HttpHeaders(response.headers()));
+                    } else {
+                        // Log more details if we get an unexpected result
+                        response.body(body -> {
+                            if (body.succeeded()) {
+                                try {
+                                    // Additional details are wrapped in an XML wrapper
+                                    final String xml = body.result().toString(StandardCharsets.UTF_8);
+                                    LOGGER.error(MessageCodes.VSS_021, aKey, EOL + XmlUtils.format(xml));
+                                } catch (final Exception details) {
+                                    LOGGER.error(MessageCodes.VSS_022, details);
+                                }
+                            } else {
+                                LOGGER.error(MessageCodes.VSS_022, body.cause());
+                            }
+                        });
+
+                        return Future.failedFuture(new UnexpectedStatusException(statusCode, response.statusMessage()));
+                    }
+                }));
     }
 
     /**
@@ -405,12 +441,14 @@ public class S3Client {
      * @param aBucket An S3 bucket
      * @param aKey An S3 key
      * @param aReadStream A stream from which to read the content to be sent
+     * @param aContentLength The length of the content being streamed
      * @param aHandler An upload response handler
      * @param aExceptionHandler An exception handler
      */
     public void put(final String aBucket, final String aKey, final ReadStream<Buffer> aReadStream,
-            final Handler<AsyncResult<HttpClientResponse>> aHandler, final Handler<Throwable> aExceptionHandler) {
-        put(aBucket, aKey, aReadStream, null, aHandler, aExceptionHandler);
+            final long aContentLength, final Handler<AsyncResult<HttpClientResponse>> aHandler,
+            final Handler<Throwable> aExceptionHandler) {
+        put(aBucket, aKey, aReadStream, aContentLength, null, aHandler, aExceptionHandler);
     }
 
     /**
@@ -419,21 +457,25 @@ public class S3Client {
      * @param aBucket An S3 bucket
      * @param aKey An S3 object key
      * @param aReadStream A stream from which to read the buffer
+     * @param aContentLength The length of the content being streamed
      * @param aMetadata A metadata object
      * @return A future indicating when the buffer has been uploaded
      */
     public Future<HttpHeaders> put(final String aBucket, final String aKey, final ReadStream<Buffer> aReadStream,
-            final UserMetadata aMetadata) {
+            final long aContentLength, final UserMetadata aMetadata) {
         final Future<S3ClientRequest> futurePut = createPutRequest(aBucket, aKey);
-        return futurePut.compose(request -> request.setUserMetadata(aMetadata).send(aReadStream).compose(response -> {
-            final int statusCode = response.statusCode();
+        final String length = String.valueOf(aContentLength);
+        return futurePut.compose(request -> request.setUserMetadata(aMetadata)
+                .putHeader(HttpHeaders.CONTENT_LENGTH, length).send(aReadStream).compose(response -> {
+                    final int statusCode = response.statusCode();
 
-            if (statusCode == HTTP.OK) {
-                return Future.succeededFuture(new HttpHeaders(response.headers()));
-            } else {
-                return Future.failedFuture(new UnexpectedStatusException(statusCode, response.statusMessage()));
-            }
-        }));
+                    if (statusCode == HTTP.OK) {
+                        return Future.succeededFuture(new HttpHeaders(response.headers()));
+                    } else {
+                        final String statusMessage = response.statusMessage();
+                        return Future.failedFuture(new UnexpectedStatusException(statusCode, statusMessage));
+                    }
+                }));
     }
 
     /**
@@ -442,18 +484,23 @@ public class S3Client {
      * @param aBucket An S3 bucket
      * @param aKey An S3 key
      * @param aReadStream A stream from which to read the content to be sent
+     * @param aContentLength The length of the content being streamed
      * @param aMetadata User metadata to set on the uploaded S3 object
      * @param aHandler An upload response handler
      * @param aExceptionHandler An upload exception handler
      */
     public void put(final String aBucket, final String aKey, final ReadStream<Buffer> aReadStream,
-            final UserMetadata aMetadata, final Handler<AsyncResult<HttpClientResponse>> aHandler,
-            final Handler<Throwable> aExceptionHandler) {
+            final long aContentLength, final UserMetadata aMetadata,
+            final Handler<AsyncResult<HttpClientResponse>> aHandler, final Handler<Throwable> aExceptionHandler) {
         createPutRequest(aBucket, aKey).onComplete(putRequest -> {
             final S3ClientRequest request = putRequest.result();
 
             if (aMetadata != null) {
                 request.setUserMetadata(aMetadata);
+            }
+
+            if (aContentLength != -1) {
+                request.putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(aContentLength));
             }
 
             request.response(aHandler).exceptionHandler(aExceptionHandler);
@@ -570,16 +617,8 @@ public class S3Client {
      * @return A newly created HttpClient
      */
     private static HttpClient getHttpClient(final Vertx aVertx, final S3ClientOptions aConfig) {
-        final HttpClient httpClient;
-
-        if (aConfig != null && aConfig.getDefaultHost() != null && aConfig.getDefaultPort() != -1) {
-            httpClient = aVertx.createHttpClient(aConfig);
-        } else {
-            final HttpClientOptions options = new HttpClientOptions().setSsl(true).setDefaultPort(443);
-            httpClient = aVertx.createHttpClient(options.setDefaultHost(S3Client.DEFAULT_ENDPOINT.getHost()));
-        }
-
-        return httpClient;
+        Objects.requireNonNull(aVertx);
+        return aConfig == null ? aVertx.createHttpClient(new S3ClientOptions()) : aVertx.createHttpClient(aConfig);
     }
 
 }

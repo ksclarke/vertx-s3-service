@@ -1,7 +1,7 @@
 
 package info.freelibrary.vertx.s3;
 
-import info.freelibrary.util.StringUtils;
+import java.net.URI;
 
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.http.HttpClientOptions;
@@ -14,17 +14,26 @@ import io.vertx.core.json.JsonObject;
 public class S3ClientOptions extends HttpClientOptions {
 
     /**
-     * Creates anew S3 client configuration.
+     * Creates a new S3 client configuration using the default AWS S3 endpoint.
      */
     public S3ClientOptions() {
+        setEndpoint(S3Endpoint.US_EAST_1);
     }
 
     /**
-     * Creates a new S3ClientOption from the JSON serialization.
+     * Creates a new S3 client configuration using the supplied S3 endpoint.
      *
-     * @param aJsonObject
+     * @param aEndpoint An S3 endpoint the client should use
      */
-    @SuppressWarnings("unused")
+    public S3ClientOptions(final Endpoint aEndpoint) {
+        setEndpoint(aEndpoint);
+    }
+
+    /**
+     * Creates a new S3 client configuration from the supplied JSON serialization.
+     *
+     * @param aJsonObject A JSON serialization of the S3 client configuration
+     */
     public S3ClientOptions(final JsonObject aJsonObject) {
         super(aJsonObject);
     }
@@ -35,27 +44,14 @@ public class S3ClientOptions extends HttpClientOptions {
      * @param aEndpoint An S3 endpoint
      * @return The S3 client options
      */
-    public S3ClientOptions setEndpoint(final String aEndpoint) {
-        return setEndpoint(new S3Endpoint(aEndpoint));
-    }
+    public S3ClientOptions setEndpoint(final Endpoint aEndpoint) {
+        final URI endpointURI = URI.create(aEndpoint.toString());
+        final String protocol = endpointURI.getScheme();
+        final String host = endpointURI.getHost();
+        final int port = endpointURI.getPort();
 
-    /**
-     * Sets the endpoint for the S3 client.
-     *
-     * @param aEndpoint An S3 endpoint
-     * @return The S3 client options
-     */
-    public S3ClientOptions setEndpoint(final S3Endpoint aEndpoint) {
-        final String host = StringUtils.trimToNull(aEndpoint.getHost());
-        final String protocol = aEndpoint.getProtocol();
-        final int port = aEndpoint.getPort();
+        setDefaultHost(host);
 
-        // If there is a supplied host, set it in the client options
-        if (host != null) {
-            setDefaultHost(host);
-        }
-
-        // An exception has been thrown if there is no protocol
         if ("http".equals(protocol)) {
             setSsl(false);
 
