@@ -1,4 +1,3 @@
-
 /**
  * Classes for the Vert.x S3 client.
  */

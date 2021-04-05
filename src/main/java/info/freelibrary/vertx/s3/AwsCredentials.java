@@ -1,13 +1,13 @@
 
 package info.freelibrary.vertx.s3;
 
-import io.vertx.codegen.annotations.DataObject;
+// import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
 
 /**
  * An AWS credentials object.
  */
-@DataObject
+// @DataObject
 public class AwsCredentials extends uk.co.lucasweb.aws.v4.signer.credentials.AwsCredentials {
 
     private String mySessionToken;
@@ -41,7 +41,7 @@ public class AwsCredentials extends uk.co.lucasweb.aws.v4.signer.credentials.Aws
      */
     public AwsCredentials(final JsonObject aJsonConfig) {
         super(aJsonConfig.getString(AwsCredentialsProviderChain.ACCESS_KEY_FILE_PROPERTY),
-                aJsonConfig.getString(AwsCredentialsProviderChain.SECRET_KEY_FILE_PROPERTY));
+            aJsonConfig.getString(AwsCredentialsProviderChain.SECRET_KEY_FILE_PROPERTY));
         mySessionToken = aJsonConfig.getString(AwsCredentialsProviderChain.SESSION_KEY_FILE_PROPERTY);
     }
 

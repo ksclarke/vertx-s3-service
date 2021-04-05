@@ -1,8 +1,6 @@
 
 package info.freelibrary.vertx.s3.service;
 
-import info.freelibrary.vertx.s3.AwsCredentials;
-import info.freelibrary.vertx.s3.AwsProfile;
 import info.freelibrary.vertx.s3.S3ClientOptions;
 
 import io.vertx.codegen.annotations.ProxyClose;
@@ -27,56 +25,28 @@ public class S3ClientServiceProxyImpl extends S3ClientServiceImpl implements S3C
      * @param aAddress A Vert.x event bus address
      */
     public S3ClientServiceProxyImpl(final Vertx aVertx, final String aAddress) {
-        this(aVertx, (AwsProfile) null, aAddress);
+        super(aVertx);
+
+        myServiceBinder = new ServiceBinder(aVertx);
+        myConsumer = myServiceBinder.setAddress(aAddress).register(S3ClientService.class, this);
     }
 
     /**
      * Creates a new S3 client service proxy using the supplied AWS credentials profile.
      *
      * @param aVertx A Vert.x instance
-     * @param aProfile An AWS credentials profile
+     * @param aConfig An S3 client configuration
      * @param aAddress A Vert.x event bus address
      */
-    public S3ClientServiceProxyImpl(final Vertx aVertx, final AwsProfile aProfile, final String aAddress) {
-        super(aVertx, aProfile);
+    public S3ClientServiceProxyImpl(final Vertx aVertx, final S3ClientOptions aConfig, final String aAddress) {
+        super(aVertx, aConfig);
 
         myServiceBinder = new ServiceBinder(aVertx);
         myConsumer = myServiceBinder.setAddress(aAddress).register(S3ClientService.class, this);
 
         myConsumer.handler(handler -> {
-            System.out.println("====== here ======");
-            handler.reply("asdf");
+            System.out.println(handler.address());
         });
-    }
-
-    /**
-     * Creates a new S3 client service proxy using the supplied AWS credentials profile.
-     *
-     * @param aVertx A Vert.x instance
-     * @param aCredentials AWS credentials
-     * @param aAddress A Vert.x event bus address
-     */
-    public S3ClientServiceProxyImpl(final Vertx aVertx, final AwsCredentials aCredentials, final String aAddress) {
-        super(aVertx, aCredentials);
-
-        myServiceBinder = new ServiceBinder(aVertx);
-        myConsumer = myServiceBinder.setAddress(aAddress).register(S3ClientService.class, this);
-    }
-
-    /**
-     * Creates a new S3 client service proxy using the supplied AWS credentials profile.
-     *
-     * @param aVertx A Vert.x instance
-     * @param aCredentials AWS credentials
-     * @param aConfig An S3 client configuration
-     * @param aAddress A Vert.x event bus address
-     */
-    public S3ClientServiceProxyImpl(final Vertx aVertx, final AwsCredentials aCredentials,
-            final S3ClientOptions aConfig, final String aAddress) {
-        super(aVertx, aCredentials, aConfig);
-
-        myServiceBinder = new ServiceBinder(aVertx);
-        myConsumer = myServiceBinder.setAddress(aAddress).register(S3ClientService.class, this);
     }
 
     @Override

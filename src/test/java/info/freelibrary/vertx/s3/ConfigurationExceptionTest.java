@@ -24,7 +24,6 @@ public class ConfigurationExceptionTest {
     @Test
     public final void testConfigurationExceptionString() {
         final String message = "asdf-asdf";
-
         assertEquals(message, new ConfigurationException(message).getMessage());
     }
 
@@ -34,7 +33,6 @@ public class ConfigurationExceptionTest {
     @Test
     public final void testConfigurationExceptionStringObjectArray() {
         final String message = "asdf";
-
         assertEquals(message + "-1234", new ConfigurationException(message + "-{}", "1234").getMessage());
     }
 

@@ -25,5 +25,4 @@ public class AwsProfile {
     public AwsCredentials getCredentials() {
         return new AwsCredentialsProviderChain(myProfileName).getCredentials();
     }
-
 }

@@ -29,6 +29,20 @@ public interface Endpoint {
     String getRegion();
 
     /**
+     * Gets the host name for the endpoint.
+     *
+     * @return The host name for the endpoint
+     */
+    String getHost();
+
+    /**
+     * Gets the port for the endpoint.
+     *
+     * @return The port for the endpoint
+     */
+    int getPort();
+
+    /**
      * Gets a human-friendly name for the endpoint.
      *
      * @return The human-friendly name for the endpoint

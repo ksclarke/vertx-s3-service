@@ -17,7 +17,7 @@ import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 
 /**
- * Tests of the {@link BucketList} class.
+ * Tests of the {@link S3BucketList} class.
  */
 @RunWith(VertxUnitRunner.class)
 public class BucketListTest {
@@ -26,22 +26,22 @@ public class BucketListTest {
 
     private static final String STANDARD_KEY = "e48af1f0-b745-4d11-ad8c-3b024ecde959";
 
-    private BucketList myBucketList;
+    private S3BucketList myBucketList;
 
     /**
-     * Creates a test BucketList.
+     * Creates a test S3BucketList.
      *
      * @param aContext A test context
-     * @throws IOException If there is trouble constructing the BucketList
+     * @throws IOException If there is trouble constructing the S3BucketList
      */
     @Before
     public final void setUp(final TestContext aContext) throws IOException {
-        myBucketList = new BucketList(StringUtils.read(new File("src/test/resources/list.xml"),
+        myBucketList = new S3BucketList(StringUtils.read(new File("src/test/resources/list.xml"),
                 StandardCharsets.UTF_8));
     }
 
     /**
-     * Tests creating a new BucketList.
+     * Tests creating a new S3BucketList.
      *
      * @param aContext A test context
      */
@@ -78,7 +78,7 @@ public class BucketListTest {
      */
     @Test
     public final void testIterator(final TestContext aContext) {
-        final Iterator<ListObject> iterator = myBucketList.iterator();
+        final Iterator<S3ObjectList> iterator = myBucketList.iterator();
 
         int index = 0;
 
@@ -120,13 +120,13 @@ public class BucketListTest {
     }
 
     /**
-     * Tests the toArray method on BucketList.
+     * Tests the toArray method on S3BucketList.
      *
      * @param aContext A test context
      */
     @Test
     public final void testToArray(final TestContext aContext) {
-        aContext.assertEquals(myBucketList.toArray(new ListObject[myBucketList.size()]).length, myBucketList.size());
+        aContext.assertEquals(myBucketList.toArray(new S3ObjectList[myBucketList.size()]).length, myBucketList.size());
     }
 
     /**
@@ -136,12 +136,12 @@ public class BucketListTest {
      */
     @Test
     public final void testIsEmptyTrue(final TestContext aContext) throws IOException {
-        aContext.assertTrue(new BucketList(StringUtils.read(new File("src/test/resources/list-empty.xml"),
+        aContext.assertTrue(new S3BucketList(StringUtils.read(new File("src/test/resources/list-empty.xml"),
                 StandardCharsets.UTF_8)).isEmpty());
     }
 
     /**
-     * Test that our BucketList is iterable.
+     * Test that our S3BucketList is iterable.
      *
      * @param aContext A testing context
      * @throws IOException If there is trouble reading the XML list test fixture
@@ -150,8 +150,8 @@ public class BucketListTest {
     public final void testIterableList(final TestContext aContext) {
         int count = 0;
 
-        for (final ListObject listObject : myBucketList) {
-            aContext.assertNotNull(listObject.getKey());
+        for (final S3ObjectList s3ObjectList : myBucketList) {
+            aContext.assertNotNull(s3ObjectList.getKey());
             count += 1;
         }
 

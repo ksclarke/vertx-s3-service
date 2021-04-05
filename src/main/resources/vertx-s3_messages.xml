@@ -34,5 +34,6 @@
   <entry key="VSS-020">Retrieved '{}' from S3 bucket: {} [contents: {}]</entry>
   <entry key="VSS-021">Error details from {}'s PUT response: {}</entry>
   <entry key="VSS-022">Unexpected error: {}</entry>
+  <entry key="VSS-023">Closing uploaded file: {}</entry>
 
 </properties>

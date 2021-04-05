@@ -1,10 +1,7 @@
 
 package info.freelibrary.vertx.s3;
 
-import static org.junit.Assert.assertTrue;
-
 import java.io.File;
-import java.io.IOException;
 import java.util.UUID;
 
 import org.junit.Before;
@@ -15,7 +12,6 @@ import org.junit.runner.RunWith;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
 
-import info.freelibrary.util.HTTP;
 import info.freelibrary.util.Logger;
 import info.freelibrary.util.LoggerFactory;
 
@@ -24,7 +20,6 @@ import info.freelibrary.vertx.s3.util.MessageCodes;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.OpenOptions;
-import io.vertx.core.http.HttpClientResponse;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.RunTestOnContext;
@@ -48,7 +43,7 @@ public class S3ClientFT extends AbstractS3FT {
     @Rule
     public final RunTestOnContext myContext = new RunTestOnContext();
 
-    private S3Client myTestClient;
+    private S3Client myClient;
 
     private String myBucket;
 
@@ -63,7 +58,7 @@ public class S3ClientFT extends AbstractS3FT {
     public void setUp(final TestContext aContext) {
         final AwsCredentials creds = new AwsCredentials(myAccessKey, mySecretKey);
 
-        myTestClient = new S3Client(myContext.vertx(), creds, new S3ClientOptions().setEndpoint(myEndpoint));
+        myClient = new S3Client(myContext.vertx(), new S3ClientOptions(myEndpoint).setCredentials(creds));
         myBucket = UUID.randomUUID().toString();
         myKey = UUID.randomUUID().toString();
 
@@ -83,7 +78,7 @@ public class S3ClientFT extends AbstractS3FT {
 
         putGIF(myKey);
 
-        myTestClient.head(myBucket, myKey).onComplete(head -> {
+        myClient.head(myBucket, myKey).onComplete(head -> {
             if (head.succeeded()) {
                 aContext.assertEquals("85", head.result().get(HttpHeaders.CONTENT_LENGTH));
                 complete(asyncTask);
@@ -104,22 +99,13 @@ public class S3ClientFT extends AbstractS3FT {
 
         putGIF(myKey);
 
-        myTestClient.head(myBucket, myKey, head -> {
+        myClient.head(myBucket, myKey, head -> {
             if (head.succeeded()) {
-                final HttpClientResponse response = head.result();
-                final int statusCode = response.statusCode();
-
-                if (statusCode == HTTP.OK) {
-                    aContext.assertEquals(85, Integer.parseInt(response.getHeader(HttpHeaders.CONTENT_LENGTH)));
-                    complete(asyncTask);
-                } else {
-                    aContext.fail(LOGGER.getMessage(MessageCodes.VSS_017, statusCode, response.statusMessage()));
-                }
+                aContext.assertEquals(85, Integer.parseInt(head.result().get(HttpHeaders.CONTENT_LENGTH)));
+                complete(asyncTask);
             } else {
                 aContext.fail(head.cause());
             }
-        }, error -> {
-            aContext.fail(error);
         });
     }
 
@@ -134,10 +120,16 @@ public class S3ClientFT extends AbstractS3FT {
 
         putGIF(myKey);
 
-        myTestClient.get(myBucket, myKey).onComplete(get -> {
+        myClient.get(myBucket, myKey).onComplete(get -> {
             if (get.succeeded()) {
-                aContext.assertEquals(85, get.result().length());
-                complete(asyncTask);
+                get.result().body(body -> {
+                    if (body.succeeded()) {
+                        aContext.assertEquals(85, body.result().length());
+                        complete(asyncTask);
+                    } else {
+                        aContext.fail(body.cause());
+                    }
+                });
             } else {
                 aContext.fail(get.cause());
             }
@@ -155,24 +147,15 @@ public class S3ClientFT extends AbstractS3FT {
 
         putGIF(myKey);
 
-        myTestClient.get(myBucket, myKey, get -> {
+        myClient.get(myBucket, myKey, get -> {
             if (get.succeeded()) {
-                final HttpClientResponse response = get.result();
-                final int statusCode = response.statusCode();
-
-                if (statusCode == HTTP.OK) {
-                    response.bodyHandler(body -> {
-                        aContext.assertEquals(85, body.length());
-                        complete(asyncTask);
-                    });
-                } else {
-                    aContext.fail(LOGGER.getMessage(MessageCodes.VSS_017, statusCode, response.statusMessage()));
-                }
+                get.result().body(body -> {
+                    aContext.assertEquals(85, body.result().length());
+                    complete(asyncTask);
+                });
             } else {
                 aContext.fail(get.cause());
             }
-        }, error -> {
-            aContext.fail(error);
         });
     }
 
@@ -187,7 +170,7 @@ public class S3ClientFT extends AbstractS3FT {
 
         putGIF(myKey);
 
-        myTestClient.list(myBucket).onComplete(list -> {
+        myClient.list(myBucket).onComplete(list -> {
             if (list.succeeded()) {
                 aContext.assertEquals(1, list.result().size());
                 complete(asyncTask);
@@ -208,32 +191,17 @@ public class S3ClientFT extends AbstractS3FT {
 
         putGIF(myKey);
 
-        myTestClient.list(myBucket, list -> {
+        myClient.list(myBucket, list -> {
             if (list.succeeded()) {
-                final HttpClientResponse response = list.result();
-                final int statusCode = response.statusCode();
+                final S3BucketList bucketList = list.result();
 
-                if (statusCode == HTTP.OK) {
-                    response.bodyHandler(body -> {
-                        try {
-                            final BucketList bucketList = new BucketList(body);
+                aContext.assertEquals(1, bucketList.size());
+                aContext.assertTrue(bucketList.containsKey(myKey));
 
-                            aContext.assertEquals(1, bucketList.size());
-                            aContext.assertTrue(bucketList.containsKey(myKey));
-
-                            complete(asyncTask);
-                        } catch (final IOException details) {
-                            aContext.fail(details);
-                        }
-                    });
-                } else {
-                    aContext.fail(LOGGER.getMessage(MessageCodes.VSS_017, statusCode, response.statusMessage()));
-                }
+                complete(asyncTask);
             } else {
                 aContext.fail(list.cause());
             }
-        }, error -> {
-            aContext.fail(error);
         });
     }
 
@@ -251,7 +219,7 @@ public class S3ClientFT extends AbstractS3FT {
         putGIF(prefixedKey1);
         putGIF(prefixedKey2);
 
-        myTestClient.list(myBucket, PREFIX).onComplete(list -> {
+        myClient.list(myBucket, PREFIX).onComplete(list -> {
             if (list.succeeded()) {
                 aContext.assertEquals(2, list.result().size());
                 complete(asyncTask);
@@ -275,33 +243,18 @@ public class S3ClientFT extends AbstractS3FT {
         putGIF(prefixedKey1);
         putGIF(prefixedKey2);
 
-        myTestClient.list(myBucket, PREFIX, list -> {
+        myClient.list(myBucket, PREFIX, list -> {
             if (list.succeeded()) {
-                final HttpClientResponse response = list.result();
-                final int statusCode = response.statusCode();
+                final S3BucketList bucketList = list.result();
 
-                if (statusCode == HTTP.OK) {
-                    response.bodyHandler(body -> {
-                        try {
-                            final BucketList bucketList = new BucketList(body);
+                aContext.assertEquals(2, bucketList.size());
+                aContext.assertTrue(bucketList.containsKey(prefixedKey1));
+                aContext.assertTrue(bucketList.containsKey(prefixedKey2));
 
-                            aContext.assertEquals(2, bucketList.size());
-                            aContext.assertTrue(bucketList.containsKey(prefixedKey1));
-                            aContext.assertTrue(bucketList.containsKey(prefixedKey2));
-
-                            complete(asyncTask);
-                        } catch (final IOException details) {
-                            aContext.fail(details);
-                        }
-                    });
-                } else {
-                    aContext.fail(LOGGER.getMessage(MessageCodes.VSS_017, statusCode, response.statusMessage()));
-                }
+                complete(asyncTask);
             } else {
                 aContext.fail(list.cause());
             }
-        }, error -> {
-            aContext.fail(error);
         });
     }
 
@@ -315,12 +268,12 @@ public class S3ClientFT extends AbstractS3FT {
         final Buffer buffer = myContext.vertx().fileSystem().readFileBlocking(TEST_FILE);
         final Async asyncTask = aContext.async();
 
-        myTestClient.put(myBucket, myKey, buffer).onComplete(put -> {
+        myClient.put(myBucket, myKey, buffer).onComplete(put -> {
             if (put.succeeded()) {
                 aContext.assertTrue(myS3Client.doesObjectExist(myBucket, myKey));
 
                 if (!asyncTask.isCompleted()) {
-                    assertTrue(put.result().contains(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
+                    aContext.assertTrue(put.result().contains(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
                 }
 
                 complete(asyncTask);
@@ -340,22 +293,13 @@ public class S3ClientFT extends AbstractS3FT {
         final Buffer buffer = myContext.vertx().fileSystem().readFileBlocking(TEST_FILE);
         final Async asyncTask = aContext.async();
 
-        myTestClient.put(myBucket, myKey, buffer, put -> {
+        myClient.put(myBucket, myKey, buffer, put -> {
             if (put.succeeded()) {
-                final HttpClientResponse response = put.result();
-                final int statusCode = response.statusCode();
-
-                if (statusCode == HTTP.OK) {
-                    aContext.assertTrue(myS3Client.doesObjectExist(myBucket, myKey));
-                    complete(asyncTask);
-                } else {
-                    aContext.fail(LOGGER.getMessage(MessageCodes.VSS_017, statusCode, response.statusMessage()));
-                }
+                aContext.assertTrue(myS3Client.doesObjectExist(myBucket, myKey));
+                complete(asyncTask);
             } else {
                 aContext.fail(put.cause());
             }
-        }, error -> {
-            aContext.fail(error);
         });
     }
 
@@ -370,7 +314,7 @@ public class S3ClientFT extends AbstractS3FT {
         final UserMetadata metadata = getTestUserMetadata();
         final Async asyncTask = aContext.async();
 
-        myTestClient.put(myBucket, myKey, buffer, metadata).onComplete(put -> {
+        myClient.put(myBucket, myKey, buffer, metadata).onComplete(put -> {
             if (put.succeeded()) {
                 aContext.assertTrue(myS3Client.doesObjectExist(myBucket, myKey));
 
@@ -382,7 +326,7 @@ public class S3ClientFT extends AbstractS3FT {
                 }
 
                 if (!asyncTask.isCompleted()) {
-                    assertTrue(put.result().contains(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
+                    aContext.assertTrue(put.result().contains(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
                 }
 
                 complete(asyncTask);
@@ -403,30 +347,21 @@ public class S3ClientFT extends AbstractS3FT {
         final UserMetadata metadata = getTestUserMetadata();
         final Async asyncTask = aContext.async();
 
-        myTestClient.put(myBucket, myKey, buffer, metadata, put -> {
+        myClient.put(myBucket, myKey, buffer, metadata, put -> {
             if (put.succeeded()) {
-                final HttpClientResponse response = put.result();
-                final int statusCode = response.statusCode();
+                aContext.assertTrue(myS3Client.doesObjectExist(myBucket, myKey));
 
-                if (statusCode == HTTP.OK) {
-                    aContext.assertTrue(myS3Client.doesObjectExist(myBucket, myKey));
+                if (!asyncTask.isCompleted()) {
+                    final ObjectMetadata objMetadata = myS3Client.getObjectMetadata(myBucket, myKey);
+                    final String metadataValue = objMetadata.getUserMetaDataOf(metadata.getName(0));
 
-                    if (!asyncTask.isCompleted()) {
-                        final ObjectMetadata objMetadata = myS3Client.getObjectMetadata(myBucket, myKey);
-                        final String metadataValue = objMetadata.getUserMetaDataOf(metadata.getName(0));
-
-                        aContext.assertEquals(metadata.getValue(metadata.getName(0)), metadataValue);
-                    }
-
-                    complete(asyncTask);
-                } else {
-                    aContext.fail(LOGGER.getMessage(MessageCodes.VSS_017, statusCode, response.statusMessage()));
+                    aContext.assertEquals(metadata.getValue(metadata.getName(0)), metadataValue);
                 }
+
+                complete(asyncTask);
             } else {
                 aContext.fail(put.cause());
             }
-        }, error -> {
-            aContext.fail(error);
         });
     }
 
@@ -440,12 +375,12 @@ public class S3ClientFT extends AbstractS3FT {
         final AsyncFile file = myContext.vertx().fileSystem().openBlocking(TEST_FILE, new OpenOptions());
         final Async asyncTask = aContext.async();
 
-        myTestClient.put(myBucket, myKey, file, TEST_FILE.length()).onComplete(put -> {
+        myClient.put(myBucket, myKey, file).onComplete(put -> {
             if (put.succeeded()) {
                 aContext.assertTrue(myS3Client.doesObjectExist(myBucket, myKey));
 
                 if (!asyncTask.isCompleted()) {
-                    assertTrue(put.result().contains(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
+                    aContext.assertTrue(put.result().contains(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
                 }
 
                 complete(asyncTask);
@@ -465,22 +400,18 @@ public class S3ClientFT extends AbstractS3FT {
         final AsyncFile file = myContext.vertx().fileSystem().openBlocking(TEST_FILE, new OpenOptions());
         final Async asyncTask = aContext.async();
 
-        myTestClient.put(myBucket, myKey, file, TEST_FILE.length(), put -> {
+        myClient.put(myBucket, myKey, file, put -> {
             if (put.succeeded()) {
-                final HttpClientResponse response = put.result();
-                final int statusCode = response.statusCode();
+                aContext.assertTrue(myS3Client.doesObjectExist(myBucket, myKey));
 
-                if (statusCode == HTTP.OK) {
-                    aContext.assertTrue(myS3Client.doesObjectExist(myBucket, myKey));
-                    complete(asyncTask);
-                } else {
-                    aContext.fail(LOGGER.getMessage(MessageCodes.VSS_017, statusCode, response.statusMessage()));
+                if (!asyncTask.isCompleted()) {
+                    aContext.assertTrue(put.result().contains(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
                 }
+
+                complete(asyncTask);
             } else {
                 aContext.fail(put.cause());
             }
-        }, error -> {
-            aContext.fail(error);
         });
     }
 
@@ -495,7 +426,7 @@ public class S3ClientFT extends AbstractS3FT {
         final UserMetadata metadata = getTestUserMetadata();
         final Async asyncTask = aContext.async();
 
-        myTestClient.put(myBucket, myKey, file, TEST_FILE.length(), metadata).onComplete(put -> {
+        myClient.put(myBucket, myKey, file, metadata).onComplete(put -> {
             if (put.succeeded()) {
                 aContext.assertTrue(myS3Client.doesObjectExist(myBucket, myKey));
 
@@ -508,7 +439,7 @@ public class S3ClientFT extends AbstractS3FT {
                 }
 
                 if (!asyncTask.isCompleted()) {
-                    assertTrue(put.result().contains(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
+                    aContext.assertTrue(put.result().contains(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
                 }
 
                 complete(asyncTask);
@@ -529,28 +460,19 @@ public class S3ClientFT extends AbstractS3FT {
         final UserMetadata metadata = getTestUserMetadata();
         final Async asyncTask = aContext.async();
 
-        myTestClient.put(myBucket, myKey, file, TEST_FILE.length(), metadata, put -> {
+        myClient.put(myBucket, myKey, file, metadata, put -> {
             if (put.succeeded()) {
-                final HttpClientResponse response = put.result();
-                final int statusCode = response.statusCode();
+                aContext.assertTrue(myS3Client.doesObjectExist(myBucket, myKey));
 
-                if (statusCode == HTTP.OK) {
-                    aContext.assertTrue(myS3Client.doesObjectExist(myBucket, myKey));
+                if (!asyncTask.isCompleted()) {
+                    final ObjectMetadata objMetadata = myS3Client.getObjectMetadata(myBucket, myKey);
+                    final String metadataValue = objMetadata.getUserMetaDataOf(metadata.getName(0));
 
-                    if (!asyncTask.isCompleted()) {
-                        final ObjectMetadata objMetadata = myS3Client.getObjectMetadata(myBucket, myKey);
-                        final String metadataValue = objMetadata.getUserMetaDataOf(metadata.getName(0));
-
-                        aContext.assertEquals(metadata.getValue(metadata.getName(0)), metadataValue);
-                    }
-
-                    complete(asyncTask);
-                } else {
-                    aContext.fail(LOGGER.getMessage(MessageCodes.VSS_017, statusCode, response.statusMessage()));
+                    aContext.assertEquals(metadata.getValue(metadata.getName(0)), metadataValue);
                 }
+
+                complete(asyncTask);
             }
-        }, error -> {
-            aContext.fail(error);
         });
     }
 
@@ -565,7 +487,7 @@ public class S3ClientFT extends AbstractS3FT {
 
         putGIF(myKey);
 
-        myTestClient.delete(myBucket, myKey).onComplete(deletion -> {
+        myClient.delete(myBucket, myKey).onComplete(deletion -> {
             if (deletion.failed()) {
                 aContext.fail(deletion.cause());
             } else {
@@ -586,26 +508,13 @@ public class S3ClientFT extends AbstractS3FT {
 
         putGIF(myKey);
 
-        myTestClient.delete(myBucket, myKey, delete -> {
+        myClient.delete(myBucket, myKey, delete -> {
             if (delete.succeeded()) {
-                final HttpClientResponse response = delete.result();
-                final int statusCode = response.statusCode();
-
-                if (statusCode == HTTP.NO_CONTENT) {
-                    aContext.assertFalse(myS3Client.doesObjectExist(myBucket, myKey));
-                    complete(asyncTask);
-                } else {
-                    response.bodyHandler(body -> {
-                        LOGGER.info(body.toString());
-                    });
-
-                    aContext.fail(LOGGER.getMessage(MessageCodes.VSS_017, statusCode, response.statusMessage()));
-                }
+                aContext.assertFalse(myS3Client.doesObjectExist(myBucket, myKey));
+                complete(asyncTask);
             } else {
                 aContext.fail(delete.cause());
             }
-        }, error -> {
-            aContext.fail(error);
         });
     }
 

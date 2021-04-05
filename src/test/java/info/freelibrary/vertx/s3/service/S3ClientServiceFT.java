@@ -5,7 +5,6 @@ import java.util.UUID;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -13,6 +12,7 @@ import org.junit.runner.RunWith;
 import info.freelibrary.vertx.s3.AbstractS3FT;
 import info.freelibrary.vertx.s3.AwsCredentials;
 import info.freelibrary.vertx.s3.S3ClientOptions;
+import info.freelibrary.vertx.s3.S3ObjectData;
 import info.freelibrary.vertx.s3.TestConstants;
 
 import io.vertx.core.json.JsonObject;
@@ -31,7 +31,7 @@ public class S3ClientServiceFT extends AbstractS3FT {
      * Rule that creates the test context.
      */
     @Rule
-    public RunTestOnContext myTestContext = new RunTestOnContext();
+    public RunTestOnContext myContext = new RunTestOnContext();
 
     private String myBucket;
 
@@ -62,14 +62,14 @@ public class S3ClientServiceFT extends AbstractS3FT {
      * @param aContext A test context
      */
     @Test
-    @Ignore
-    public final void testCreateFromCreds(final TestContext aContext) {
+    public final void testCreateWithOptions(final TestContext aContext) {
         final AwsCredentials creds = new AwsCredentials(myAccessKey, mySecretKey);
-        final S3ClientOptions config = new S3ClientOptions().setEndpoint(myEndpoint);
-        final S3ClientService service = S3ClientService.createCustom(myTestContext.vertx(), creds, config);
+        final S3ClientOptions config = new S3ClientOptions(myEndpoint).setCredentials(creds);
+        final S3ClientService service = S3ClientService.createWithOptions(myContext.vertx(), config);
+        final JsonObject json = new JsonObject().put(TestConstants.ID, myKey);
         final Async asyncTask = aContext.async();
 
-        service.putJSON(myBucket, myKey, new JsonObject().put(TestConstants.ID, myKey), put -> {
+        service.put(myBucket, myKey, new S3ObjectData(json.toBuffer()), put -> {
             if (put.succeeded()) {
                 aContext.assertTrue(myS3Client.doesObjectExist(myBucket, myKey));
                 complete(asyncTask);
@@ -85,14 +85,14 @@ public class S3ClientServiceFT extends AbstractS3FT {
      * @param aContext A test context
      */
     @Test
-    @Ignore
-    public final void testCreateProxyFromCreds(final TestContext aContext) {
-        final AwsCredentials creds = new AwsCredentials(myAccessKey, mySecretKey);
-        final S3ClientOptions config = new S3ClientOptions().setEndpoint(myEndpoint);
-        final S3ClientService service = S3ClientService.createCustomProxy(myTestContext.vertx(), creds, config, "s3");
+    public final void testCreateProxyWithOptions(final TestContext aContext) {
+        final AwsCredentials credentials = new AwsCredentials(myAccessKey, mySecretKey);
+        final S3ClientOptions config = new S3ClientOptions(myEndpoint).setCredentials(credentials);
+        final S3ClientService service = S3ClientService.createProxyWithOptions(myContext.vertx(), config, "s3");
+        final JsonObject json = new JsonObject().put(TestConstants.ID, myKey);
         final Async asyncTask = aContext.async();
 
-        service.putJSON(myBucket, myKey, new JsonObject().put(TestConstants.ID, myKey), put -> {
+        service.put(myBucket, myKey, new S3ObjectData(json.toBuffer()), put -> {
             if (put.succeeded()) {
                 aContext.assertTrue(myS3Client.doesObjectExist(myBucket, myKey));
                 complete(asyncTask);
@@ -100,15 +100,6 @@ public class S3ClientServiceFT extends AbstractS3FT {
                 aContext.fail(put.cause());
             }
         });
-    }
-
-    /**
-     * Tests putting a JSON document to the S3 service.
-     */
-    @Test
-    @Ignore
-    public final void testPutJSON() {
-
     }
 
 }

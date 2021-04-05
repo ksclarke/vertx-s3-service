@@ -10,10 +10,13 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Iterator;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import info.freelibrary.util.I18nRuntimeException;
-
+import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.file.AsyncFile;
 import io.vertx.core.http.HttpHeaders;
 import uk.co.lucasweb.aws.v4.signer.HttpRequest;
 import uk.co.lucasweb.aws.v4.signer.Signer;
@@ -56,53 +59,124 @@ public class AwsV4Signature implements AwsSignature {
     }
 
     @Override
-    public String getAuthorization(final MultiMap aHeaders, final String aMethod, final byte[] aPayload) {
-        try {
-            final LocalDateTime localDateTime = LocalDateTime.ofInstant(Instant.now(), ZoneOffset.UTC);
-            final String timestamp = localDateTime.format(DATE_TIME_FORMATTER);
-            final HttpRequest request = new HttpRequest(aMethod, myHost);
-            final Signer.Builder signer = Signer.builder().awsCredentials(myCredentials);
-            final MessageDigest digest = MessageDigest.getInstance(DIGEST_ALGORITHM);
-            final String sha256Hex = hashToHex(digest.digest(aPayload));
-            final Iterator<Entry<String, String>> iterator;
+    public Future<String> getAuthorization(final MultiMap aHeaders, final String aMethod, final AsyncFile aPayload) {
+        return getSignature(aHeaders, aMethod, getDigest(aPayload));
+    }
 
-            if (myCredentials != null && myCredentials.hasSessionToken()) {
-                final String sessionToken = myCredentials.getSessionToken();
+    @Override
+    public Future<String> getAuthorization(final MultiMap aHeaders, final String aMethod, final Buffer aPayload) {
+        return getSignature(aHeaders, aMethod, getDigest(aPayload));
+    }
 
-                aHeaders.add("X-Amz-Security-Token", sessionToken);
-                signer.header("x-amz-security-token", sessionToken);
-            }
+    @Override
+    public Future<String> getAuthorization(final MultiMap aHeaders, final String aMethod, final String aPayload) {
+        return getSignature(aHeaders, aMethod, getDigest(Buffer.buffer(aPayload)));
+    }
 
-            // If we have any user metadata set, add it to the signed headers
-            iterator = aHeaders.iterator();
+    /**
+     * Gets the value of the "Authorization" header.
+     *
+     * @param aHeaders The request headers
+     * @param aMethod The request method
+     * @param aDigest The SHA-256 digest of the payload
+     * @return The header value string
+     */
+    private Future<String> getSignature(final MultiMap aHeaders, final String aMethod, final Future<String> aDigest) {
+        final LocalDateTime localDateTime = LocalDateTime.ofInstant(Instant.now(), ZoneOffset.UTC);
+        final Signer.Builder signer = Signer.builder().awsCredentials(myCredentials);
+        final String timestamp = localDateTime.format(DATE_TIME_FORMATTER);
+        final HttpRequest request = new HttpRequest(aMethod, myHost);
+        final Promise<String> promise = Promise.promise();
+        final Iterator<Entry<String, String>> iterator;
 
-            while (iterator.hasNext()) {
-                final Entry<String, String> entry = iterator.next();
-                final String headerKey = entry.getKey();
+        if (myCredentials != null && myCredentials.hasSessionToken()) {
+            final String sessionToken = myCredentials.getSessionToken();
 
-                if (headerKey.startsWith(AWS_NAME_PREFIX) ||
-                        headerKey.equalsIgnoreCase(HttpHeaders.CONTENT_MD5.toString()) ||
-                        headerKey.equalsIgnoreCase(HttpHeaders.CONTENT_TYPE.toString())) {
-                    if (headerKey.equals(HttpHeaders.CONTENT_LENGTH)) {
-                        signer.header("Content-Length", entry.getValue());
-                    } else {
-                        System.out.println(headerKey + " = " + entry.getValue());
-                        signer.header(headerKey, entry.getValue());
-                    }
-                }
-            }
-
-            signer.header(HOST, myHost.getHost());
-            aHeaders.add(HOST, myHost.getHost());
-            signer.header(X_AMZ_DATE, timestamp);
-            aHeaders.add(X_AMZ_DATE, timestamp);
-            signer.header(X_AMZ_CONTENT_SHA256, sha256Hex);
-            aHeaders.add(X_AMZ_CONTENT_SHA256, sha256Hex);
-
-            return signer.buildS3(request, sha256Hex).getSignature();
-        } catch (final NoSuchAlgorithmException details) {
-            throw new I18nRuntimeException(details);
+            aHeaders.add("X-Amz-Security-Token", sessionToken);
+            signer.header("x-amz-security-token", sessionToken);
         }
+
+        // If we have any user metadata set, add it to the signed headers
+        iterator = aHeaders.iterator();
+
+        while (iterator.hasNext()) {
+            final Entry<String, String> entry = iterator.next();
+            final String headerKey = entry.getKey();
+
+            if (headerKey.startsWith(AWS_NAME_PREFIX) ||
+                    headerKey.equalsIgnoreCase(HttpHeaders.CONTENT_MD5.toString()) ||
+                    headerKey.equalsIgnoreCase(HttpHeaders.CONTENT_TYPE.toString())) {
+                signer.header(headerKey, entry.getValue());
+            }
+        }
+
+        signer.header(HOST, myHost.getHost());
+        aHeaders.add(HOST, myHost.getHost());
+        signer.header(X_AMZ_DATE, timestamp);
+        aHeaders.add(X_AMZ_DATE, timestamp);
+
+        aDigest.onComplete(digest -> {
+            if (digest.succeeded()) {
+                signer.header(X_AMZ_CONTENT_SHA256, digest.result());
+                aHeaders.add(X_AMZ_CONTENT_SHA256, digest.result());
+                promise.complete(signer.buildS3(request, digest.result()).getSignature());
+            } else {
+                promise.fail(digest.cause());
+            }
+        });
+
+        return promise.future();
+    }
+
+    /**
+     * Gets theSHA-256 digest string of the supplied file.
+     *
+     * @param aFile A payload
+     * @return The SHA-256 digest string
+     */
+    private Future<String> getDigest(final AsyncFile aFile) {
+        final Promise<String> promise = Promise.promise();
+
+        try {
+            final MessageDigest messageDigest = MessageDigest.getInstance(DIGEST_ALGORITHM);
+            final AtomicInteger counter = new AtomicInteger();
+
+            aFile.handler(read -> {
+                final byte[] bytes = read.getBytes();
+
+                counter.addAndGet(bytes.length);
+                messageDigest.update(bytes);
+            }).endHandler(end -> {
+                aFile.setReadPos(0);
+                aFile.setReadLength(counter.longValue());
+                promise.complete(hashToHex(messageDigest.digest()));
+            }).exceptionHandler(error -> {
+                promise.fail(error);
+            });
+        } catch (final NoSuchAlgorithmException details) {
+            promise.fail(details);
+        }
+
+        return promise.future();
+    }
+
+    /**
+     * Gets theSHA-256 digest string of the supplied buffer.
+     *
+     * @param aBuffer A payload
+     * @return The SHA-256 digest string
+     */
+    private Future<String> getDigest(final Buffer aBuffer) {
+        final Promise<String> promise = Promise.promise();
+
+        try {
+            final MessageDigest messageDigest = MessageDigest.getInstance(DIGEST_ALGORITHM);
+            promise.complete(hashToHex(messageDigest.digest(aBuffer.getBytes())));
+        } catch (final NoSuchAlgorithmException details) {
+            promise.fail(details);
+        }
+
+        return promise.future();
     }
 
     /**

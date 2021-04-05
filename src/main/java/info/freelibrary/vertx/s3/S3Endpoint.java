@@ -34,7 +34,9 @@ public enum S3Endpoint implements Endpoint {
     US_GOV_EAST_1("us-gov-east-1", "AWS GovCloud (US-East)"), //
     US_GOV_WEST_1("us-gov-west-1", "AWS GovCloud (US)");
 
-    private static final String ENDPOINT_PATTERN = "https://s3.{}.amazonaws.com";
+    private static final String HOST_PATTERN = "s3.{}.amazonaws.com";
+
+    private static final String ENDPOINT_PATTERN = "https://" + HOST_PATTERN;
 
     private static final String DUALSTACK_ENDPOINT_PATTERN = "https://s3.dualstack.{}.amazonaws.com";
 
@@ -66,6 +68,16 @@ public enum S3Endpoint implements Endpoint {
     @Override
     public String getRegion() {
         return myRegion;
+    }
+
+    @Override
+    public String getHost() {
+        return StringUtils.format(HOST_PATTERN, myRegion);
+    }
+
+    @Override
+    public int getPort() {
+        return 443;
     }
 
     @Override

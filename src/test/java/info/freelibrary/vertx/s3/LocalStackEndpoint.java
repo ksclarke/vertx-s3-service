@@ -1,6 +1,8 @@
 
 package info.freelibrary.vertx.s3;
 
+import java.net.URI;
+
 import info.freelibrary.util.StringUtils;
 
 /**
@@ -47,8 +49,18 @@ public class LocalStackEndpoint implements Endpoint {
     }
 
     @Override
+    public String getHost() {
+        return URI.create(myEndpointURI).getHost();
+    }
+
+    @Override
     public String getLabel() {
         return myEndpointURI;
+    }
+
+    @Override
+    public int getPort() {
+        return URI.create(myEndpointURI).getPort();
     }
 
 }

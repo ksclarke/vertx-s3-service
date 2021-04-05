@@ -2,14 +2,16 @@
 package info.freelibrary.vertx.s3;
 
 import java.net.URI;
-import java.nio.charset.Charset;
+import java.util.Objects;
 import java.util.Optional;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.file.AsyncFile;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpConnection;
@@ -17,7 +19,6 @@ import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
-import io.vertx.core.streams.ReadStream;
 
 /**
  * An S3 client request implementation of <code>HttpClientRequest</code>.
@@ -54,6 +55,11 @@ class S3ClientRequest implements HttpClientRequest {
         myRequest = aRequest;
     }
 
+    /**
+     * Gets the credentials, if any, associated with this request.
+     *
+     * @return The request's AWS credentials
+     */
     public Optional<AwsCredentials> getCredentials() {
         return myCredentials;
     }
@@ -166,26 +172,25 @@ class S3ClientRequest implements HttpClientRequest {
 
     @Override
     public Future<Void> end(final String aChunk) {
-        addAuthorizationHeader(aChunk.getBytes());
-        return myRequest.end(aChunk);
+        return addAuthorizationHeader(Buffer.buffer(aChunk)).compose(
+            result -> myRequest.putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(aChunk.length())).end(aChunk));
     }
 
     @Override
     public Future<Void> end(final String aChunk, final String aEncoding) {
-        addAuthorizationHeader(aChunk.getBytes(Charset.forName(aEncoding)));
-        return myRequest.end(aChunk, aEncoding);
+        return addAuthorizationHeader(Buffer.buffer(aChunk, aEncoding)).compose(result -> myRequest
+            .putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(aChunk.length())).end(aChunk, aEncoding));
     }
 
     @Override
     public Future<Void> end(final Buffer aChunk) {
-        addAuthorizationHeader(aChunk.getBytes());
-        return myRequest.end(aChunk);
+        return addAuthorizationHeader(aChunk).compose(
+            result -> myRequest.putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(aChunk.length())).end(aChunk));
     }
 
     @Override
     public Future<Void> end() {
-        addAuthenticationHeader();
-        return myRequest.end();
+        return addAuthorizationHeader().compose(result -> myRequest.end());
     }
 
     /**
@@ -193,33 +198,66 @@ class S3ClientRequest implements HttpClientRequest {
      *
      * @return The S3 client request
      */
-    protected S3ClientRequest addAuthenticationHeader() {
-        return addAuthorizationHeader(new byte[] {});
+    protected Future<Void> addAuthorizationHeader() {
+        return addAuthorizationHeader(Buffer.buffer());
     }
 
     /**
      * Adds the authentication header.
      *
+     * @param aFile An asynchronous file
      * @return The S3 client request
      */
-    protected S3ClientRequest addAuthorizationHeader(final byte[] aBytes) {
+    protected Future<Void> addAuthorizationHeader(final AsyncFile aFile) {
+        final Promise<Void> promise = Promise.promise();
+
         if (myCredentials.isPresent()) {
             final AwsSignatureFactory factory = AwsSignatureFactory.getFactory().setHost(URI.create(absoluteURI()));
             final MultiMap headers = headers();
-            final AwsSignature signature;
 
             factory.setCredentials(myCredentials.get());
-
-            // If the content-md5 header isn't already set, we can set it now using our supplied byte array
-            if (!headers.contains(HttpHeaders.CONTENT_MD5) && aBytes != null && aBytes.length > 0) {
-
-            }
-
-            signature = factory.getSignature();
-            headers.add(HttpHeaders.AUTHORIZATION, signature.getAuthorization(headers, getMethod().name(), aBytes));
+            factory.getSignature().getAuthorization(headers, getMethod().name(), aFile).onComplete(auth -> {
+                if (auth.succeeded()) {
+                    headers.add(HttpHeaders.AUTHORIZATION, auth.result());
+                    promise.complete();
+                } else {
+                    promise.fail(auth.cause());
+                }
+            });
+        } else {
+            promise.complete(); // Will probably lead to a 403, but that's okay
         }
 
-        return this;
+        return promise.future();
+    }
+
+    /**
+     * Adds the authentication header.
+     *
+     * @param aBuffer A buffer
+     * @return The S3 client request
+     */
+    protected Future<Void> addAuthorizationHeader(final Buffer aBuffer) {
+        final Promise<Void> promise = Promise.promise();
+
+        if (myCredentials.isPresent()) {
+            final AwsSignatureFactory factory = AwsSignatureFactory.getFactory().setHost(URI.create(absoluteURI()));
+            final MultiMap headers = headers();
+
+            factory.setCredentials(myCredentials.get());
+            factory.getSignature().getAuthorization(headers, getMethod().name(), aBuffer).onComplete(auth -> {
+                if (auth.succeeded()) {
+                    headers.add(HttpHeaders.AUTHORIZATION, auth.result());
+                    promise.complete();
+                } else {
+                    promise.fail(auth.cause());
+                }
+            });
+        } else {
+            promise.complete(); // Will probably lead to a 403, but that's okay
+        }
+
+        return promise.future();
     }
 
     /**
@@ -229,6 +267,8 @@ class S3ClientRequest implements HttpClientRequest {
      * @return The S3 client request
      */
     public S3ClientRequest setUserMetadata(final UserMetadata aUserMetadata) {
+        Objects.requireNonNull(aUserMetadata);
+
         for (int index = 0; index < aUserMetadata.count(); index++) {
             myRequest.putHeader(AWS_NAME_PREFIX + aUserMetadata.getName(index), aUserMetadata.getValue(index));
         }
@@ -264,39 +304,42 @@ class S3ClientRequest implements HttpClientRequest {
 
     @Override
     public S3ClientRequest sendHead(final Handler<AsyncResult<Void>> aHandler) {
-        addAuthenticationHeader();
-        myRequest.sendHead(aHandler);
+        addAuthorizationHeader().onComplete(auth -> {
+            if (auth.succeeded()) {
+                myRequest.sendHead(aHandler);
+            } else {
+                aHandler.handle(Future.failedFuture(auth.cause()));
+            }
+        });
+
         return this;
     }
 
     @Override
     public Future<Void> sendHead() {
-        addAuthenticationHeader();
-        return myRequest.sendHead();
+        return addAuthorizationHeader().compose(result -> myRequest.sendHead());
     }
 
     @Override
     public Future<HttpClientResponse> send() {
-        addAuthenticationHeader();
-        return myRequest.send();
+        return addAuthorizationHeader().compose(result -> myRequest.send());
     }
 
     @Override
     public Future<HttpClientResponse> send(final Buffer aBuffer) {
-        addAuthenticationHeader();
-        return myRequest.send(aBuffer);
+        return addAuthorizationHeader(aBuffer).compose(
+            result -> myRequest.putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(aBuffer.length())).send(aBuffer));
     }
 
-    @Override
-    public Future<HttpClientResponse> send(final ReadStream<Buffer> aBufferStream) {
-        addAuthenticationHeader();
-        return myRequest.send(aBufferStream);
+    public Future<HttpClientResponse> send(final AsyncFile aFile) {
+        return addAuthorizationHeader(aFile).compose(result -> myRequest
+            .putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(aFile.getReadLength())).send(aFile));
     }
 
     @Override
     public Future<HttpClientResponse> send(final String aString) {
-        addAuthenticationHeader();
-        return myRequest.send(aString);
+        return addAuthorizationHeader().compose(
+            result -> myRequest.putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(aString.length())).send(aString));
     }
 
     @Override

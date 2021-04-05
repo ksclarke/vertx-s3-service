@@ -10,9 +10,9 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
- * A SAX handler for S3's ObjectList response.
+ * A SAX handler for S3's S3ObjectList response.
  */
-class ObjectListHandler extends DefaultHandler {
+class S3ObjectListHandler extends DefaultHandler {
 
     /** The element name for an S3 key. */
     private static final String KEY = "Key";
@@ -33,13 +33,13 @@ class ObjectListHandler extends DefaultHandler {
     private static final String ETAG = "ETag";
 
     /** The S3 list in a Java {@link List}. */
-    private final List<ListObject> myList = new ArrayList<>();
+    private final List<S3ObjectList> myList = new ArrayList<>();
 
     /** Temporary storage for characters parsed through SAX */
     private final StringBuilder myValue = new StringBuilder();
 
     /** A single S3 list object */
-    private ListObject myListObject;
+    private S3ObjectList myListObject;
 
     /** The last element encountered while parsing S3 output */
     private String myCurrentElement;
@@ -63,7 +63,7 @@ class ObjectListHandler extends DefaultHandler {
             final Attributes aAttributes) throws SAXException {
         switch (aLocalName) {
             case CONTENTS:
-                myListObject = new ListObject();
+                myListObject = new S3ObjectList();
                 break;
             case KEY:
             case ETAG:
@@ -114,7 +114,7 @@ class ObjectListHandler extends DefaultHandler {
      *
      * @return The list of S3 objects
      */
-    public List<ListObject> getList() {
+    public List<S3ObjectList> getList() {
         return myList;
     }
 

@@ -6,7 +6,6 @@ import java.util.UUID;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -14,11 +13,10 @@ import org.junit.runner.RunWith;
 import com.amazonaws.services.s3.model.S3Object;
 
 import info.freelibrary.vertx.s3.AbstractS3FT;
+import info.freelibrary.vertx.s3.AwsCredentials;
+import info.freelibrary.vertx.s3.S3ClientOptions;
+import info.freelibrary.vertx.s3.S3ObjectData;
 
-import io.vertx.core.Future;
-import io.vertx.core.eventbus.DeliveryOptions;
-import io.vertx.core.eventbus.EventBus;
-import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -37,7 +35,7 @@ public class S3ClientServiceProxyImplFT extends AbstractS3FT {
      * Rule that creates the test context.
      */
     @Rule
-    public RunTestOnContext myTestContext = new RunTestOnContext();
+    public RunTestOnContext myContext = new RunTestOnContext();
 
     private String myBucket;
 
@@ -76,16 +74,20 @@ public class S3ClientServiceProxyImplFT extends AbstractS3FT {
      * @param aContext A test context
      */
     @Test
-    @Ignore
     public final void testS3ClientServiceProxyImplVertxString(final TestContext aContext) {
-        final S3ClientService service = new S3ClientServiceProxyImpl(myTestContext.vertx(), ADDRESS);
+        final AwsCredentials awsCreds = new AwsCredentials(myAccessKey, mySecretKey);
+        final S3ClientOptions config = new S3ClientOptions(myEndpoint).setCredentials(awsCreds);
+        final S3ClientService service = new S3ClientServiceProxyImpl(myContext.vertx(), config, ADDRESS);
+        final JsonObject json = new JsonObject().put("asdf", "aaaa");
         final Async asyncTask = aContext.async();
 
-        service.putJSON(myBucket, myKey, new JsonObject().put("asdf", "aaaa"), put -> {
+        service.put(myBucket, myKey, new S3ObjectData(json.toBuffer()), put -> {
             if (put.succeeded()) {
                 try (S3Object s3Obj = myS3Client.getObject(myBucket, myKey)) {
                     aContext.assertEquals(myBucket, s3Obj.getBucketName());
                     aContext.assertEquals(myKey, s3Obj.getKey());
+                    s3Obj.getObjectContent().abort();
+                    s3Obj.close();
                 } catch (final IOException details) {
                     aContext.fail(details);
                 } finally {
@@ -94,30 +96,6 @@ public class S3ClientServiceProxyImplFT extends AbstractS3FT {
             } else {
                 aContext.fail(put.cause());
             }
-        });
-    }
-
-    /**
-     * Tests constructing a S3 client service proxy from the supplied address.
-     *
-     * @param aContext A test context
-     */
-    @Test
-    @Ignore
-    public final void testS3ClientServiceProxyImplVertxString2(final TestContext aContext) {
-        final S3ClientService service = new S3ClientServiceProxyImpl(myTestContext.vertx(), ADDRESS);
-        final Async asyncTask = aContext.async();
-
-        final EventBus eventBus = myTestContext.vertx().eventBus();
-
-        final Future<Message<JsonObject>> future =
-                eventBus.request("s3-service",
-                        new JsonObject().put("bucket", myBucket).put("key", myKey).put("Document",
-                                new JsonObject().put("zz", "11")),
-                        new DeliveryOptions().addHeader("action", "putJSON"));
-
-        future.onComplete(put -> {
-            asyncTask.complete();
         });
     }
 

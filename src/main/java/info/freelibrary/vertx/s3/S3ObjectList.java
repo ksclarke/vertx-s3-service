@@ -9,7 +9,7 @@ import java.util.TimeZone;
 /**
  * An S3 list object.
  */
-public class ListObject {
+public class S3ObjectList {
 
     private static final SimpleDateFormat DATE = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 
@@ -26,7 +26,7 @@ public class ListObject {
     /**
      * Creates a new S3 list object.
      */
-    public ListObject() {
+    public S3ObjectList() {
         DATE.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
 
@@ -36,7 +36,7 @@ public class ListObject {
      * @param aKey A key
      * @return The list object
      */
-    public ListObject setKey(final String aKey) {
+    public S3ObjectList setKey(final String aKey) {
         myKey = aKey;
         return this;
     }
@@ -56,7 +56,7 @@ public class ListObject {
      * @param aETag A ETag
      * @return The list object
      */
-    public ListObject setETag(final String aETag) {
+    public S3ObjectList setETag(final String aETag) {
         myETag = aETag;
         return this;
     }
@@ -76,7 +76,7 @@ public class ListObject {
      * @param aLastUpdated A last updated date
      * @return The list object
      */
-    public ListObject setLastUpdated(final String aLastUpdated) throws ParseException {
+    public S3ObjectList setLastUpdated(final String aLastUpdated) throws ParseException {
         myLastUpdated = DATE.parse(aLastUpdated).toInstant();
         return this;
     }
@@ -96,7 +96,7 @@ public class ListObject {
      * @param aSize A object size
      * @return The list object
      */
-    public ListObject setSize(final String aSize) {
+    public S3ObjectList setSize(final String aSize) {
         mySize = Integer.parseInt(aSize);
         return this;
     }
@@ -116,7 +116,7 @@ public class ListObject {
      * @param aStorageClass A storage class
      * @return The list object
      */
-    public ListObject setStorageClass(final String aStorageClass) {
+    public S3ObjectList setStorageClass(final String aStorageClass) {
         myStorageClass = aStorageClass;
         return this;
     }
