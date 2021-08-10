@@ -81,7 +81,7 @@ public class S3ClientServiceProxyImplFT extends AbstractS3FT {
         final JsonObject json = new JsonObject().put("asdf", "aaaa");
         final Async asyncTask = aContext.async();
 
-        service.put(myBucket, myKey, new S3ObjectData(json.toBuffer()), put -> {
+        service.put(myBucket, myKey, new S3ObjectData(json.toBuffer())).onComplete(put -> {
             if (put.succeeded()) {
                 try (S3Object s3Obj = myS3Client.getObject(myBucket, myKey)) {
                     aContext.assertEquals(myBucket, s3Obj.getBucketName());

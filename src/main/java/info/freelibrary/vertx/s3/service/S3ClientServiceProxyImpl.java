@@ -4,6 +4,7 @@ package info.freelibrary.vertx.s3.service;
 import info.freelibrary.vertx.s3.S3ClientOptions;
 
 import io.vertx.codegen.annotations.ProxyClose;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.json.JsonObject;
@@ -14,8 +15,14 @@ import io.vertx.serviceproxy.ServiceBinder;
  */
 public class S3ClientServiceProxyImpl extends S3ClientServiceImpl implements S3ClientService {
 
+    /**
+     * The message consumer for the proxy implementation.
+     */
     private final MessageConsumer<JsonObject> myConsumer;
 
+    /**
+     * The service binder for the proxy implementation.
+     */
     private final ServiceBinder myServiceBinder;
 
     /**
@@ -51,8 +58,9 @@ public class S3ClientServiceProxyImpl extends S3ClientServiceImpl implements S3C
 
     @Override
     @ProxyClose
-    public void close() {
-        super.close();
+    public Future<Void> close() {
+        final Future<Void> future = super.close();
         myServiceBinder.unregister(myConsumer);
+        return future;
     }
 }

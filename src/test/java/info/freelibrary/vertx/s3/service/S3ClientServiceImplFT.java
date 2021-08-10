@@ -75,7 +75,7 @@ public class S3ClientServiceImplFT extends AbstractS3FT {
         final JsonObject testObject = new JsonObject().put(myKey, myBucket);
         final Async asyncTask = aContext.async();
 
-        service.put(myBucket, myKey, new S3ObjectData(testObject.toBuffer()), put -> {
+        service.put(myBucket, myKey, new S3ObjectData(testObject.toBuffer())).onComplete(put -> {
             if (put.succeeded()) {
                 try (S3Object s3Obj = myS3Client.getObject(myBucket, myKey)) {
                     aContext.assertEquals(myBucket, s3Obj.getBucketName());
@@ -106,7 +106,7 @@ public class S3ClientServiceImplFT extends AbstractS3FT {
         final JsonObject json = new JsonObject().put(TestConstants.ID, myKey);
         final Async asyncTask = aContext.async();
 
-        service.put(myBucket, myKey, new S3ObjectData(json.toBuffer()), put -> {
+        service.put(myBucket, myKey, new S3ObjectData(json.toBuffer())).onComplete(put -> {
             if (put.succeeded()) {
                 aContext.assertTrue(myS3Client.doesObjectExist(myBucket, myKey));
                 complete(asyncTask);
@@ -135,7 +135,7 @@ public class S3ClientServiceImplFT extends AbstractS3FT {
         aContext.assertTrue(myS3Client.doesObjectExist(myBucket, myKey));
 
         // Get the object from the S3 bucket and check its value
-        service.get(myBucket, myKey, get -> {
+        service.get(myBucket, myKey).onComplete(get -> {
             if (get.succeeded()) {
                 get.result().asBuffer(fileSystem).onComplete(asBuffer -> {
                     if (asBuffer.succeeded()) {

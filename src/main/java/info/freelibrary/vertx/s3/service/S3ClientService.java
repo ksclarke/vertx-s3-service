@@ -4,12 +4,10 @@ package info.freelibrary.vertx.s3.service;
 import info.freelibrary.vertx.s3.S3ClientOptions;
 import info.freelibrary.vertx.s3.S3ObjectData;
 
-import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.ProxyClose;
 import io.vertx.codegen.annotations.ProxyGen;
 import io.vertx.codegen.annotations.VertxGen;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
 /**
@@ -60,37 +58,35 @@ public interface S3ClientService {
      * @return The S3 client service
      */
     static S3ClientService createProxyWithOptions(final Vertx aVertx, final S3ClientOptions aConfig,
-        final String aAddress) {
+            final String aAddress) {
         return new S3ClientServiceProxyImpl(aVertx, aConfig, aAddress);
     }
 
     /**
-     * Puts a JsonObject to the S3 bucket.
+     * Puts S3ObjectData to the S3 bucket.
      *
      * @param aBucket An S3 bucket
      * @param aKey A key for the JSON object
      * @param aObjectData A object with the data to be uploaded
-     * @param aResult The result of the PUT
-     * @return The service
+     * @return The result of the PUT
      */
-    @Fluent
-    S3ClientService put(String aBucket, String aKey, S3ObjectData aObjectData, Handler<AsyncResult<Void>> aResult);
+    Future<Void> put(String aBucket, String aKey, S3ObjectData aObjectData);
 
     /**
-     * Gets a JsonObject from the S3 client service.
+     * Gets S3ObjectData from the S3 client service.
      *
      * @param aBucket An S3 bucket
-     * @param aKey An S3 object key
-     * @param aResult A handler for the result
-     * @return The service
+     * @param aKey An S3 key
+     * @return The S3ObjectData
      */
-    @Fluent
-    S3ClientService get(String aBucket, String aKey, Handler<AsyncResult<S3ObjectData>> aResult);
+    Future<S3ObjectData> get(String aBucket, String aKey);
 
     /**
      * Closes the S3 client service.
+     *
+     * @return A result for closing the service
      */
     @ProxyClose
-    void close();
+    Future<Void> close();
 
 }

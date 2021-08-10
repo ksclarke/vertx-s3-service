@@ -69,7 +69,7 @@ public class S3ClientServiceFT extends AbstractS3FT {
         final JsonObject json = new JsonObject().put(TestConstants.ID, myKey);
         final Async asyncTask = aContext.async();
 
-        service.put(myBucket, myKey, new S3ObjectData(json.toBuffer()), put -> {
+        service.put(myBucket, myKey, new S3ObjectData(json.toBuffer())).onComplete(put -> {
             if (put.succeeded()) {
                 aContext.assertTrue(myS3Client.doesObjectExist(myBucket, myKey));
                 complete(asyncTask);
@@ -92,7 +92,7 @@ public class S3ClientServiceFT extends AbstractS3FT {
         final JsonObject json = new JsonObject().put(TestConstants.ID, myKey);
         final Async asyncTask = aContext.async();
 
-        service.put(myBucket, myKey, new S3ObjectData(json.toBuffer()), put -> {
+        service.put(myBucket, myKey, new S3ObjectData(json.toBuffer())).onComplete(put -> {
             if (put.succeeded()) {
                 aContext.assertTrue(myS3Client.doesObjectExist(myBucket, myKey));
                 complete(asyncTask);
