@@ -61,11 +61,11 @@ Once your S3 bucket has been created, the default property values in the build c
 
 After the integration test setup has been done all three types of tests can be run along with the build by typing:
 
-    mvn verify -Ps3_it
+    mvn verify -P s3_it
 
 or
 
-    mvn verify -Ps3it -Dtest.s3.bucket=YOUR_BUCKET_NAME -Dtest.s3.region=YOUR_REGION
+    mvn verify -P s3_it -Dtest.s3.bucket=YOUR_BUCKET_NAME -Dtest.s3.region=YOUR_REGION
 
 The first would be an example of running the build with the additional profile values put into your settings.xml file. The second is an example of supplying the required values on the command line.
 
