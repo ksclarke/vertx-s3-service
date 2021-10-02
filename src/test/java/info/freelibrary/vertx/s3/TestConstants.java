@@ -8,8 +8,6 @@ public final class TestConstants {
 
     public static final String ID = "id";
 
-    static final String TEST_PROFILE = "vertx-s3";
-
     static final String TEST_KEY_PREFIX = "green-";
 
     static final String TEST_KEY_SUFFIX = ".gif";
@@ -32,21 +30,10 @@ public final class TestConstants {
 
     static final String FOUR = "four";
 
-    //
-
-    static final String S3_SERVICE = "s3";
-
-    static final String S3_BUCKET = "test.s3.bucket";
-
-    static final String S3_REGION = "test.s3.region";
-
     /**
-     * The version of the test container's tag.
+     * Creates a new test constants class.
      */
-    static final String TAG_VERSION = "container.tag.version";
-
-    static final String IMAGE_NAME = "container.image.name";
-
     private TestConstants() {
+        // This is intentionally left empty.
     }
 }

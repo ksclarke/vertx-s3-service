@@ -15,6 +15,9 @@ import io.vertx.core.streams.WriteStream;
  */
 class S3ClientResponseImpl implements S3ClientResponse {
 
+    /**
+     * The inner HTTP client response.
+     */
     private final HttpClientResponse myHttpResponse;
 
     /**

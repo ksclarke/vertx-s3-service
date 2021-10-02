@@ -4,7 +4,9 @@ package info.freelibrary.vertx.s3;
 import static info.freelibrary.util.Constants.COMMA;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -15,11 +17,17 @@ import io.vertx.core.MultiMap;
  */
 public class HttpHeaders implements io.vertx.core.http.HttpHeaders {
 
+    /**
+     * Header patterns, used to match headers.
+     */
     private static final String HEADER_PATTERN = String.join("|", ACCEPT, ACCEPT_CHARSET, ACCEPT_ENCODING,
-            ACCEPT_LANGUAGE, CONNECTION, ACCESS_CONTROL_ALLOW_HEADERS, ACCESS_CONTROL_ALLOW_METHODS,
-            ACCESS_CONTROL_ALLOW_ORIGIN, ACCESS_CONTROL_EXPOSE_HEADERS, ACCESS_CONTROL_REQUEST_HEADERS,
-            CONTENT_LANGUAGE, ACCESS_CONTROL_REQUEST_METHOD);
+        ACCEPT_LANGUAGE, CONNECTION, ACCESS_CONTROL_ALLOW_HEADERS, ACCESS_CONTROL_ALLOW_METHODS,
+        ACCESS_CONTROL_ALLOW_ORIGIN, ACCESS_CONTROL_EXPOSE_HEADERS, ACCESS_CONTROL_REQUEST_HEADERS, CONTENT_LANGUAGE,
+        ACCESS_CONTROL_REQUEST_METHOD);
 
+    /**
+     * A header multi-map.
+     */
     private final MultiMap myMultiMap;
 
     /**
@@ -36,7 +44,7 @@ public class HttpHeaders implements io.vertx.core.http.HttpHeaders {
      */
     public HttpHeaders(final Map<String, String> aMap) {
         myMultiMap = io.vertx.core.http.HttpHeaders.headers();
-        this.addAll(aMap);
+        myMultiMap.addAll(aMap);
     }
 
     /**
@@ -66,14 +74,12 @@ public class HttpHeaders implements io.vertx.core.http.HttpHeaders {
      * @return The values of the requested header
      */
     public List<String> getAll(final CharSequence aName) {
-        final String name = aName.toString().toLowerCase();
+        final String name = aName.toString().toLowerCase(Locale.US);
         final List<String> list = new ArrayList<>();
 
         if (name.matches(HEADER_PATTERN)) {
             for (final String values : myMultiMap.getAll(aName)) {
-                for (final String value : values.split(COMMA)) {
-                    list.add(value);
-                }
+                Collections.addAll(list, values.split(COMMA));
             }
         } else {
             list.addAll(myMultiMap.getAll(aName));

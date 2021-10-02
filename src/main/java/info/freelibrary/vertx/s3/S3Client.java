@@ -1,6 +1,8 @@
 
 package info.freelibrary.vertx.s3;
 
+import static info.freelibrary.util.Constants.EOL;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
@@ -13,9 +15,7 @@ import info.freelibrary.util.Logger;
 import info.freelibrary.util.LoggerFactory;
 import info.freelibrary.util.StringUtils;
 import info.freelibrary.util.XmlUtils;
-
 import info.freelibrary.vertx.s3.util.MessageCodes;
-
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -35,23 +35,39 @@ import io.vertx.core.http.HttpMethod;
 @SuppressWarnings("PMD.TooManyMethods")
 public class S3Client {
 
+    /**
+     * The S3 client logger.
+     */
     private static final Logger LOGGER = LoggerFactory.getLogger(S3Client.class, MessageCodes.BUNDLE);
 
+    /**
+     * The S3 list command.
+     */
     private static final String LIST_CMD = "?list-type=2";
 
+    /**
+     * The S3 list command with a prefix.
+     */
     private static final String PREFIX_LIST_CMD = "?list-type=2&prefix=";
 
+    /**
+     * A URL request template.
+     */
     private static final String REQUEST = "/{}/{}";
 
-    private static final String EOL = System.lineSeparator();
-
-    /** AWS credentials */
+    /**
+     * AWS credentials.
+     */
     private final AwsCredentials myCredentials;
 
-    /** HTTP client used to interact with S3 */
+    /**
+     * HTTP client used to interact with S3.
+     */
     private final HttpClient myHttpClient;
 
-    /** The internal Vert.x instance */
+    /**
+     * The internal Vert.x instance.
+     */
     private final Vertx myVertx;
 
     /**
@@ -97,9 +113,8 @@ public class S3Client {
 
             if (statusCode == HTTP.NO_CONTENT) {
                 return Future.<Void>succeededFuture();
-            } else {
-                return Future.failedFuture(new UnexpectedStatusException(statusCode, response.statusMessage()));
             }
+            return Future.failedFuture(new UnexpectedStatusException(statusCode, response.statusMessage()));
         }));
     }
 
@@ -153,9 +168,8 @@ public class S3Client {
 
             if (statusCode == HTTP.OK) {
                 return Future.succeededFuture(new S3ClientResponseImpl(response));
-            } else {
-                return Future.failedFuture(new UnexpectedStatusException(statusCode, response.statusMessage()));
             }
+            return Future.failedFuture(new UnexpectedStatusException(statusCode, response.statusMessage()));
         }));
     }
 
@@ -209,9 +223,8 @@ public class S3Client {
 
             if (statusCode == HTTP.OK) {
                 return Future.succeededFuture(new HttpHeaders(response.headers()));
-            } else {
-                return Future.failedFuture(new UnexpectedStatusException(statusCode, response.statusMessage()));
             }
+            return Future.failedFuture(new UnexpectedStatusException(statusCode, response.statusMessage()));
         }));
     }
 
@@ -262,25 +275,24 @@ public class S3Client {
         return createGetRequest(aBucket, LIST_CMD).compose(request -> request.send().compose(response -> {
             final int statusCode = response.statusCode();
 
-            if (statusCode == HTTP.OK) {
-                final Promise<S3BucketList> promise = Promise.promise();
-
-                response.body(body -> {
-                    if (body.succeeded()) {
-                        try {
-                            promise.complete(new S3BucketList(body.result()));
-                        } catch (final IOException details) {
-                            promise.fail(details);
-                        }
-                    } else {
-                        promise.fail(body.cause());
-                    }
-                });
-
-                return promise.future();
-            } else {
+            if (statusCode != HTTP.OK) {
                 return Future.failedFuture(new UnexpectedStatusException(statusCode, response.statusMessage()));
             }
+            final Promise<S3BucketList> promise = Promise.promise();
+
+            response.body(body -> {
+                if (body.succeeded()) {
+                    try {
+                        promise.complete(new S3BucketList(body.result()));
+                    } catch (final IOException details) {
+                        promise.fail(details);
+                    }
+                } else {
+                    promise.fail(body.cause());
+                }
+            });
+
+            return promise.future();
         }));
     }
 
@@ -342,25 +354,24 @@ public class S3Client {
         return createGetRequest(aBucket, prefixedList).compose(request -> request.send().compose(response -> {
             final int statusCode = response.statusCode();
 
-            if (statusCode == HTTP.OK) {
-                final Promise<S3BucketList> promise = Promise.promise();
-
-                response.body(body -> {
-                    if (body.succeeded()) {
-                        try {
-                            promise.complete(new S3BucketList(body.result()));
-                        } catch (final IOException details) {
-                            promise.fail(details);
-                        }
-                    } else {
-                        promise.fail(body.cause());
-                    }
-                });
-
-                return promise.future();
-            } else {
+            if (statusCode != HTTP.OK) {
                 return Future.failedFuture(new UnexpectedStatusException(statusCode, response.statusMessage()));
             }
+            final Promise<S3BucketList> promise = Promise.promise();
+
+            response.body(body -> {
+                if (body.succeeded()) {
+                    try {
+                        promise.complete(new S3BucketList(body.result()));
+                    } catch (final IOException details) {
+                        promise.fail(details);
+                    }
+                } else {
+                    promise.fail(body.cause());
+                }
+            });
+
+            return promise.future();
         }));
     }
 
@@ -425,9 +436,8 @@ public class S3Client {
 
             if (statusCode == HTTP.OK) {
                 return Future.succeededFuture(new HttpHeaders(response.headers()));
-            } else {
-                return Future.failedFuture(new UnexpectedStatusException(statusCode, response.statusMessage()));
             }
+            return Future.failedFuture(new UnexpectedStatusException(statusCode, response.statusMessage()));
         }));
     }
 
@@ -440,7 +450,7 @@ public class S3Client {
      * @param aHandler A response handler
      */
     public void put(final String aBucket, final String aKey, final Buffer aBuffer,
-            final Handler<AsyncResult<HttpHeaders>> aHandler) {
+        final Handler<AsyncResult<HttpHeaders>> aHandler) {
         final Promise<HttpHeaders> promise = Promise.promise();
 
         // Set the supplied handler as the handler for our response promise
@@ -480,16 +490,15 @@ public class S3Client {
      * @return A future indicating when the buffer has been uploaded
      */
     public Future<HttpHeaders> put(final String aBucket, final String aKey, final Buffer aBuffer,
-            final UserMetadata aMetadata) {
+        final UserMetadata aMetadata) {
         final Future<S3ClientRequest> future = createPutRequest(aBucket, aKey);
         return future.compose(request -> request.setUserMetadata(aMetadata).send(aBuffer).compose(response -> {
             final int statusCode = response.statusCode();
 
             if (statusCode == HTTP.OK) {
                 return Future.succeededFuture(new HttpHeaders(response.headers()));
-            } else {
-                return Future.failedFuture(new UnexpectedStatusException(statusCode, response.statusMessage()));
             }
+            return Future.failedFuture(new UnexpectedStatusException(statusCode, response.statusMessage()));
         }));
     }
 
@@ -503,7 +512,7 @@ public class S3Client {
      * @param aHandler An upload response handler
      */
     public void put(final String aBucket, final String aKey, final Buffer aBuffer, final UserMetadata aMetadata,
-            final Handler<AsyncResult<HttpHeaders>> aHandler) {
+        final Handler<AsyncResult<HttpHeaders>> aHandler) {
         final Promise<HttpHeaders> promise = Promise.promise();
 
         // Set the supplied handler as the handler for our response promise
@@ -547,29 +556,28 @@ public class S3Client {
 
             if (statusCode == HTTP.OK) {
                 return Future.succeededFuture(new HttpHeaders(response.headers()));
-            } else {
-                // Log more details if we get an unexpected result
-                response.body(body -> {
-                    if (body.succeeded()) {
-                        try {
-                            // Additional details are wrapped in an XML wrapper
-                            final String xml = body.result().toString(StandardCharsets.UTF_8);
-
-                            try {
-                                LOGGER.error(MessageCodes.VSS_021, aKey, EOL + XmlUtils.format(xml));
-                            } catch (final TransformerException details) {
-                                LOGGER.error(MessageCodes.VSS_021, aKey, xml);
-                            }
-                        } catch (final Exception details) {
-                            LOGGER.error(MessageCodes.VSS_022, details.getMessage());
-                        }
-                    } else {
-                        LOGGER.error(MessageCodes.VSS_022, body.cause().getMessage());
-                    }
-                });
-
-                return Future.failedFuture(new UnexpectedStatusException(statusCode, response.statusMessage()));
             }
+            // Log more details if we get an unexpected result
+            response.body(body -> {
+                if (body.succeeded()) {
+                    try {
+                        // Additional details are wrapped in an XML wrapper
+                        final String xml = body.result().toString(StandardCharsets.UTF_8);
+
+                        try {
+                            LOGGER.error(MessageCodes.VSS_021, aKey, EOL + XmlUtils.format(xml));
+                        } catch (final TransformerException details) {
+                            LOGGER.error(MessageCodes.VSS_021, aKey, xml);
+                        }
+                    } catch (final Exception details) { // NOPMD
+                        LOGGER.error(MessageCodes.VSS_022, details.getMessage());
+                    }
+                } else {
+                    LOGGER.error(MessageCodes.VSS_022, body.cause().getMessage());
+                }
+            });
+
+            return Future.failedFuture(new UnexpectedStatusException(statusCode, response.statusMessage()));
         }));
     }
 
@@ -582,7 +590,7 @@ public class S3Client {
      * @param aHandler An upload response handler
      */
     public void put(final String aBucket, final String aKey, final AsyncFile aFile,
-            final Handler<AsyncResult<HttpHeaders>> aHandler) {
+        final Handler<AsyncResult<HttpHeaders>> aHandler) {
         put(aBucket, aKey, aFile, null, aHandler);
     }
 
@@ -596,17 +604,16 @@ public class S3Client {
      * @return A future indicating when the buffer has been uploaded
      */
     public Future<HttpHeaders> put(final String aBucket, final String aKey, final AsyncFile aFile,
-            final UserMetadata aMetadata) {
+        final UserMetadata aMetadata) {
         final Future<S3ClientRequest> futurePut = createPutRequest(aBucket, aKey);
         return futurePut.compose(request -> request.setUserMetadata(aMetadata).send(aFile).compose(response -> {
             final int statusCode = response.statusCode();
 
             if (statusCode == HTTP.OK) {
                 return Future.succeededFuture(new HttpHeaders(response.headers()));
-            } else {
-                final String statusMessage = response.statusMessage();
-                return Future.failedFuture(new UnexpectedStatusException(statusCode, statusMessage));
             }
+            final String statusMessage = response.statusMessage();
+            return Future.failedFuture(new UnexpectedStatusException(statusCode, statusMessage));
         }));
     }
 
@@ -620,7 +627,7 @@ public class S3Client {
      * @param aHandler An upload response handler
      */
     public void put(final String aBucket, final String aKey, final AsyncFile aFile, final UserMetadata aMetadata,
-            final Handler<AsyncResult<HttpHeaders>> aHandler) {
+        final Handler<AsyncResult<HttpHeaders>> aHandler) {
         final Promise<HttpHeaders> promise = Promise.promise();
 
         // Set the supplied handler as the handler for our response promise

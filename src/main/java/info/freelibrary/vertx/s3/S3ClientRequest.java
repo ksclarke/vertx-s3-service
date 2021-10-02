@@ -26,13 +26,19 @@ import io.vertx.core.http.StreamPriority;
 @SuppressWarnings({ "PMD.ExcessivePublicCount", "PMD.TooManyMethods", "PMD.AvoidDuplicateLiterals" })
 class S3ClientRequest implements HttpClientRequest {
 
-    /** Prefix for the AWS user metadata keys */
+    /**
+     * Prefix for the AWS user metadata keys.
+     */
     private static final String AWS_NAME_PREFIX = "x-amz-meta-";
 
-    /** The underlying S3 HTTP client request */
+    /**
+     * The underlying S3 HTTP client request.
+     */
     private final HttpClientRequest myRequest;
 
-    /** The AWS S3 credentials */
+    /**
+     * The AWS S3 credentials.
+     */
     private final Optional<AwsCredentials> myCredentials;
 
     /**
@@ -155,7 +161,7 @@ class S3ClientRequest implements HttpClientRequest {
     }
 
     @Override
-    public Future<Void> write(final String aChunk) throws IllegalStateException {
+    public Future<Void> write(final String aChunk) {
         return myRequest.write(aChunk);
     }
 
@@ -331,6 +337,12 @@ class S3ClientRequest implements HttpClientRequest {
             result -> myRequest.putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(aBuffer.length())).send(aBuffer));
     }
 
+    /**
+     * Sends an file to S3.
+     *
+     * @param aFile A file to send
+     * @return A future with the HttpClientResponse
+     */
     public Future<HttpClientResponse> send(final AsyncFile aFile) {
         return addAuthorizationHeader(aFile).compose(result -> myRequest
             .putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(aFile.getReadLength())).send(aFile));

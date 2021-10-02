@@ -1,15 +1,16 @@
 
 package info.freelibrary.vertx.s3;
 
-// import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
 
 /**
  * An AWS credentials object.
  */
-// @DataObject
 public class AwsCredentials extends uk.co.lucasweb.aws.v4.signer.credentials.AwsCredentials {
 
+    /**
+     * The AWS credentials sessions token.
+     */
     private String mySessionToken;
 
     /**
@@ -61,16 +62,6 @@ public class AwsCredentials extends uk.co.lucasweb.aws.v4.signer.credentials.Aws
         }
 
         return json;
-    }
-
-    @Override
-    public String getAccessKey() {
-        return super.getAccessKey();
-    }
-
-    @Override
-    public String getSecretKey() {
-        return super.getSecretKey();
     }
 
     /**

@@ -24,7 +24,7 @@ public class HttpHeadersTest {
         "x-amz-user-agent", "x-amz-target", "x-amz-acl", "x-amz-version-id", "x-localstack-target", "x-amz-tagging" };
 
     private static final String[] ALLOWED_METHODS =
-            new String[] { "HEAD", "GET", "PUT", "POST", "DELETE", "OPTIONS", "PATCH" };
+        new String[] { "HEAD", "GET", "PUT", "POST", "DELETE", "OPTIONS", "PATCH" };
 
     private static final String AMZ_ID = "MzRISOwyjmnup426780B5CBE705517/JypPGXLh0OVFGcJaaO3KW/hRAqKOpIEEp";
 
@@ -45,20 +45,19 @@ public class HttpHeadersTest {
      */
     @Before
     public void setUp() {
-        final Map<String, String> myHeaderMap =
-                Map.ofEntries(new AbstractMap.SimpleEntry<>(ALLOWED_HEADERS[1], "text/html; charset=utf-8"),
-                        new AbstractMap.SimpleEntry<>(ALLOWED_HEADERS[2], "0"),
-                        new AbstractMap.SimpleEntry<>("etag", "618a996c65e02322bd5b5932c9b05714"),
-                        new AbstractMap.SimpleEntry<>("last-modified", TIMESTAMP),
-                        new AbstractMap.SimpleEntry<>("access-control-allow-origin", "*"),
-                        new AbstractMap.SimpleEntry<>("x-amz-request-id", "426780B5CBE70551"),
-                        new AbstractMap.SimpleEntry<>(AMZ_ID_HEADER, AMZ_ID),
-                        new AbstractMap.SimpleEntry<>(AC_ALLOW_METHODS, String.join(COMMA, ALLOWED_METHODS)),
-                        new AbstractMap.SimpleEntry<>(AC_ALLOW_HEADERS, String.join(COMMA, ALLOWED_HEADERS)),
-                        new AbstractMap.SimpleEntry<>("access-control-expose-headers", ALLOWED_HEADERS[11]),
-                        new AbstractMap.SimpleEntry<>("connection", "close"), //
-                        new AbstractMap.SimpleEntry<>("date", TIMESTAMP),
-                        new AbstractMap.SimpleEntry<>("server", "hypercorn-h11"));
+        final Map<String, String> myHeaderMap = Map.ofEntries(
+            new AbstractMap.SimpleEntry<>(ALLOWED_HEADERS[1], "text/html; charset=utf-8"),
+            new AbstractMap.SimpleEntry<>(ALLOWED_HEADERS[2], "0"),
+            new AbstractMap.SimpleEntry<>("etag", "618a996c65e02322bd5b5932c9b05714"),
+            new AbstractMap.SimpleEntry<>("last-modified", TIMESTAMP),
+            new AbstractMap.SimpleEntry<>("access-control-allow-origin", "*"),
+            new AbstractMap.SimpleEntry<>("x-amz-request-id", "426780B5CBE70551"),
+            new AbstractMap.SimpleEntry<>(AMZ_ID_HEADER, AMZ_ID),
+            new AbstractMap.SimpleEntry<>(AC_ALLOW_METHODS, String.join(COMMA, ALLOWED_METHODS)),
+            new AbstractMap.SimpleEntry<>(AC_ALLOW_HEADERS, String.join(COMMA, ALLOWED_HEADERS)),
+            new AbstractMap.SimpleEntry<>("access-control-expose-headers", ALLOWED_HEADERS[11]),
+            new AbstractMap.SimpleEntry<>("connection", "close"), //
+            new AbstractMap.SimpleEntry<>("date", TIMESTAMP), new AbstractMap.SimpleEntry<>("server", "hypercorn-h11"));
 
         myHeaders = new HttpHeaders(myHeaderMap);
     }

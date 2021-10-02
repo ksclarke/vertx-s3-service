@@ -4,6 +4,7 @@ package info.freelibrary.vertx.s3;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.util.Locale;
 import java.util.TimeZone;
 
 /**
@@ -11,16 +12,34 @@ import java.util.TimeZone;
  */
 public class S3ObjectList {
 
-    private static final SimpleDateFormat DATE = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+    /**
+     * A date format for S3 objects.
+     */
+    private static final SimpleDateFormat DATE = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
 
+    /**
+     * An S3 object key.
+     */
     private String myKey;
 
+    /**
+     * A last updated date.
+     */
     private Instant myLastUpdated;
 
+    /**
+     * An eTag.
+     */
     private String myETag;
 
+    /**
+     * A list of S3 objects.
+     */
     private int mySize;
 
+    /**
+     * The S3 storage class.
+     */
     private String myStorageClass;
 
     /**

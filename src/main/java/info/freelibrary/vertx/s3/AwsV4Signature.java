@@ -12,6 +12,7 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import info.freelibrary.util.Constants;
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
@@ -26,25 +27,50 @@ import uk.co.lucasweb.aws.v4.signer.Signer;
  */
 public class AwsV4Signature implements AwsSignature {
 
+    /**
+     * The date-time format.
+     */
     private static final String DATE_TIME_FORMAT = "yyyyMMdd'T'HHmmss'Z'";
 
-    /** The date format used for timestamping requests */
+    /**
+     * The date format used for timestamping requests
+     */
     private static final DateTimeFormatter DATE_TIME_FORMATTER =
-            DateTimeFormatter.ofPattern(DATE_TIME_FORMAT).withZone(ZoneOffset.UTC);
+        DateTimeFormatter.ofPattern(DATE_TIME_FORMAT).withZone(ZoneOffset.UTC);
 
+    /**
+     * The signature's digest algorithm.
+     */
     private static final String DIGEST_ALGORITHM = "SHA-256";
 
+    /**
+     * The signature's host header.
+     */
     private static final String HOST = "Host";
 
+    /**
+     * The AMZ date header.
+     */
     private static final String X_AMZ_DATE = "X-Amz-Date";
 
+    /**
+     * The AMZ content SHA-256 header.
+     */
     private static final String X_AMZ_CONTENT_SHA256 = "x-amz-content-sha256";
 
-    /** Prefix for the AWS user metadata keys */
+    /**
+     * Prefix for the AWS user metadata keys.
+     */
     private static final String AWS_NAME_PREFIX = "x-amz-meta-";
 
+    /**
+     * The credentials used when signing.
+     */
     private final AwsCredentials myCredentials;
 
+    /**
+     * The signature host.
+     */
     private final URI myHost;
 
     /**
@@ -104,8 +130,8 @@ public class AwsV4Signature implements AwsSignature {
             final String headerKey = entry.getKey();
 
             if (headerKey.startsWith(AWS_NAME_PREFIX) ||
-                    headerKey.equalsIgnoreCase(HttpHeaders.CONTENT_MD5.toString()) ||
-                    headerKey.equalsIgnoreCase(HttpHeaders.CONTENT_TYPE.toString())) {
+                headerKey.equalsIgnoreCase(HttpHeaders.CONTENT_MD5.toString()) ||
+                headerKey.equalsIgnoreCase(HttpHeaders.CONTENT_TYPE.toString())) {
                 signer.header(headerKey, entry.getValue());
             }
         }
@@ -191,7 +217,7 @@ public class AwsV4Signature implements AwsSignature {
         for (final byte element : aEncodedHash) {
             final String hex = Integer.toHexString(0xff & element);
 
-            if (hex.length() == 1) {
+            if (hex.length() == Constants.SINGLE_INSTANCE) {
                 hexString.append('0');
             }
 

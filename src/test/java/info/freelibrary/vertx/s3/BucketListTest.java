@@ -36,8 +36,8 @@ public class BucketListTest {
      */
     @Before
     public final void setUp(final TestContext aContext) throws IOException {
-        myBucketList = new S3BucketList(StringUtils.read(new File("src/test/resources/list.xml"),
-                StandardCharsets.UTF_8));
+        myBucketList =
+            new S3BucketList(StringUtils.read(new File("src/test/resources/list.xml"), StandardCharsets.UTF_8));
     }
 
     /**
@@ -136,8 +136,9 @@ public class BucketListTest {
      */
     @Test
     public final void testIsEmptyTrue(final TestContext aContext) throws IOException {
-        aContext.assertTrue(new S3BucketList(StringUtils.read(new File("src/test/resources/list-empty.xml"),
-                StandardCharsets.UTF_8)).isEmpty());
+        aContext.assertTrue(
+            new S3BucketList(StringUtils.read(new File("src/test/resources/list-empty.xml"), StandardCharsets.UTF_8))
+                .isEmpty());
     }
 
     /**

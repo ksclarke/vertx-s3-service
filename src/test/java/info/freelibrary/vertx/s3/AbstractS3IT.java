@@ -24,9 +24,7 @@ import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 
 import info.freelibrary.util.IOUtils;
-import info.freelibrary.util.Logger;
 import info.freelibrary.util.StringUtils;
-
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -37,14 +35,23 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 @RunWith(VertxUnitRunner.class)
 public abstract class AbstractS3IT {
 
-    /** The test file used in the tests */
+    /** The test file used in the tests. */
     protected static final File TEST_FILE = new File("src/test/resources/green.gif");
 
-    /** A sample AWS Access Key */
+    /** A sample AWS Access Key. */
     protected static final String YOUR_ACCESS_KEY = "YOUR_ACCESS_KEY";
 
-    /** A sample AWS Secret Key */
+    /** A sample AWS Secret Key. */
     protected static final String YOUR_SECRET_KEY = "YOUR_SECRET_KEY";
+
+    /** The S3 bucket property. */
+    protected static final String S3_BUCKET = "test.s3.bucket";
+
+    /** The S3 region property. */
+    protected static final String S3_REGION = "test.s3.region";
+
+    /** A test AWS profile. */
+    protected static final String TEST_PROFILE = "vertx-s3";
 
     /** S3 bucket used in the tests */
     protected static String myTestBucket;
@@ -65,10 +72,10 @@ public abstract class AbstractS3IT {
      */
     @BeforeClass
     public static void setUpBeforeClass(final TestContext aContext) {
-        final String endpoint = StringUtils.trimToNull(System.getProperty(TestConstants.S3_REGION));
+        final String endpoint = StringUtils.trimToNull(System.getProperty(S3_REGION));
 
         try {
-            myTestBucket = StringUtils.trimToNull(System.getProperty(TestConstants.S3_BUCKET));
+            myTestBucket = StringUtils.trimToNull(System.getProperty(S3_BUCKET));
             myResource = IOUtils.readBytes(new FileInputStream(TEST_FILE));
 
             if (endpoint != null) {
@@ -89,7 +96,7 @@ public abstract class AbstractS3IT {
      */
     @Before
     public void setUp(final TestContext aContext) {
-        final AwsCredentials creds = new AwsCredentialsProviderChain(TestConstants.TEST_PROFILE).getCredentials();
+        final AwsCredentials creds = new AwsCredentialsProviderChain(TEST_PROFILE).getCredentials();
         final String accessKey = creds.getAccessKey();
         final String secretKey = creds.getSecretKey();
         final BasicAWSCredentials basicCredentials = new BasicAWSCredentials(accessKey, secretKey);
@@ -136,12 +143,4 @@ public abstract class AbstractS3IT {
             aAsyncTask.complete();
         }
     }
-
-    /**
-     * Return the logger that's been created in the subclass.
-     *
-     * @return A logger for logging events
-     */
-    protected abstract Logger getLogger();
-
 }

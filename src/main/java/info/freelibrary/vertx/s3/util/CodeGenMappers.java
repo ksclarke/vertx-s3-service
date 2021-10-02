@@ -15,16 +15,34 @@ import io.vertx.core.json.JsonObject;
  */
 public final class CodeGenMappers {
 
+    /**
+     * A mapping for AWS credentials.
+     */
     private static final String CREDENTIALS = "credentials";
 
+    /**
+     * A mapping for AWS profile.
+     */
     private static final String PROFILE = "profile";
 
+    /**
+     * A mapping for an AWS access key.
+     */
     private static final String AWS_ACCESS_KEY = "aws_access_key";
 
+    /**
+     * A mapping for an AWS secret key.
+     */
     private static final String AWS_SECRET_KEY = "aws_secret_key";
 
+    /**
+     * A mapping for an AWS session token.
+     */
     private static final String AWS_SESSION_TOKEN = "aws_session_token";
 
+    /**
+     * Creates a new CodeGen mapper.
+     */
     private CodeGenMappers() {
     }
 

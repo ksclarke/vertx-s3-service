@@ -1,10 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
 
-<!--
-  To process this file outside of a full build, run:
-    mvn info.freelibrary:freelib-utils:generate-codes
--->
+<!-- To process this file outside of a full build, run: mvn info.freelibrary:freelib-utils:generate-codes -->
 
 <properties>
   <entry key="message-class-name">info.freelibrary.vertx.s3.util.MessageCodes</entry>

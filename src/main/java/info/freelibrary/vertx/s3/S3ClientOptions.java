@@ -11,15 +11,21 @@ import io.vertx.core.http.HttpClientOptions;
  */
 public class S3ClientOptions extends HttpClientOptions {
 
+    /**
+     * AWS credentials.
+     */
     private AwsCredentials myCredentials;
 
+    /**
+     * An AWS profile.
+     */
     private AwsProfile myProfile;
 
     /**
      * Creates a new S3 client options.
      */
     public S3ClientOptions() {
-        setEndpoint(S3Endpoint.US_EAST_1);
+        setEndpointPrivately(S3Endpoint.US_EAST_1);
     }
 
     /**
@@ -28,8 +34,8 @@ public class S3ClientOptions extends HttpClientOptions {
      * @param aProfile An S3 credentials profile
      */
     public S3ClientOptions(final String aProfile) {
-        setEndpoint(S3Endpoint.US_EAST_1);
-        setProfile(aProfile);
+        setEndpointPrivately(S3Endpoint.US_EAST_1);
+        setProfilePrivately(aProfile);
     }
 
     /**
@@ -38,7 +44,7 @@ public class S3ClientOptions extends HttpClientOptions {
      * @param aEndpoint An S3 endpoint
      */
     public S3ClientOptions(final Endpoint aEndpoint) {
-        setEndpoint(aEndpoint);
+        setEndpointPrivately(aEndpoint);
     }
 
     /**
@@ -48,8 +54,8 @@ public class S3ClientOptions extends HttpClientOptions {
      * @param aEndpoint An S3 endpoint
      */
     public S3ClientOptions(final String aProfile, final Endpoint aEndpoint) {
-        setEndpoint(aEndpoint);
-        setProfile(aProfile);
+        setEndpointPrivately(aEndpoint);
+        setProfilePrivately(aProfile);
     }
 
     /**
@@ -112,6 +118,16 @@ public class S3ClientOptions extends HttpClientOptions {
      * @return The S3 client options
      */
     public S3ClientOptions setProfile(final String aProfile) {
+        return setProfilePrivately(aProfile);
+    }
+
+    /**
+     * Sets the AWS profile to use from a profile name
+     *
+     * @param aProfile An AWS profile name
+     * @return The S3 client options
+     */
+    private S3ClientOptions setProfilePrivately(final String aProfile) {
         final AwsProfile profile = new AwsProfile(aProfile);
 
         myCredentials = profile.getCredentials();
@@ -136,6 +152,16 @@ public class S3ClientOptions extends HttpClientOptions {
      * @return The S3 client options
      */
     public S3ClientOptions setEndpoint(final Endpoint aEndpoint) {
+        return setEndpointPrivately(aEndpoint);
+    }
+
+    /**
+     * Sets the endpoint for the S3 client.
+     *
+     * @param aEndpoint An S3 endpoint
+     * @return The S3 client options
+     */
+    private S3ClientOptions setEndpointPrivately(final Endpoint aEndpoint) {
         final URI endpointURI = URI.create(aEndpoint.toString());
         final String protocol = endpointURI.getScheme();
         final String host = endpointURI.getHost();

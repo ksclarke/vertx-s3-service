@@ -19,9 +19,7 @@ import com.amazonaws.services.s3.model.S3Object;
 
 import info.freelibrary.util.Logger;
 import info.freelibrary.util.LoggerFactory;
-
 import info.freelibrary.vertx.s3.util.MessageCodes;
-
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -40,18 +38,27 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 @RunWith(VertxUnitRunner.class)
 public class S3ClientIT extends AbstractS3IT {
 
+    /**
+     * The S3 client integration test logger.
+     */
     private static final Logger LOGGER = LoggerFactory.getLogger(S3ClientIT.class, MessageCodes.BUNDLE);
 
+    /**
+     * The testing context.
+     */
     @Rule
     public RunTestOnContext myContext = new RunTestOnContext();
 
+    /**
+     * Insight into a particular running test's name.
+     */
     @Rule
     public TestName myName = new TestName();
 
-    /** The S3 client being used in the tests */
+    /** The S3 client being used in the tests. */
     private S3Client myClient;
 
-    /** A test ID */
+    /** A test ID. */
     private String myTestID;
 
     /**
@@ -62,7 +69,7 @@ public class S3ClientIT extends AbstractS3IT {
     @Override
     @Before
     public void setUp(final TestContext aContext) {
-        final AwsProfile awsProfile = new AwsProfile(TestConstants.TEST_PROFILE);
+        final AwsProfile awsProfile = new AwsProfile(TEST_PROFILE);
         final Vertx vertx = myContext.vertx();
 
         myTestID = UUID.randomUUID().toString();
@@ -817,11 +824,6 @@ public class S3ClientIT extends AbstractS3IT {
                 }
             });
         }
-    }
-
-    @Override
-    public Logger getLogger() {
-        return LoggerFactory.getLogger(S3ClientIT.class, MessageCodes.BUNDLE);
     }
 
     private boolean createResource(final String aResource, final TestContext aContext, final Async aAsync) {

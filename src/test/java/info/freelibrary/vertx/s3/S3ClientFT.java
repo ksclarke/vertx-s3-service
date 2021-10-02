@@ -2,10 +2,9 @@
 package info.freelibrary.vertx.s3;
 
 import java.io.File;
-import java.util.UUID;
+import java.util.Locale;
 
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -14,15 +13,12 @@ import com.amazonaws.services.s3.model.S3Object;
 
 import info.freelibrary.util.Logger;
 import info.freelibrary.util.LoggerFactory;
-
 import info.freelibrary.vertx.s3.util.MessageCodes;
-
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.unit.junit.RunTestOnContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 
 /**
@@ -31,40 +27,34 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 @RunWith(VertxUnitRunner.class)
 public class S3ClientFT extends AbstractS3FT {
 
+    /**
+     * The S3 client test logger.
+     */
     private static final Logger LOGGER = LoggerFactory.getLogger(S3ClientFT.class, MessageCodes.BUNDLE);
 
+    /**
+     * A test file to use with the S3 client.
+     */
     private static final String TEST_FILE = "src/test/resources/green.gif";
 
+    /**
+     * A S3 prefix.
+     */
     private static final String PREFIX = "prefix_";
 
     /**
-     * A test rule to run the tests on the Vert.x context.
+     * The S3 client being tested.
      */
-    @Rule
-    public final RunTestOnContext myContext = new RunTestOnContext();
-
-    private S3Client myClient;
-
-    private String myBucket;
-
-    private String myKey;
+    private S3Client myS3Client;
 
     /**
-     * Sets up the test about to be run.
-     *
-     * @param aContext A test context
+     * Sets up the testing environment.
      */
+    @Override
     @Before
-    public void setUp(final TestContext aContext) {
-        final AwsCredentials creds = new AwsCredentials(myAccessKey, mySecretKey);
-
-        myClient = new S3Client(myContext.vertx(), new S3ClientOptions(myEndpoint).setCredentials(creds));
-        myBucket = UUID.randomUUID().toString();
-        myKey = UUID.randomUUID().toString();
-
-        if (!myS3Client.doesBucketExistV2(myBucket)) {
-            myS3Client.createBucket(myBucket);
-        }
+    public void setUp() {
+        super.setUp();
+        myS3Client = new S3Client(myContext.vertx(), getConfig());
     }
 
     /**
@@ -76,9 +66,9 @@ public class S3ClientFT extends AbstractS3FT {
     public final void testHeadBucketKey(final TestContext aContext) {
         final Async asyncTask = aContext.async();
 
-        putGIF(myKey);
+        putTestObject(myKey);
 
-        myClient.head(myBucket, myKey).onComplete(head -> {
+        myS3Client.head(myBucket, myKey).onComplete(head -> {
             if (head.succeeded()) {
                 aContext.assertEquals("85", head.result().get(HttpHeaders.CONTENT_LENGTH));
                 complete(asyncTask);
@@ -97,9 +87,9 @@ public class S3ClientFT extends AbstractS3FT {
     public final void testHeadBucketKeyWithHandler(final TestContext aContext) {
         final Async asyncTask = aContext.async();
 
-        putGIF(myKey);
+        putTestObject(myKey);
 
-        myClient.head(myBucket, myKey, head -> {
+        myS3Client.head(myBucket, myKey, head -> {
             if (head.succeeded()) {
                 aContext.assertEquals(85, Integer.parseInt(head.result().get(HttpHeaders.CONTENT_LENGTH)));
                 complete(asyncTask);
@@ -118,9 +108,9 @@ public class S3ClientFT extends AbstractS3FT {
     public final void testGetBucketKey(final TestContext aContext) {
         final Async asyncTask = aContext.async();
 
-        putGIF(myKey);
+        putTestObject(myKey);
 
-        myClient.get(myBucket, myKey).onComplete(get -> {
+        myS3Client.get(myBucket, myKey).onComplete(get -> {
             if (get.succeeded()) {
                 get.result().body(body -> {
                     if (body.succeeded()) {
@@ -145,9 +135,9 @@ public class S3ClientFT extends AbstractS3FT {
     public final void testGetBucketKeyWithHandler(final TestContext aContext) {
         final Async asyncTask = aContext.async();
 
-        putGIF(myKey);
+        putTestObject(myKey);
 
-        myClient.get(myBucket, myKey, get -> {
+        myS3Client.get(myBucket, myKey, get -> {
             if (get.succeeded()) {
                 get.result().body(body -> {
                     aContext.assertEquals(85, body.result().length());
@@ -168,9 +158,9 @@ public class S3ClientFT extends AbstractS3FT {
     public final void testListBucket(final TestContext aContext) {
         final Async asyncTask = aContext.async();
 
-        putGIF(myKey);
+        putTestObject(myKey);
 
-        myClient.list(myBucket).onComplete(list -> {
+        myS3Client.list(myBucket).onComplete(list -> {
             if (list.succeeded()) {
                 aContext.assertEquals(1, list.result().size());
                 complete(asyncTask);
@@ -189,9 +179,9 @@ public class S3ClientFT extends AbstractS3FT {
     public final void testListBucketWithHandler(final TestContext aContext) {
         final Async asyncTask = aContext.async();
 
-        putGIF(myKey);
+        putTestObject(myKey);
 
-        myClient.list(myBucket, list -> {
+        myS3Client.list(myBucket, list -> {
             if (list.succeeded()) {
                 final S3BucketList bucketList = list.result();
 
@@ -212,14 +202,14 @@ public class S3ClientFT extends AbstractS3FT {
      */
     @Test
     public final void testListBucketPrefix(final TestContext aContext) {
-        final String prefixedKey1 = PREFIX + UUID.randomUUID().toString();
-        final String prefixedKey2 = PREFIX + UUID.randomUUID().toString();
+        final String prefixedKey1 = PREFIX + myKey.toUpperCase(Locale.US);
+        final String prefixedKey2 = PREFIX + myKey;
         final Async asyncTask = aContext.async();
 
-        putGIF(prefixedKey1);
-        putGIF(prefixedKey2);
+        putTestObject(prefixedKey1);
+        putTestObject(prefixedKey2);
 
-        myClient.list(myBucket, PREFIX).onComplete(list -> {
+        myS3Client.list(myBucket, PREFIX).onComplete(list -> {
             if (list.succeeded()) {
                 aContext.assertEquals(2, list.result().size());
                 complete(asyncTask);
@@ -236,26 +226,31 @@ public class S3ClientFT extends AbstractS3FT {
      */
     @Test
     public final void testListBucketPrefixWithHandler(final TestContext aContext) {
-        final String prefixedKey1 = PREFIX + UUID.randomUUID().toString();
-        final String prefixedKey2 = PREFIX + UUID.randomUUID().toString();
+        final String prefixedKey1 = PREFIX + myKey.toUpperCase(Locale.US);
+        final String prefixedKey2 = PREFIX + myKey;
         final Async asyncTask = aContext.async();
 
-        putGIF(prefixedKey1);
-        putGIF(prefixedKey2);
+        putTestObject(prefixedKey1);
+        putTestObject(prefixedKey2);
 
-        myClient.list(myBucket, PREFIX, list -> {
-            if (list.succeeded()) {
-                final S3BucketList bucketList = list.result();
+        try {
+            myS3Client.list(myBucket, PREFIX, list -> {
+                if (list.succeeded()) {
+                    final S3BucketList bucketList = list.result();
 
-                aContext.assertEquals(2, bucketList.size());
-                aContext.assertTrue(bucketList.containsKey(prefixedKey1));
-                aContext.assertTrue(bucketList.containsKey(prefixedKey2));
+                    aContext.assertEquals(2, bucketList.size());
+                    aContext.assertTrue(bucketList.containsKey(prefixedKey1));
+                    aContext.assertTrue(bucketList.containsKey(prefixedKey2));
 
-                complete(asyncTask);
-            } else {
-                aContext.fail(list.cause());
-            }
-        });
+                    complete(asyncTask);
+                } else {
+                    aContext.fail(list.cause());
+                }
+            });
+        } catch (final NullPointerException details) {
+            details.printStackTrace();
+            throw details;
+        }
     }
 
     /**
@@ -268,9 +263,9 @@ public class S3ClientFT extends AbstractS3FT {
         final Buffer buffer = myContext.vertx().fileSystem().readFileBlocking(TEST_FILE);
         final Async asyncTask = aContext.async();
 
-        myClient.put(myBucket, myKey, buffer).onComplete(put -> {
+        myS3Client.put(myBucket, myKey, buffer).onComplete(put -> {
             if (put.succeeded()) {
-                aContext.assertTrue(myS3Client.doesObjectExist(myBucket, myKey));
+                aContext.assertTrue(myAwsS3Client.doesObjectExist(myBucket, myKey));
 
                 if (!asyncTask.isCompleted()) {
                     aContext.assertTrue(put.result().contains(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
@@ -293,9 +288,9 @@ public class S3ClientFT extends AbstractS3FT {
         final Buffer buffer = myContext.vertx().fileSystem().readFileBlocking(TEST_FILE);
         final Async asyncTask = aContext.async();
 
-        myClient.put(myBucket, myKey, buffer, put -> {
+        myS3Client.put(myBucket, myKey, buffer, put -> {
             if (put.succeeded()) {
-                aContext.assertTrue(myS3Client.doesObjectExist(myBucket, myKey));
+                aContext.assertTrue(myAwsS3Client.doesObjectExist(myBucket, myKey));
                 complete(asyncTask);
             } else {
                 aContext.fail(put.cause());
@@ -314,12 +309,12 @@ public class S3ClientFT extends AbstractS3FT {
         final UserMetadata metadata = getTestUserMetadata();
         final Async asyncTask = aContext.async();
 
-        myClient.put(myBucket, myKey, buffer, metadata).onComplete(put -> {
+        myS3Client.put(myBucket, myKey, buffer, metadata).onComplete(put -> {
             if (put.succeeded()) {
-                aContext.assertTrue(myS3Client.doesObjectExist(myBucket, myKey));
+                aContext.assertTrue(myAwsS3Client.doesObjectExist(myBucket, myKey));
 
                 if (!asyncTask.isCompleted()) {
-                    final ObjectMetadata objMetadata = myS3Client.getObjectMetadata(myBucket, myKey);
+                    final ObjectMetadata objMetadata = myAwsS3Client.getObjectMetadata(myBucket, myKey);
                     final String metadataValue = objMetadata.getUserMetaDataOf(metadata.getName(0));
 
                     aContext.assertEquals(metadata.getValue(metadata.getName(0)), metadataValue);
@@ -347,12 +342,12 @@ public class S3ClientFT extends AbstractS3FT {
         final UserMetadata metadata = getTestUserMetadata();
         final Async asyncTask = aContext.async();
 
-        myClient.put(myBucket, myKey, buffer, metadata, put -> {
+        myS3Client.put(myBucket, myKey, buffer, metadata, put -> {
             if (put.succeeded()) {
-                aContext.assertTrue(myS3Client.doesObjectExist(myBucket, myKey));
+                aContext.assertTrue(myAwsS3Client.doesObjectExist(myBucket, myKey));
 
                 if (!asyncTask.isCompleted()) {
-                    final ObjectMetadata objMetadata = myS3Client.getObjectMetadata(myBucket, myKey);
+                    final ObjectMetadata objMetadata = myAwsS3Client.getObjectMetadata(myBucket, myKey);
                     final String metadataValue = objMetadata.getUserMetaDataOf(metadata.getName(0));
 
                     aContext.assertEquals(metadata.getValue(metadata.getName(0)), metadataValue);
@@ -375,9 +370,9 @@ public class S3ClientFT extends AbstractS3FT {
         final AsyncFile file = myContext.vertx().fileSystem().openBlocking(TEST_FILE, new OpenOptions());
         final Async asyncTask = aContext.async();
 
-        myClient.put(myBucket, myKey, file).onComplete(put -> {
+        myS3Client.put(myBucket, myKey, file).onComplete(put -> {
             if (put.succeeded()) {
-                aContext.assertTrue(myS3Client.doesObjectExist(myBucket, myKey));
+                aContext.assertTrue(myAwsS3Client.doesObjectExist(myBucket, myKey));
 
                 if (!asyncTask.isCompleted()) {
                     aContext.assertTrue(put.result().contains(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
@@ -400,9 +395,9 @@ public class S3ClientFT extends AbstractS3FT {
         final AsyncFile file = myContext.vertx().fileSystem().openBlocking(TEST_FILE, new OpenOptions());
         final Async asyncTask = aContext.async();
 
-        myClient.put(myBucket, myKey, file, put -> {
+        myS3Client.put(myBucket, myKey, file, put -> {
             if (put.succeeded()) {
-                aContext.assertTrue(myS3Client.doesObjectExist(myBucket, myKey));
+                aContext.assertTrue(myAwsS3Client.doesObjectExist(myBucket, myKey));
 
                 if (!asyncTask.isCompleted()) {
                     aContext.assertTrue(put.result().contains(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
@@ -426,12 +421,12 @@ public class S3ClientFT extends AbstractS3FT {
         final UserMetadata metadata = getTestUserMetadata();
         final Async asyncTask = aContext.async();
 
-        myClient.put(myBucket, myKey, file, metadata).onComplete(put -> {
+        myS3Client.put(myBucket, myKey, file, metadata).onComplete(put -> {
             if (put.succeeded()) {
-                aContext.assertTrue(myS3Client.doesObjectExist(myBucket, myKey));
+                aContext.assertTrue(myAwsS3Client.doesObjectExist(myBucket, myKey));
 
                 if (!asyncTask.isCompleted()) {
-                    final S3Object s3Obj = myS3Client.getObject(myBucket, myKey);
+                    final S3Object s3Obj = myAwsS3Client.getObject(myBucket, myKey);
                     final String name = metadata.getName(0);
                     final String value = metadata.getValue(0);
 
@@ -460,12 +455,12 @@ public class S3ClientFT extends AbstractS3FT {
         final UserMetadata metadata = getTestUserMetadata();
         final Async asyncTask = aContext.async();
 
-        myClient.put(myBucket, myKey, file, metadata, put -> {
+        myS3Client.put(myBucket, myKey, file, metadata, put -> {
             if (put.succeeded()) {
-                aContext.assertTrue(myS3Client.doesObjectExist(myBucket, myKey));
+                aContext.assertTrue(myAwsS3Client.doesObjectExist(myBucket, myKey));
 
                 if (!asyncTask.isCompleted()) {
-                    final ObjectMetadata objMetadata = myS3Client.getObjectMetadata(myBucket, myKey);
+                    final ObjectMetadata objMetadata = myAwsS3Client.getObjectMetadata(myBucket, myKey);
                     final String metadataValue = objMetadata.getUserMetaDataOf(metadata.getName(0));
 
                     aContext.assertEquals(metadata.getValue(metadata.getName(0)), metadataValue);
@@ -485,13 +480,13 @@ public class S3ClientFT extends AbstractS3FT {
     public final void testDeleteBucketKey(final TestContext aContext) {
         final Async asyncTask = aContext.async();
 
-        putGIF(myKey);
+        putTestObject(myKey);
 
-        myClient.delete(myBucket, myKey).onComplete(deletion -> {
+        myS3Client.delete(myBucket, myKey).onComplete(deletion -> {
             if (deletion.failed()) {
                 aContext.fail(deletion.cause());
             } else {
-                aContext.assertFalse(myS3Client.doesObjectExist(myBucket, myKey));
+                aContext.assertFalse(myAwsS3Client.doesObjectExist(myBucket, myKey));
                 complete(asyncTask);
             }
         });
@@ -506,11 +501,11 @@ public class S3ClientFT extends AbstractS3FT {
     public final void testDeleteBucketKeyHandler(final TestContext aContext) {
         final Async asyncTask = aContext.async();
 
-        putGIF(myKey);
+        putTestObject(myKey);
 
-        myClient.delete(myBucket, myKey, delete -> {
+        myS3Client.delete(myBucket, myKey, delete -> {
             if (delete.succeeded()) {
-                aContext.assertFalse(myS3Client.doesObjectExist(myBucket, myKey));
+                aContext.assertFalse(myAwsS3Client.doesObjectExist(myBucket, myKey));
                 complete(asyncTask);
             } else {
                 aContext.fail(delete.cause());
@@ -523,8 +518,8 @@ public class S3ClientFT extends AbstractS3FT {
      *
      * @param aKey The S3 object key of the artifact
      */
-    public void putGIF(final String aKey) {
-        myS3Client.putObject(myBucket, aKey, new File(TEST_FILE));
+    public void putTestObject(final String aKey) {
+        myAwsS3Client.putObject(myBucket, aKey, new File(TEST_FILE));
         LOGGER.debug(MessageCodes.VSS_015, myBucket, aKey);
     }
 
@@ -534,9 +529,6 @@ public class S3ClientFT extends AbstractS3FT {
      * @return User metadata for testing
      */
     private UserMetadata getTestUserMetadata() {
-        final String name = UUID.randomUUID().toString();
-        final String value = UUID.randomUUID().toString();
-
-        return new UserMetadata(name, value);
+        return new UserMetadata(myKey.toUpperCase(Locale.US), myKey);
     }
 }

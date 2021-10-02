@@ -36,7 +36,7 @@ class S3ObjectListHandler extends DefaultHandler {
     private final List<S3ObjectList> myList = new ArrayList<>();
 
     /** Temporary storage for characters parsed through SAX */
-    private final StringBuilder myValue = new StringBuilder();
+    private final StringBuilder myValue = new StringBuilder(); // NOPMD
 
     /** A single S3 list object */
     private S3ObjectList myListObject;
@@ -53,6 +53,7 @@ class S3ObjectListHandler extends DefaultHandler {
             case STORAGE_CLASS:
             case LAST_MODIFIED:
                 myValue.append(aCharArray, aStart, aLength);
+                break;
             default:
                 // ignore everything else
         }
@@ -60,7 +61,7 @@ class S3ObjectListHandler extends DefaultHandler {
 
     @Override
     public void startElement(final String aURI, final String aLocalName, final String aQName,
-            final Attributes aAttributes) throws SAXException {
+        final Attributes aAttributes) throws SAXException {
         switch (aLocalName) {
             case CONTENTS:
                 myListObject = new S3ObjectList();
@@ -71,6 +72,7 @@ class S3ObjectListHandler extends DefaultHandler {
             case STORAGE_CLASS:
             case LAST_MODIFIED:
                 myValue.delete(0, myValue.length());
+                break;
             default:
                 // ignore everything else
         }

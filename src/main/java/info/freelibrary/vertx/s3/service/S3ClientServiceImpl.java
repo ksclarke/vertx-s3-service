@@ -3,12 +3,10 @@ package info.freelibrary.vertx.s3.service;
 
 import info.freelibrary.util.Logger;
 import info.freelibrary.util.LoggerFactory;
-
 import info.freelibrary.vertx.s3.S3Client;
 import info.freelibrary.vertx.s3.S3ClientOptions;
-import info.freelibrary.vertx.s3.S3ObjectData;
+import info.freelibrary.vertx.s3.S3DataObject;
 import info.freelibrary.vertx.s3.util.MessageCodes;
-
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -19,8 +17,14 @@ import io.vertx.core.file.FileSystem;
  */
 public class S3ClientServiceImpl implements S3ClientService {
 
+    /**
+     * The client service implementation logger.
+     */
     private static final Logger LOGGER = LoggerFactory.getLogger(S3ClientServiceImpl.class, MessageCodes.BUNDLE);
 
+    /**
+     * An inner S3 client.
+     */
     protected final S3Client myS3Client;
 
     /**
@@ -43,13 +47,13 @@ public class S3ClientServiceImpl implements S3ClientService {
     }
 
     @Override
-    public Future<Void> put(final String aBucket, final String aKey, final S3ObjectData aObject) {
+    public Future<Void> put(final String aBucket, final String aKey, final S3DataObject aObject) {
         final FileSystem fileSystem = myS3Client.getVertx().fileSystem();
         final Promise<Void> promise = Promise.promise();
 
         LOGGER.debug(MessageCodes.VSS_018, aKey, aBucket, aObject);
 
-        if (aObject.source() == S3ObjectData.Type.BUFFER) {
+        if (aObject.source() == S3DataObject.Type.BUFFER) {
             aObject.asBuffer(fileSystem).onComplete(asBuffer -> {
                 if (asBuffer.succeeded()) {
                     myS3Client.put(aBucket, aKey, asBuffer.result(), put -> {
@@ -83,15 +87,15 @@ public class S3ClientServiceImpl implements S3ClientService {
     }
 
     @Override
-    public Future<S3ObjectData> get(final String aBucket, final String aKey) {
-        final Promise<S3ObjectData> promise = Promise.promise();
+    public Future<S3DataObject> get(final String aBucket, final String aKey) {
+        final Promise<S3DataObject> promise = Promise.promise();
 
         LOGGER.debug(MessageCodes.VSS_019, aKey, aBucket);
 
         myS3Client.get(aBucket, aKey).onComplete(get -> {
             if (get.succeeded()) {
                 get.result().body(body -> {
-                    promise.complete(new S3ObjectData(body.result()));
+                    promise.complete(new S3DataObject(body.result()));
                 });
             } else {
                 promise.fail(get.cause());

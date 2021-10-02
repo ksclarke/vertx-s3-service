@@ -9,26 +9,26 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 
 /**
- * Tests of the S3ObjectData class.
+ * Tests of the S3DataObject class.
  */
 public class S3ObjectDataTest {
 
     private static final String TEST_FILE = "src/test/resources/green.gif";
 
     /**
-     * Test method for {@link info.freelibrary.vertx.s3.S3ObjectData#S3ObjectData(io.vertx.core.json.JsonObject)}.
+     * Test method for {@link info.freelibrary.vertx.s3.S3DataObject#S3ObjectData(io.vertx.core.json.JsonObject)}.
      */
     @Test
     public final void testS3ObjectDataJsonObject() {
-        final JsonObject json = new JsonObject().put(S3ObjectData.Type.FILE.name(), Buffer.buffer(TEST_FILE));
-        final S3ObjectData objectData = new S3ObjectData(json);
+        final JsonObject json = new JsonObject().put(S3DataObject.Type.FILE.name(), Buffer.buffer(TEST_FILE));
+        final S3DataObject objectData = new S3DataObject(json);
 
-        assertEquals(S3ObjectData.Type.FILE, objectData.source());
+        assertEquals(S3DataObject.Type.FILE, objectData.source());
         // assertEquals(TEST_FILE, objectData.asBuffer(null))
     }
 
     /**
-     * Test method for {@link info.freelibrary.vertx.s3.S3ObjectData#S3ObjectData(java.lang.String)}.
+     * Test method for {@link info.freelibrary.vertx.s3.S3DataObject#S3ObjectData(java.lang.String)}.
      */
     @Test
     public final void testS3ObjectDataString() {
@@ -36,7 +36,7 @@ public class S3ObjectDataTest {
     }
 
     /**
-     * Test method for {@link info.freelibrary.vertx.s3.S3ObjectData#S3ObjectData(io.vertx.core.buffer.Buffer)}.
+     * Test method for {@link info.freelibrary.vertx.s3.S3DataObject#S3ObjectData(io.vertx.core.buffer.Buffer)}.
      */
     @Test
     public final void testS3ObjectDataBuffer() {
@@ -44,7 +44,7 @@ public class S3ObjectDataTest {
     }
 
     /**
-     * Test method for {@link info.freelibrary.vertx.s3.S3ObjectData#source()}.
+     * Test method for {@link info.freelibrary.vertx.s3.S3DataObject#source()}.
      */
     @Test
     public final void testSource() {
@@ -52,7 +52,7 @@ public class S3ObjectDataTest {
     }
 
     /**
-     * Test method for {@link info.freelibrary.vertx.s3.S3ObjectData#asBuffer(io.vertx.core.file.FileSystem)}.
+     * Test method for {@link info.freelibrary.vertx.s3.S3DataObject#asBuffer(io.vertx.core.file.FileSystem)}.
      */
     @Test
     public final void testAsBuffer() {
@@ -60,7 +60,7 @@ public class S3ObjectDataTest {
     }
 
     /**
-     * Test method for {@link info.freelibrary.vertx.s3.S3ObjectData#asFile(io.vertx.core.file.FileSystem)}.
+     * Test method for {@link info.freelibrary.vertx.s3.S3DataObject#asFile(io.vertx.core.file.FileSystem)}.
      */
     @Test
     public final void testAsFile() {
@@ -68,7 +68,7 @@ public class S3ObjectDataTest {
     }
 
     /**
-     * Test method for {@link info.freelibrary.vertx.s3.S3ObjectData#toJson()}.
+     * Test method for {@link info.freelibrary.vertx.s3.S3DataObject#toJson()}.
      */
     @Test
     public final void testToJson() {

@@ -6,6 +6,9 @@ package info.freelibrary.vertx.s3;
  */
 public class AwsProfile {
 
+    /**
+     * The profile name.
+     */
     private final String myProfileName;
 
     /**

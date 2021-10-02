@@ -2,7 +2,7 @@
 package info.freelibrary.vertx.s3.service;
 
 import info.freelibrary.vertx.s3.S3ClientOptions;
-import info.freelibrary.vertx.s3.S3ObjectData;
+import info.freelibrary.vertx.s3.S3DataObject;
 
 import io.vertx.codegen.annotations.ProxyClose;
 import io.vertx.codegen.annotations.ProxyGen;
@@ -58,28 +58,28 @@ public interface S3ClientService {
      * @return The S3 client service
      */
     static S3ClientService createProxyWithOptions(final Vertx aVertx, final S3ClientOptions aConfig,
-            final String aAddress) {
+        final String aAddress) {
         return new S3ClientServiceProxyImpl(aVertx, aConfig, aAddress);
     }
 
     /**
-     * Puts S3ObjectData to the S3 bucket.
+     * Puts S3DataObject to the S3 bucket.
      *
      * @param aBucket An S3 bucket
      * @param aKey A key for the JSON object
      * @param aObjectData A object with the data to be uploaded
      * @return The result of the PUT
      */
-    Future<Void> put(String aBucket, String aKey, S3ObjectData aObjectData);
+    Future<Void> put(String aBucket, String aKey, S3DataObject aObjectData);
 
     /**
-     * Gets S3ObjectData from the S3 client service.
+     * Gets S3DataObject from the S3 client service.
      *
      * @param aBucket An S3 bucket
      * @param aKey An S3 key
-     * @return The S3ObjectData
+     * @return The S3DataObject
      */
-    Future<S3ObjectData> get(String aBucket, String aKey);
+    Future<S3DataObject> get(String aBucket, String aKey);
 
     /**
      * Closes the S3 client service.

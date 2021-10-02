@@ -23,7 +23,7 @@
     <appender-ref ref="STDOUT" />
   </logger>
   <logger name="io.vertx" level="OFF" additivity="false">
-    <appender-ref ref="STDOUT"/>
+    <appender-ref ref="STDOUT" />
   </logger>
 
   <!-- Loggers for the testcontainers.org tool -->

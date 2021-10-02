@@ -9,9 +9,7 @@ import org.junit.runner.RunWith;
 
 import info.freelibrary.util.Logger;
 import info.freelibrary.util.LoggerFactory;
-
 import info.freelibrary.vertx.s3.util.MessageCodes;
-
 import io.vertx.core.Vertx;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.file.OpenOptions;
@@ -27,6 +25,9 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 @SuppressWarnings("MultipleStringLiterals") // There are code snippets from the documentation
 public class ExamplesIT {
 
+    /**
+     * The logger for the example tests.
+     */
     private static final Logger LOGGER = LoggerFactory.getLogger(ExamplesIT.class, MessageCodes.BUNDLE);
 
     /**
@@ -52,7 +53,6 @@ public class ExamplesIT {
                 .compose(response -> response.pipeTo(file)))
             .onComplete(download -> {
                 if (download.succeeded()) {
-                    System.out.println("DONE1!");
                     asyncTask.complete();
                 } else {
                     aContext.fail(download.cause());

@@ -34,14 +34,29 @@ public enum S3Endpoint implements Endpoint {
     US_GOV_EAST_1("us-gov-east-1", "AWS GovCloud (US-East)"), //
     US_GOV_WEST_1("us-gov-west-1", "AWS GovCloud (US)");
 
+    /**
+     * The S3 host pattern.
+     */
     private static final String HOST_PATTERN = "s3.{}.amazonaws.com";
 
+    /**
+     * The S3 endpoint pattern.
+     */
     private static final String ENDPOINT_PATTERN = "https://" + HOST_PATTERN;
 
+    /**
+     * The S3 dual stack endpoint pattern.
+     */
     private static final String DUALSTACK_ENDPOINT_PATTERN = "https://s3.dualstack.{}.amazonaws.com";
 
+    /**
+     * An S3 region.
+     */
     private final String myRegion;
 
+    /**
+     * An S3 region name.
+     */
     private final String myRegionName;
 
     /**

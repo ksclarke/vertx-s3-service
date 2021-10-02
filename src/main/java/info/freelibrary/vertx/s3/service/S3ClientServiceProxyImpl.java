@@ -1,8 +1,10 @@
 
 package info.freelibrary.vertx.s3.service;
 
+import info.freelibrary.util.Logger;
+import info.freelibrary.util.LoggerFactory;
 import info.freelibrary.vertx.s3.S3ClientOptions;
-
+import info.freelibrary.vertx.s3.util.MessageCodes;
 import io.vertx.codegen.annotations.ProxyClose;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -14,6 +16,11 @@ import io.vertx.serviceproxy.ServiceBinder;
  * A S3 client service implementation that can be used as a proxy.
  */
 public class S3ClientServiceProxyImpl extends S3ClientServiceImpl implements S3ClientService {
+
+    /**
+     * The logger for the service proxy implementation.
+     */
+    private static final Logger LOGGER = LoggerFactory.getLogger(S3ClientServiceProxyImpl.class, MessageCodes.BUNDLE);
 
     /**
      * The message consumer for the proxy implementation.
@@ -52,7 +59,7 @@ public class S3ClientServiceProxyImpl extends S3ClientServiceImpl implements S3C
         myConsumer = myServiceBinder.setAddress(aAddress).register(S3ClientService.class, this);
 
         myConsumer.handler(handler -> {
-            System.out.println(handler.address());
+            LOGGER.debug(handler.address());
         });
     }
 

@@ -12,11 +12,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import info.freelibrary.util.Logger;
-import info.freelibrary.util.LoggerFactory;
-
-import info.freelibrary.vertx.s3.util.MessageCodes;
-
 import io.vertx.core.http.HttpMethod;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -29,14 +24,15 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 @RunWith(VertxUnitRunner.class)
 public class S3ClientRequestIT extends AbstractS3IT {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(S3ClientRequestIT.class, MessageCodes.BUNDLE);
-
     /**
      * A test rule to run the tests on the Vert.x context.
      */
     @Rule
     public final RunTestOnContext myContext = new RunTestOnContext();
 
+    /**
+     * A bucket and S3 object key URI path.
+     */
     private String myURI;
 
     /**
@@ -74,7 +70,7 @@ public class S3ClientRequestIT extends AbstractS3IT {
      */
     @Test
     public final void testConstructorWithCreds(final TestContext aContext) {
-        final AwsCredentials creds = new AwsCredentials(UUID.randomUUID().toString(), UUID.randomUUID().toString());
+        final AwsCredentials creds = new AwsCredentials(TestUtils.AWS_ACCESS_KEY, TestUtils.AWS_SECRET_KEY);
         final String host = S3Endpoint.US_EAST_1.getHost();
         final Async asyncTask = aContext.async();
 
@@ -106,10 +102,5 @@ public class S3ClientRequestIT extends AbstractS3IT {
                 aContext.fail(request.cause());
             }
         });
-    }
-
-    @Override
-    protected Logger getLogger() {
-        return LOGGER;
     }
 }

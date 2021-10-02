@@ -26,6 +26,9 @@ import io.vertx.core.buffer.Buffer;
  */
 public class S3BucketList implements Iterable<S3ObjectList> {
 
+    /**
+     * The S3 object list.
+     */
     private List<S3ObjectList> myList;
 
     /**
@@ -71,7 +74,7 @@ public class S3BucketList implements Iterable<S3ObjectList> {
      */
     public boolean containsKey(final String aKey) {
         Objects.requireNonNull(aKey);
-        return indexOfKey(aKey) != -1 ? true : false;
+        return indexOfKey(aKey) != -1;
     }
 
     /**
@@ -141,7 +144,7 @@ public class S3BucketList implements Iterable<S3ObjectList> {
      * @param aArray An array in which to put the bucket list's objects
      * @return The array of {@link S3ObjectList}s
      */
-    public S3ObjectList[] toArray(final S3ObjectList[] aArray) {
+    public S3ObjectList[] toArray(final S3ObjectList... aArray) {
         return myList.toArray(aArray);
     }
 

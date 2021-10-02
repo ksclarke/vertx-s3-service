@@ -1,13 +1,12 @@
 
 package info.freelibrary.vertx.s3;
 
-import static info.freelibrary.vertx.s3.S3ObjectData.Type.BUFFER;
-import static info.freelibrary.vertx.s3.S3ObjectData.Type.FILE;
+import static info.freelibrary.vertx.s3.S3DataObject.Type.BUFFER;
+import static info.freelibrary.vertx.s3.S3DataObject.Type.FILE;
 
 import java.nio.charset.StandardCharsets;
 
 import info.freelibrary.util.Constants;
-
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -21,7 +20,7 @@ import io.vertx.core.json.JsonObject;
  * An S3 service interface for the different types of supported S3 data.
  */
 @DataObject
-public class S3ObjectData {
+public class S3DataObject {
 
     /**
      * The types of supported S3 service data.
@@ -41,12 +40,12 @@ public class S3ObjectData {
     private final Type myType;
 
     /**
-     * Creates a new S3ObjectData from a JSON serialization.
+     * Creates a new S3DataObject from a JSON serialization.
      *
-     * @param aJsonObject A JSON serialization of S3ObjectData
+     * @param aJsonObject A JSON serialization of S3DataObject
      * @throws IllegalArgumentException If the supplied JSON is not a serialization of this class
      */
-    public S3ObjectData(final JsonObject aJsonObject) throws IllegalArgumentException {
+    public S3DataObject(final JsonObject aJsonObject) {
         if (aJsonObject.containsKey(FILE.name())) {
             myBuffer = aJsonObject.getBuffer(FILE.name());
             myType = FILE;
@@ -59,21 +58,21 @@ public class S3ObjectData {
     }
 
     /**
-     * Creates an S3ObjectData wrapper for a file.
+     * Creates an S3DataObject wrapper for a file.
      *
      * @param aFilePath A path to a file
      */
-    public S3ObjectData(final String aFilePath) {
+    public S3DataObject(final String aFilePath) {
         myBuffer = Buffer.buffer(aFilePath, StandardCharsets.UTF_8.toString());
         myType = FILE;
     }
 
     /**
-     * Creates an S3ObjectData wrapper for a buffer.
+     * Creates an S3DataObject wrapper for a buffer.
      *
      * @param aBuffer A buffer for data
      */
-    public S3ObjectData(final Buffer aBuffer) {
+    public S3DataObject(final Buffer aBuffer) {
         myBuffer = aBuffer.copy();
         myType = BUFFER;
     }
@@ -94,30 +93,29 @@ public class S3ObjectData {
      * @return The data as a buffer
      */
     public Future<Buffer> asBuffer(final FileSystem aFileSystem) {
-        if (myType.equals(BUFFER)) {
+        if (BUFFER.equals(myType)) {
             return Future.succeededFuture(myBuffer);
-        } else {
-            final Promise<Buffer> promise = Promise.promise();
-            final Buffer buffer = Buffer.buffer();
-
-            aFileSystem.open(myBuffer.toString(StandardCharsets.UTF_8), new OpenOptions()).onSuccess(openFile -> {
-                openFile.handler(read -> {
-                    buffer.appendBytes(read.getBytes());
-                }).endHandler(end -> {
-                    openFile.close(close -> {
-                        if (close.succeeded()) {
-                            promise.complete(buffer);
-                        } else {
-                            promise.fail(close.cause());
-                        }
-                    });
-                }).exceptionHandler(error -> {
-                    promise.fail(error);
-                });
-            }).onFailure(error -> promise.fail(error));
-
-            return promise.future();
         }
+        final Promise<Buffer> promise = Promise.promise();
+        final Buffer buffer = Buffer.buffer();
+
+        aFileSystem.open(myBuffer.toString(StandardCharsets.UTF_8), new OpenOptions()).onSuccess(openFile -> {
+            openFile.handler(read -> {
+                buffer.appendBytes(read.getBytes());
+            }).endHandler(end -> {
+                openFile.close(close -> {
+                    if (close.succeeded()) {
+                        promise.complete(buffer);
+                    } else {
+                        promise.fail(close.cause());
+                    }
+                });
+            }).exceptionHandler(error -> {
+                promise.fail(error);
+            });
+        }).onFailure(error -> promise.fail(error));
+
+        return promise.future();
     }
 
     /**
@@ -129,34 +127,7 @@ public class S3ObjectData {
      * @return The upload as an AsyncFile
      */
     public Future<AsyncFile> asFile(final FileSystem aFileSystem) {
-        if (myType.equals(BUFFER)) {
-            final Promise<AsyncFile> promise = Promise.promise();
-
-            aFileSystem.createTempFile("s3-upload-", Constants.EMPTY).onComplete(fileCreation -> {
-                if (fileCreation.succeeded()) {
-                    aFileSystem.open(fileCreation.result(), new OpenOptions().setDeleteOnClose(true), open -> {
-                        if (open.succeeded()) {
-                            final AsyncFile file = open.result();
-
-                            file.exceptionHandler(error -> promise.fail(error)).write(myBuffer, write -> {
-                                if (write.succeeded()) {
-                                    file.setReadPos(0);
-                                    promise.complete(file);
-                                } else {
-                                    promise.fail(write.cause());
-                                }
-                            });
-                        } else {
-                            promise.fail(open.cause());
-                        }
-                    });
-                } else {
-                    promise.fail(fileCreation.cause());
-                }
-            });
-
-            return promise.future();
-        } else {
+        if (!BUFFER.equals(myType)) {
             final Promise<AsyncFile> promise = Promise.promise();
 
             aFileSystem.open(myBuffer.toString(StandardCharsets.UTF_8), new OpenOptions()).onSuccess(openFile -> {
@@ -165,6 +136,32 @@ public class S3ObjectData {
 
             return promise.future();
         }
+        final Promise<AsyncFile> promise = Promise.promise();
+
+        aFileSystem.createTempFile("s3-upload-", Constants.EMPTY).onComplete(fileCreation -> {
+            if (fileCreation.succeeded()) {
+                aFileSystem.open(fileCreation.result(), new OpenOptions().setDeleteOnClose(true), open -> {
+                    if (open.succeeded()) {
+                        final AsyncFile file = open.result();
+
+                        file.exceptionHandler(error -> promise.fail(error)).write(myBuffer, write -> {
+                            if (write.succeeded()) {
+                                file.setReadPos(0);
+                                promise.complete(file);
+                            } else {
+                                promise.fail(write.cause());
+                            }
+                        });
+                    } else {
+                        promise.fail(open.cause());
+                    }
+                });
+            } else {
+                promise.fail(fileCreation.cause());
+            }
+        });
+
+        return promise.future();
     }
 
     /**

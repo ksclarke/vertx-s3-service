@@ -5,7 +5,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import info.freelibrary.vertx.s3.util.MessageCodes;
-
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -76,4 +75,5 @@ public class S3ClientProfilesTest {
         new S3Client(VERTX, new S3ClientOptions(S3Endpoint.US_EAST_1).setProfile(new AwsProfile(MISSING))).close();
         aContext.fail(MessageCodes.VSS_014);
     }
+
 }

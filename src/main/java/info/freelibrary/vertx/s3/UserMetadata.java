@@ -1,6 +1,8 @@
 
 package info.freelibrary.vertx.s3;
 
+import static info.freelibrary.util.Constants.EMPTY;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -9,7 +11,6 @@ import java.util.Objects;
 import info.freelibrary.util.Logger;
 import info.freelibrary.util.LoggerFactory;
 import info.freelibrary.util.StringUtils;
-
 import info.freelibrary.vertx.s3.util.MessageCodes;
 
 /**
@@ -17,12 +18,24 @@ import info.freelibrary.vertx.s3.util.MessageCodes;
  */
 public class UserMetadata {
 
+    /**
+     * A metadata logger.
+     */
     private static final Logger LOGGER = LoggerFactory.getLogger(UserMetadata.class, MessageCodes.BUNDLE);
 
+    /**
+     * A metadata value delimiter.
+     */
     private static final String AWS_VALUE_DELIMITER = ",";
 
+    /**
+     * A default locale.
+     */
     private static final Locale DEFAULT_LOCALE = Locale.getDefault();
 
+    /**
+     * A list of metadata.
+     */
     private final List<NameValuePair> myMetadata;
 
     /**
@@ -66,7 +79,7 @@ public class UserMetadata {
                 final String oldValue = element.getValue();
                 final String newValue = aValue != null ? StringUtils.trimTo(aValue, "") : "";
 
-                if (!"".equals(newValue)) {
+                if (!EMPTY.equals(newValue)) {
                     element.setValue(oldValue + AWS_VALUE_DELIMITER + newValue);
                 }
 
@@ -170,25 +183,56 @@ public class UserMetadata {
         return -1;
     }
 
+    /**
+     * A metadata name-value pair.
+     */
     class NameValuePair {
 
+        /**
+         * The name part of the name-value pair.
+         */
         private final String myName;
 
+        /**
+         * The value part of the name-value pair.
+         */
         private String myValue;
 
+        /**
+         * Creates a new name-value pair.
+         *
+         * @param aName A metadata name
+         * @param aValue A metadata value
+         */
         NameValuePair(final String aName, final String aValue) {
             myName = aName.toLowerCase(DEFAULT_LOCALE);
             myValue = aValue;
         }
 
+        /**
+         * Gets the metadata name.
+         *
+         * @return The metadata name
+         */
         private String getName() {
             return myName;
         }
 
+        /**
+         * Gets the metadata value.
+         *
+         * @return The metadata value
+         */
         private String getValue() {
             return myValue;
         }
 
+        /**
+         * Sets the metadata value.
+         *
+         * @param aValue A metadata value
+         * @return The name-value pair
+         */
         private NameValuePair setValue(final String aValue) {
             myValue = aValue;
             return this;

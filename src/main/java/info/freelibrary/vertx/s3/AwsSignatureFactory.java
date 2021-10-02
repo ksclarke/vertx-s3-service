@@ -5,7 +5,6 @@ import java.net.URI;
 import java.util.Optional;
 
 import info.freelibrary.util.I18nRuntimeException;
-
 import info.freelibrary.vertx.s3.util.MessageCodes;
 
 /**
@@ -20,12 +19,26 @@ public final class AwsSignatureFactory {
         V4
     }
 
+    /**
+     * The version of the signatures to be generated.
+     */
     private final Version myVersion;
 
+    /**
+     * The signature host.
+     */
     private URI myHost;
 
+    /**
+     * The AWS credentials.
+     */
     private Optional<AwsCredentials> myCredentials;
 
+    /**
+     * Creates a new AWS signature factory.
+     *
+     * @param aVersion A signature version
+     */
     private AwsSignatureFactory(final Version aVersion) {
         myVersion = aVersion;
     }
@@ -85,7 +98,7 @@ public final class AwsSignatureFactory {
      * @return The signature factory
      * @throws ConfigurationException If authentication credentials are missing or invalid
      */
-    public AwsSignatureFactory setCredentials(final AwsCredentials aCredentials) throws ConfigurationException {
+    public AwsSignatureFactory setCredentials(final AwsCredentials aCredentials) {
         if (aCredentials == null || !aCredentials.isValid()) {
             throw new ConfigurationException();
         }
@@ -102,8 +115,7 @@ public final class AwsSignatureFactory {
      * @return The signature factory
      * @throws ConfigurationException If authentication credentials are missing or invalid
      */
-    public AwsSignatureFactory setCredentials(final String aAccessKey, final String aSecretKey)
-            throws ConfigurationException {
+    public AwsSignatureFactory setCredentials(final String aAccessKey, final String aSecretKey) {
         if (aAccessKey != null && aSecretKey != null) {
             myCredentials = Optional.of(new AwsCredentials(aAccessKey, aSecretKey));
         } else {
@@ -122,7 +134,7 @@ public final class AwsSignatureFactory {
      * @return The signature factory
      */
     public AwsSignatureFactory setCredentials(final String aAccessKey, final String aSecretKey,
-            final String aSessionToken) {
+        final String aSessionToken) {
         if (aAccessKey != null && aSecretKey != null && aSessionToken != null) {
             myCredentials = Optional.of(new AwsCredentials(aAccessKey, aSecretKey, aSessionToken));
         } else {
@@ -140,15 +152,13 @@ public final class AwsSignatureFactory {
     public AwsSignature getSignature() {
         final AwsSignature signature;
 
-        if (myVersion.equals(Version.V4)) {
-            if (myCredentials.isPresent()) {
-                signature = new AwsV4Signature(myHost, myCredentials.get());
-            } else {
-                throw new ConfigurationException();
-            }
-        } else {
+        if (!Version.V4.equals(myVersion)) {
             throw new I18nRuntimeException(MessageCodes.BUNDLE, MessageCodes.VSS_005);
         }
+        if (!myCredentials.isPresent()) {
+            throw new ConfigurationException();
+        }
+        signature = new AwsV4Signature(myHost, myCredentials.get());
 
         return signature;
     }
