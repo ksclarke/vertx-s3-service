@@ -1,6 +1,7 @@
 
 package info.freelibrary.vertx.s3.service;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -19,23 +20,16 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 public class S3ClientServiceFT extends AbstractS3FT {
 
     /**
-     * Tests creating a service from supplied AWS credentials.
+     * Tests creating a service proxy.
      *
      * @param aContext A test context
      */
     @Test
-    public final void testCreateWithOptions(final TestContext aContext) {
-        final S3ClientService service = S3ClientService.createWithOptions(myContext.vertx(), getConfig());
-        final JsonObject json = new JsonObject().put(TestConstants.ID, myKey);
+    public final void testCreateProxy(final TestContext aContext) {
         final Async asyncTask = aContext.async();
 
-        service.put(myBucket, myKey, new S3DataObject(json.toBuffer())).onComplete(put -> {
-            if (put.succeeded()) {
-                aContext.assertTrue(myAwsS3Client.doesObjectExist(myBucket, myKey));
-                complete(asyncTask);
-            } else {
-                aContext.fail(put.cause());
-            }
+        S3ClientService.create(myContext.vertx(), "s3").onComplete(result -> {
+            asyncTask.complete();
         });
     }
 
@@ -45,19 +39,23 @@ public class S3ClientServiceFT extends AbstractS3FT {
      * @param aContext A test context
      */
     @Test
+    @Ignore
     public final void testCreateProxyWithOptions(final TestContext aContext) {
-        final S3ClientService service = S3ClientService.createProxyWithOptions(myContext.vertx(), getConfig(), "s3");
-        final JsonObject json = new JsonObject().put(TestConstants.ID, myKey);
-        final Async asyncTask = aContext.async();
+        S3ClientService.createWithOptions(myContext.vertx(), getConfig(), "s3") //
+            .onSuccess(service -> {
+                final JsonObject json = new JsonObject().put(TestConstants.ID, myKey);
+                final Async asyncTask = aContext.async();
 
-        service.put(myBucket, myKey, new S3DataObject(json.toBuffer())).onComplete(put -> {
-            if (put.succeeded()) {
-                aContext.assertTrue(myAwsS3Client.doesObjectExist(myBucket, myKey));
-                complete(asyncTask);
-            } else {
-                aContext.fail(put.cause());
-            }
-        });
+                service.put(myBucket, myKey, new S3DataObject(json.toBuffer())).onComplete(put -> {
+                    if (put.succeeded()) {
+                        aContext.assertTrue(myAwsS3Client.doesObjectExist(myBucket, myKey));
+                        complete(asyncTask);
+                    } else {
+                        aContext.fail(put.cause());
+                    }
+                });
+            }) //
+            .onFailure(details -> aContext.fail(details));
     }
 
 }

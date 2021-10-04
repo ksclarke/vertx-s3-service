@@ -1,6 +1,8 @@
 
 package info.freelibrary.vertx.s3.service;
 
+import java.util.Objects;
+
 import info.freelibrary.util.Logger;
 import info.freelibrary.util.LoggerFactory;
 import info.freelibrary.vertx.s3.S3Client;
@@ -10,7 +12,10 @@ import info.freelibrary.vertx.s3.util.MessageCodes;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.file.FileSystem;
+import io.vertx.core.json.JsonObject;
+import io.vertx.serviceproxy.ServiceBinder;
 
 /**
  * An S3 client service implementation.
@@ -28,12 +33,28 @@ public class S3ClientServiceImpl implements S3ClientService {
     protected final S3Client myS3Client;
 
     /**
+     * The message consumer for the proxy implementation.
+     */
+    private final MessageConsumer<JsonObject> myConsumer;
+
+    /**
+     * A Vert.x service binder.
+     */
+    private final ServiceBinder myServiceBinder;
+
+    /**
      * Creates a new S3 client service.
      *
      * @param aVertx A Vert.x instance
+     * @param aAddress An event bus address for the service
      */
-    public S3ClientServiceImpl(final Vertx aVertx) {
+    public S3ClientServiceImpl(final Vertx aVertx, final String aAddress) {
+        Objects.requireNonNull(aVertx);
+        Objects.requireNonNull(aAddress);
+
         myS3Client = new S3Client(aVertx);
+        myServiceBinder = new ServiceBinder(aVertx);
+        myConsumer = myServiceBinder.setAddress(aAddress).register(S3ClientService.class, this);
     }
 
     /**
@@ -41,9 +62,16 @@ public class S3ClientServiceImpl implements S3ClientService {
      *
      * @param aVertx A Vert.x instance
      * @param aConfig A S3 client configuration
+     * @param aAddress An event bus address for the service
      */
-    public S3ClientServiceImpl(final Vertx aVertx, final S3ClientOptions aConfig) {
+    public S3ClientServiceImpl(final Vertx aVertx, final String aAddress, final S3ClientOptions aConfig) {
+        Objects.requireNonNull(aAddress);
+        Objects.requireNonNull(aConfig);
+        Objects.requireNonNull(aVertx);
+
         myS3Client = new S3Client(aVertx, aConfig);
+        myServiceBinder = new ServiceBinder(aVertx);
+        myConsumer = myServiceBinder.setAddress(aAddress).register(S3ClientService.class, this);
     }
 
     @Override
@@ -107,6 +135,10 @@ public class S3ClientServiceImpl implements S3ClientService {
 
     @Override
     public Future<Void> close() {
+        if (myServiceBinder != null) {
+            myServiceBinder.unregister(myConsumer);
+        }
+
         return myS3Client.close();
     }
 

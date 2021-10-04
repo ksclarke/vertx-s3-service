@@ -9,6 +9,7 @@ import static io.vertx.core.http.HttpMethod.GET;
 import java.io.IOException;
 import java.util.Scanner;
 
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -27,6 +28,7 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
  * A test that runs the profile tests (S3ClientProfilesTest) in a Docker container.
  */
 @RunWith(VertxUnitRunner.class)
+@Ignore
 public class S3ClientProfilesFT extends AbstractS3FT {
 
     /**

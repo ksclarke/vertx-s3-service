@@ -5,6 +5,7 @@ import java.io.File;
 import java.util.Locale;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -25,6 +26,7 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
  * Runs tests against a LocalStack S3 instance.
  */
 @RunWith(VertxUnitRunner.class)
+@Ignore
 public class S3ClientFT extends AbstractS3FT {
 
     /**
