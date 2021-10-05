@@ -1,18 +1,24 @@
 
 package info.freelibrary.vertx.s3.service;
 
+import info.freelibrary.util.Constants;
 import info.freelibrary.util.Logger;
 import info.freelibrary.util.LoggerFactory;
-import info.freelibrary.util.MessageCodes;
 import info.freelibrary.util.Stopwatch;
+
 import info.freelibrary.vertx.s3.S3ClientOptions;
 import info.freelibrary.vertx.s3.S3DataObject;
+import info.freelibrary.vertx.s3.service.S3ServiceException.S3ServiceExceptionMessageCodec;
+import info.freelibrary.vertx.s3.util.MessageCodes;
+
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.ProxyClose;
 import io.vertx.codegen.annotations.ProxyGen;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.eventbus.EventBus;
 import io.vertx.serviceproxy.ServiceProxyBuilder;
 
 /**
@@ -25,16 +31,19 @@ public interface S3ClientService {
     /**
      * A default event bus service address.
      */
+    @GenIgnore
     String DEFAULT_ADDRESS = S3ClientService.class.getName();
 
     /**
      * The environmental property used to override the default initialization timeout.
      */
+    @GenIgnore
     String INIT_TIMEOUT_PROPERTY = "S3_CLIENT_INIT_TIMEOUT";
 
     /**
      * The maximum amount of time in milliseconds that we wait for a service to be initialized.
      */
+    @GenIgnore
     String DEFAULT_INIT_TIMEOUT = "10";
 
     /**
@@ -46,8 +55,9 @@ public interface S3ClientService {
      * @return The S3 client service
      * @throws S3ServiceException If there is trouble getting the proxy
      */
+    @GenIgnore
     static Future<S3ClientService> create(final Vertx aVertx, final String... aAddress) {
-        return createWithOptions(aVertx, (S3ClientOptions) null, aAddress);
+        return createWithOpts(aVertx, (S3ClientOptions) null, aAddress);
     }
 
     /**
@@ -59,9 +69,9 @@ public interface S3ClientService {
      * @param aAddress An address on the event bus
      * @return The S3 client service
      */
-    static Future<S3ClientService> createWithOptions(final Vertx aVertx, final S3ClientOptions aConfig,
-        final String... aAddress) {
-
+    @GenIgnore
+    static Future<S3ClientService> createWithOpts(final Vertx aVertx, final S3ClientOptions aConfig,
+            final String... aAddress) {
         final long timeout = Long.parseLong(System.getenv().getOrDefault(INIT_TIMEOUT_PROPERTY, DEFAULT_INIT_TIMEOUT));
         final Logger logger = LoggerFactory.getLogger(S3ClientService.class, MessageCodes.BUNDLE);
         final Promise<S3ClientService> promise = Promise.promise();
@@ -74,6 +84,9 @@ public interface S3ClientService {
 
             // If getting the lock succeeds, it's the first time we'll initialize an S3 client service
             if (getLock.succeeded()) {
+                final EventBus eventBus = aVertx.eventBus();
+
+                // Check succeeded... stop the watch so we can log the elapsed time
                 stopwatch.stop();
 
                 // Register the S3 client service on the event bus so that we can create proxies for it
@@ -83,16 +96,22 @@ public interface S3ClientService {
                     service = new S3ClientServiceImpl(aVertx, address, aConfig);
                 }
 
-                logger.info("Service '{}' registered at '{}' in {} ms", service.getClass().getSimpleName(), aAddress,
-                    stopwatch.getMilliseconds());
-            } else {
-                final Long elapsedTime = Long.parseLong(stopwatch.stop().getMilliseconds());
+                // Log that we've successfully registered the S3 client service
+                logger.info(MessageCodes.VSS_023, service.getName(), address, stopwatch.getMilliseconds());
 
-                // If we cannot get a lock the service has already been initialized; record how long we waited
+                // Register service exceptions related to the S3 client service
+                eventBus.registerDefaultCodec(S3ServiceException.class, new S3ServiceExceptionMessageCodec());
+                logger.debug(MessageCodes.VSS_025, S3ServiceExceptionMessageCodec.class.getSimpleName());
+            } else {
+                final String msecString = stopwatch.stop().getMilliseconds();
+                final int index = msecString.lastIndexOf(Constants.SPACE);
+                final int length = msecString.length();
+                // msecString's value should always have a space, but let's be cautious about future changes
+                final Long elapsedTime = Long.parseLong(msecString.substring(0, index != -1 ? index : length));
+
+                // If we cannot get a lock the service should already be initialized; record how long we waited
                 if (elapsedTime > timeout) {
-                    logger.debug(
-                        "{}'s initialization attempt couldn't get a lock in {} ms -- service should already exist",
-                        S3ClientService.class.getSimpleName(), elapsedTime);
+                    logger.debug(MessageCodes.VSS_024, S3ClientService.class.getSimpleName(), elapsedTime);
                 }
             }
 
@@ -100,6 +119,16 @@ public interface S3ClientService {
         });
 
         return promise.future();
+    }
+
+    /**
+     * Gets the name of the service.
+     *
+     * @return The human friendly name of the service
+     */
+    @GenIgnore
+    default String getName() {
+        return S3ClientService.class.getSimpleName();
     }
 
     /**

@@ -17,7 +17,9 @@ import org.junit.runner.RunWith;
 import info.freelibrary.util.Logger;
 import info.freelibrary.util.LoggerFactory;
 import info.freelibrary.util.StringUtils;
+
 import info.freelibrary.vertx.s3.util.MessageCodes;
+
 import io.vertx.core.http.HttpClient;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -83,8 +85,8 @@ public class S3ClientProfilesFT extends AbstractS3FT {
         client.request(GET, port, INADDR_ANY, LOG_FILE).compose(request -> request.send().onComplete(response -> {
             if (response.succeeded()) {
                 response.result().body() //
-                    .onSuccess(body -> testBody(body.toString(), asyncTask)) //
-                    .onFailure(details -> aContext.fail(details));
+                        .onSuccess(body -> testBody(body.toString(), asyncTask)) //
+                        .onFailure(details -> aContext.fail(details));
             } else {
                 aContext.fail(response.cause());
             }

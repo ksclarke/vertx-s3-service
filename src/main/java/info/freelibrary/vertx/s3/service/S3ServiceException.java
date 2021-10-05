@@ -2,11 +2,14 @@
 package info.freelibrary.vertx.s3.service;
 
 import io.vertx.core.Future;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.json.JsonObject;
 import io.vertx.serviceproxy.ServiceException;
+import io.vertx.serviceproxy.ServiceExceptionMessageCodec;
 
 /**
- * An S3 service exception.
+ * A general S3 service exception.
  */
 public class S3ServiceException extends ServiceException {
 
@@ -16,7 +19,7 @@ public class S3ServiceException extends ServiceException {
     private static final long serialVersionUID = -141348299829570221L;
 
     /**
-     * Creates a new service exception from the supplied code and exception message.
+     * Creates a new S3 service exception from the supplied code and exception message.
      *
      * @param aCode An exception code
      * @param aMessage An exception message
@@ -26,14 +29,23 @@ public class S3ServiceException extends ServiceException {
     }
 
     /**
-     * Creates a new service exception from the supplied code and exception message.
+     * Creates a new S3 service exception from the supplied code and exception message.
      *
      * @param aCode An exception code
      * @param aMessage An exception message
      * @param aDebugInfo Additional debugging information
      */
     public S3ServiceException(final int aCode, final String aMessage, final JsonObject aDebugInfo) {
-        super(aCode, aMessage, aDebugInfo);
+        super(aCode, aMessage, aDebugInfo != null ? aDebugInfo : new JsonObject());
+    }
+
+    /**
+     * Creates a new S3 service exception from another more generic ServiceException.
+     *
+     * @param aServiceException The more generic ServiceException
+     */
+    public S3ServiceException(final ServiceException aServiceException) {
+        this(aServiceException.failureCode(), aServiceException.getMessage(), aServiceException.getDebugInfo());
     }
 
     /**
@@ -53,6 +65,7 @@ public class S3ServiceException extends ServiceException {
      *
      * @param aCode A failure code
      * @param aMessage An exception message
+     * @param aDebugInfo Additional details about the failure
      * @return A failed future
      */
     @SuppressWarnings("unchecked")
@@ -60,4 +73,40 @@ public class S3ServiceException extends ServiceException {
         return Future.failedFuture(new S3ServiceException(aCode, aMessage, aDebugInfo));
     }
 
+    /**
+     * A message codec for sending S3ServiceException(s) over the Vert.x event bus.
+     */
+    static class S3ServiceExceptionMessageCodec implements MessageCodec<S3ServiceException, S3ServiceException> {
+
+        /**
+         * The underlying ServiceExceptionMessageCodec (that does all the work for us).
+         */
+        private final ServiceExceptionMessageCodec myDelegateCodec = new ServiceExceptionMessageCodec();
+
+        @Override
+        public void encodeToWire(final Buffer aBuffer, final S3ServiceException aServiceException) {
+            myDelegateCodec.encodeToWire(aBuffer, aServiceException);
+        }
+
+        @Override
+        public S3ServiceException decodeFromWire(final int aPosition, final Buffer aBuffer) {
+            return new S3ServiceException(myDelegateCodec.decodeFromWire(aPosition, aBuffer));
+        }
+
+        @Override
+        public S3ServiceException transform(final S3ServiceException aServiceException) {
+            return aServiceException;
+        }
+
+        @Override
+        public String name() {
+            return getClass().getSimpleName();
+        }
+
+        @Override
+        public byte systemCodecID() {
+            return -1; // Always -1 (the Vert.x examples say)
+        }
+
+    }
 }

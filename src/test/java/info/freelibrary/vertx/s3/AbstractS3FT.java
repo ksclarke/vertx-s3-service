@@ -18,7 +18,12 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
 import info.freelibrary.util.Constants;
+import info.freelibrary.util.Logger;
+import info.freelibrary.util.LoggerFactory;
 import info.freelibrary.util.StringUtils;
+
+import info.freelibrary.vertx.s3.util.MessageCodes;
+
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.junit.RunTestOnContext;
 
@@ -26,6 +31,11 @@ import io.vertx.ext.unit.junit.RunTestOnContext;
  * An abstract base class for functional tests.
  */
 public abstract class AbstractS3FT {
+
+    /**
+     * Gets a logger for abstract functional tests.
+     */
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractS3FT.class, MessageCodes.BUNDLE);
 
     /**
      * The default LocalStack port in string form.
@@ -72,6 +82,8 @@ public abstract class AbstractS3FT {
         myBucket = UUID.randomUUID().toString();
         myKey = UUID.randomUUID().toString();
         myAwsS3Client.createBucket(myBucket);
+
+        LOGGER.debug(MessageCodes.VSS_026, myBucket);
     }
 
     /**

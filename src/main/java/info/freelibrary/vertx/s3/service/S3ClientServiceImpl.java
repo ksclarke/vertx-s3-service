@@ -5,10 +5,12 @@ import java.util.Objects;
 
 import info.freelibrary.util.Logger;
 import info.freelibrary.util.LoggerFactory;
+
 import info.freelibrary.vertx.s3.S3Client;
 import info.freelibrary.vertx.s3.S3ClientOptions;
 import info.freelibrary.vertx.s3.S3DataObject;
 import info.freelibrary.vertx.s3.util.MessageCodes;
+
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -79,7 +81,7 @@ public class S3ClientServiceImpl implements S3ClientService {
         final FileSystem fileSystem = myS3Client.getVertx().fileSystem();
         final Promise<Void> promise = Promise.promise();
 
-        LOGGER.debug(MessageCodes.VSS_018, aKey, aBucket, aObject);
+        LOGGER.debug(MessageCodes.VSS_018, aKey, aBucket);
 
         if (aObject.source() == S3DataObject.Type.BUFFER) {
             aObject.asBuffer(fileSystem).onComplete(asBuffer -> {

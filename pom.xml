@@ -376,7 +376,6 @@
           </excludes>
           <argLine>${jacoco.agent.arg}</argLine>
           <systemPropertyVariables>
-            <test.user>${project.artifactId}</test.user>
             <localstack.port>${s3.port}</localstack.port>
             <maven.port>${sfs.port}</maven.port>
             <vertx.logger-delegate-factory-class-name>io.vertx.core.logging.SLF4JLogDelegateFactory</vertx.logger-delegate-factory-class-name>
