@@ -7,7 +7,8 @@ import info.freelibrary.util.LoggerFactory;
 import info.freelibrary.util.Stopwatch;
 
 import info.freelibrary.vertx.s3.S3ClientOptions;
-import info.freelibrary.vertx.s3.S3DataObject;
+import info.freelibrary.vertx.s3.S3Object;
+import info.freelibrary.vertx.s3.service.MissingKeyException.MissingKeyExceptionMessageCodec;
 import info.freelibrary.vertx.s3.service.S3ServiceException.S3ServiceExceptionMessageCodec;
 import info.freelibrary.vertx.s3.util.MessageCodes;
 
@@ -53,7 +54,7 @@ public interface S3ClientService {
      * @param aVertx A Vert.x instance
      * @param aAddress An address on the event bus
      * @return The S3 client service
-     * @throws S3ServiceException If there is trouble getting the proxy
+     * @throws S3ServiceException If there is trouble creating the service
      */
     @GenIgnore
     static Future<S3ClientService> create(final Vertx aVertx, final String... aAddress) {
@@ -101,7 +102,10 @@ public interface S3ClientService {
 
                 // Register service exceptions related to the S3 client service
                 eventBus.registerDefaultCodec(S3ServiceException.class, new S3ServiceExceptionMessageCodec());
+                eventBus.registerDefaultCodec(MissingKeyException.class, new MissingKeyExceptionMessageCodec());
+
                 logger.debug(MessageCodes.VSS_025, S3ServiceExceptionMessageCodec.class.getSimpleName());
+                logger.debug(MessageCodes.VSS_025, MissingKeyExceptionMessageCodec.class.getSimpleName());
             } else {
                 final String msecString = stopwatch.stop().getMilliseconds();
                 final int index = msecString.lastIndexOf(Constants.SPACE);
@@ -135,20 +139,19 @@ public interface S3ClientService {
      * Puts S3DataObject to the S3 bucket.
      *
      * @param aBucket An S3 bucket
-     * @param aKey A key for the JSON object
-     * @param aObjectData A object with the data to be uploaded
+     * @param aS3Object A object with the data to be uploaded
      * @return The result of the PUT
      */
-    Future<Void> put(String aBucket, String aKey, S3DataObject aObjectData);
+    Future<Void> put(String aBucket, S3Object aS3Object);
 
     /**
      * Gets S3DataObject from the S3 client service.
      *
      * @param aBucket An S3 bucket
      * @param aKey An S3 key
-     * @return The S3DataObject
+     * @return The S3Object
      */
-    Future<S3DataObject> get(String aBucket, String aKey);
+    Future<S3Object> get(String aBucket, String aKey);
 
     /**
      * Closes the S3 client service.

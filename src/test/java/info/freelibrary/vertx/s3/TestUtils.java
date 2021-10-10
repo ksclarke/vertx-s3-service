@@ -1,6 +1,9 @@
 
 package info.freelibrary.vertx.s3;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Iterator;
 
 import com.amazonaws.services.s3.AmazonS3;
@@ -31,6 +34,22 @@ public final class TestUtils {
      */
     private TestUtils() {
         // This intentionally left empty
+    }
+
+    /**
+     * Gets a test output file path.
+     *
+     * @param aExt A file extension
+     * @return A path to a test result file
+     * @throws IOException If there is trouble creating the test file
+     */
+    public static Path getTestFile(final String aExt) throws IOException {
+        final Path result = Files.createTempFile("s3-test-output_", aExt);
+
+        // Clean up our temporary file after the test is completed
+        result.toFile().deleteOnExit();
+
+        return result;
     }
 
     /**

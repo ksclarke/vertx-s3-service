@@ -78,7 +78,7 @@ public class BucketListTest {
      */
     @Test
     public final void testIterator(final TestContext aContext) {
-        final Iterator<S3ObjectList> iterator = myBucketList.iterator();
+        final Iterator<S3Object> iterator = myBucketList.iterator();
 
         int index = 0;
 
@@ -126,7 +126,7 @@ public class BucketListTest {
      */
     @Test
     public final void testToArray(final TestContext aContext) {
-        aContext.assertEquals(myBucketList.toArray(new S3ObjectList[myBucketList.size()]).length, myBucketList.size());
+        aContext.assertEquals(myBucketList.toArray(new S3Object[myBucketList.size()]).length, myBucketList.size());
     }
 
     /**
@@ -151,8 +151,8 @@ public class BucketListTest {
     public final void testIterableList(final TestContext aContext) {
         int count = 0;
 
-        for (final S3ObjectList s3ObjectList : myBucketList) {
-            aContext.assertNotNull(s3ObjectList.getKey());
+        for (final S3Object s3Object : myBucketList) {
+            aContext.assertNotNull(s3Object.getKey());
             count += 1;
         }
 

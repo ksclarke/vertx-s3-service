@@ -11,7 +11,7 @@ import io.vertx.core.json.JsonObject;
 /**
  * Tests of the S3DataObject class.
  */
-public class S3ObjectDataTest {
+public class S3ObjectTest {
 
     private static final String TEST_FILE = "src/test/resources/green.gif";
 
@@ -20,10 +20,10 @@ public class S3ObjectDataTest {
      */
     @Test
     public final void testS3ObjectDataJsonObject() {
-        final JsonObject json = new JsonObject().put(S3DataObject.Type.FILE.name(), Buffer.buffer(TEST_FILE));
-        final S3DataObject objectData = new S3DataObject(json);
+        final JsonObject json = new JsonObject().put(S3Object.Type.FILE.name(), Buffer.buffer(TEST_FILE));
+        final S3Object objectData = new S3Object(json);
 
-        assertEquals(S3DataObject.Type.FILE, objectData.source());
+        assertEquals(S3Object.Type.FILE, objectData.getSource());
         // assertEquals(TEST_FILE, objectData.asBuffer(null))
     }
 

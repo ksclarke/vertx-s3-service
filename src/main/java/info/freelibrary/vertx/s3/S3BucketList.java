@@ -24,12 +24,12 @@ import io.vertx.core.buffer.Buffer;
 /**
  * A listing of objects in an S3 bucket.
  */
-public class S3BucketList implements Iterable<S3ObjectList> {
+public class S3BucketList implements Iterable<S3Object> {
 
     /**
      * The S3 object list.
      */
-    private List<S3ObjectList> myList;
+    private List<S3Object> myList;
 
     /**
      * Creates a new listing of S3 objects.
@@ -55,12 +55,12 @@ public class S3BucketList implements Iterable<S3ObjectList> {
         try {
             final SAXParser saxParser = saxParserFactory.newSAXParser();
             final XMLReader xmlReader = saxParser.getXMLReader();
-            final S3ObjectListHandler s3ObjectListHandler = new S3ObjectListHandler();
+            final S3BucketListHandler s3BucketListHandler = new S3BucketListHandler();
 
-            xmlReader.setContentHandler(s3ObjectListHandler);
+            xmlReader.setContentHandler(s3BucketListHandler);
             xmlReader.parse(new InputSource(new StringReader(aString)));
 
-            myList = Collections.unmodifiableList(s3ObjectListHandler.getList());
+            myList = Collections.unmodifiableList(s3BucketListHandler.getList());
         } catch (final ParserConfigurationException | SAXException details) {
             throw new IOException(details);
         }
@@ -83,7 +83,7 @@ public class S3BucketList implements Iterable<S3ObjectList> {
      * @param aIndex A position in the list
      * @return The list object at the supplied index position
      */
-    public S3ObjectList get(final int aIndex) {
+    public S3Object get(final int aIndex) {
         return myList.get(aIndex);
     }
 
@@ -115,17 +115,17 @@ public class S3BucketList implements Iterable<S3ObjectList> {
     }
 
     @Override
-    public Iterator<S3ObjectList> iterator() {
+    public Iterator<S3Object> iterator() {
         return myList.iterator();
     }
 
     @Override
-    public Spliterator<S3ObjectList> spliterator() {
+    public Spliterator<S3Object> spliterator() {
         return myList.spliterator();
     }
 
     @Override
-    public void forEach(final Consumer<? super S3ObjectList> aEvent) {
+    public void forEach(final Consumer<? super S3Object> aEvent) {
         myList.forEach(aEvent);
     }
 
@@ -139,12 +139,12 @@ public class S3BucketList implements Iterable<S3ObjectList> {
     }
 
     /**
-     * Converts the bucket list into an array of {@link S3ObjectList}s.
+     * Converts the bucket list into an array of {@link S3Object}s.
      *
      * @param aArray An array in which to put the bucket list's objects
-     * @return The array of {@link S3ObjectList}s
+     * @return The array of {@link S3Object}s
      */
-    public S3ObjectList[] toArray(final S3ObjectList... aArray) {
+    public S3Object[] toArray(final S3Object... aArray) {
         return myList.toArray(aArray);
     }
 

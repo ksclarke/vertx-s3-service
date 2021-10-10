@@ -1,6 +1,11 @@
 
 package info.freelibrary.vertx.s3.service;
 
+import info.freelibrary.util.Logger;
+import info.freelibrary.util.LoggerFactory;
+
+import info.freelibrary.vertx.s3.util.MessageCodes;
+
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.MessageCodec;
@@ -11,7 +16,12 @@ import io.vertx.serviceproxy.ServiceExceptionMessageCodec;
 /**
  * A general S3 service exception.
  */
-public class S3ServiceException extends ServiceException {
+public class S3ServiceException extends AbstractServiceException {
+
+    /**
+     * A service exception logger.
+     */
+    private static final Logger LOGGER = LoggerFactory.getLogger(S3ServiceException.class, MessageCodes.BUNDLE);
 
     /**
      * The <code>serialVersionUID</code> for an S3 service exception.
@@ -36,7 +46,7 @@ public class S3ServiceException extends ServiceException {
      * @param aDebugInfo Additional debugging information
      */
     public S3ServiceException(final int aCode, final String aMessage, final JsonObject aDebugInfo) {
-        super(aCode, aMessage, aDebugInfo != null ? aDebugInfo : new JsonObject());
+        super(aCode, aMessage, aDebugInfo);
     }
 
     /**
@@ -45,7 +55,17 @@ public class S3ServiceException extends ServiceException {
      * @param aServiceException The more generic ServiceException
      */
     public S3ServiceException(final ServiceException aServiceException) {
-        this(aServiceException.failureCode(), aServiceException.getMessage(), aServiceException.getDebugInfo());
+        super(aServiceException);
+    }
+
+    /**
+     * Gets the exception logger.
+     *
+     * @return An exception logger
+     */
+    @Override
+    protected Logger getLogger() {
+        return LOGGER;
     }
 
     /**
@@ -56,7 +76,7 @@ public class S3ServiceException extends ServiceException {
      * @return A failed future
      */
     @SuppressWarnings("unchecked")
-    public static Future<S3ServiceException> fail(final int aCode, final String aMessage) {
+    public static Future<ServiceException> fail(final int aCode, final String aMessage) {
         return Future.failedFuture(new S3ServiceException(aCode, aMessage));
     }
 
@@ -69,7 +89,7 @@ public class S3ServiceException extends ServiceException {
      * @return A failed future
      */
     @SuppressWarnings("unchecked")
-    public static Future<S3ServiceException> fail(final int aCode, final String aMessage, final JsonObject aDebugInfo) {
+    public static Future<ServiceException> fail(final int aCode, final String aMessage, final JsonObject aDebugInfo) {
         return Future.failedFuture(new S3ServiceException(aCode, aMessage, aDebugInfo));
     }
 

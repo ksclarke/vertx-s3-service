@@ -8,7 +8,7 @@ import info.freelibrary.util.LoggerFactory;
 
 import info.freelibrary.vertx.s3.S3Client;
 import info.freelibrary.vertx.s3.S3ClientOptions;
-import info.freelibrary.vertx.s3.S3DataObject;
+import info.freelibrary.vertx.s3.S3Object;
 import info.freelibrary.vertx.s3.util.MessageCodes;
 
 import io.vertx.core.Future;
@@ -77,55 +77,60 @@ public class S3ClientServiceImpl implements S3ClientService {
     }
 
     @Override
-    public Future<Void> put(final String aBucket, final String aKey, final S3DataObject aObject) {
+    public Future<Void> put(final String aBucket, final S3Object aS3Object) {
         final FileSystem fileSystem = myS3Client.getVertx().fileSystem();
         final Promise<Void> promise = Promise.promise();
+        final String key = aS3Object.getKey();
 
-        LOGGER.debug(MessageCodes.VSS_018, aKey, aBucket);
+        if (key != null) {
+            LOGGER.debug(MessageCodes.VSS_018, key, aBucket);
 
-        if (aObject.source() == S3DataObject.Type.BUFFER) {
-            aObject.asBuffer(fileSystem).onComplete(asBuffer -> {
-                if (asBuffer.succeeded()) {
-                    myS3Client.put(aBucket, aKey, asBuffer.result(), put -> {
-                        if (put.succeeded()) {
-                            promise.complete();
-                        } else {
-                            promise.fail(put.cause());
-                        }
-                    });
-                } else {
-                    promise.fail(asBuffer.cause());
-                }
-            });
+            if (aS3Object.getSource() == S3Object.Type.BUFFER) {
+                aS3Object.asBuffer(fileSystem).onComplete(asBuffer -> {
+                    if (asBuffer.succeeded()) {
+                        myS3Client.put(aBucket, key, asBuffer.result(), put -> {
+                            if (put.succeeded()) {
+                                promise.complete();
+                            } else {
+                                promise.fail(put.cause());
+                            }
+                        });
+                    } else {
+                        promise.fail(asBuffer.cause());
+                    }
+                });
+            } else {
+                aS3Object.asFile(fileSystem).onComplete(asFile -> {
+                    if (asFile.succeeded()) {
+                        myS3Client.put(aBucket, key, asFile.result(), put -> {
+                            if (put.succeeded()) {
+                                promise.complete();
+                            } else {
+                                promise.fail(put.cause());
+                            }
+                        });
+                    } else {
+                        promise.fail(asFile.cause());
+                    }
+                });
+            }
         } else {
-            aObject.asFile(fileSystem).onComplete(asFile -> {
-                if (asFile.succeeded()) {
-                    myS3Client.put(aBucket, aKey, asFile.result(), put -> {
-                        if (put.succeeded()) {
-                            promise.complete();
-                        } else {
-                            promise.fail(put.cause());
-                        }
-                    });
-                } else {
-                    promise.fail(asFile.cause());
-                }
-            });
+            promise.fail(new MissingKeyException(LOGGER.getMessage(MessageCodes.VSS_027, aBucket)));
         }
 
         return promise.future();
     }
 
     @Override
-    public Future<S3DataObject> get(final String aBucket, final String aKey) {
-        final Promise<S3DataObject> promise = Promise.promise();
+    public Future<S3Object> get(final String aBucket, final String aKey) {
+        final Promise<S3Object> promise = Promise.promise();
 
         LOGGER.debug(MessageCodes.VSS_019, aKey, aBucket);
 
         myS3Client.get(aBucket, aKey).onComplete(get -> {
             if (get.succeeded()) {
                 get.result().body(body -> {
-                    promise.complete(new S3DataObject(body.result()));
+                    promise.complete(new S3Object(aKey, body.result()));
                 });
             } else {
                 promise.fail(get.cause());

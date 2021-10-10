@@ -9,10 +9,12 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import info.freelibrary.vertx.s3.util.DateUtils;
+
 /**
- * A SAX handler for S3's S3ObjectList response.
+ * A SAX handler for S3's S3Object response.
  */
-class S3ObjectListHandler extends DefaultHandler {
+class S3BucketListHandler extends DefaultHandler {
 
     /** The element name for an S3 key. */
     private static final String KEY = "Key";
@@ -33,13 +35,13 @@ class S3ObjectListHandler extends DefaultHandler {
     private static final String ETAG = "ETag";
 
     /** The S3 list in a Java {@link List}. */
-    private final List<S3ObjectList> myList = new ArrayList<>();
+    private final List<S3Object> myList = new ArrayList<>();
 
     /** Temporary storage for characters parsed through SAX */
     private final StringBuilder myValue = new StringBuilder(); // NOPMD
 
     /** A single S3 list object */
-    private S3ObjectList myListObject;
+    private S3Object myListObject;
 
     /** The last element encountered while parsing S3 output */
     private String myCurrentElement;
@@ -61,10 +63,10 @@ class S3ObjectListHandler extends DefaultHandler {
 
     @Override
     public void startElement(final String aURI, final String aLocalName, final String aQName,
-        final Attributes aAttributes) throws SAXException {
+            final Attributes aAttributes) throws SAXException {
         switch (aLocalName) {
             case CONTENTS:
-                myListObject = new S3ObjectList();
+                myListObject = new S3Object();
                 break;
             case KEY:
             case ETAG:
@@ -93,14 +95,14 @@ class S3ObjectListHandler extends DefaultHandler {
                 myListObject.setETag(getValue());
                 break;
             case SIZE:
-                myListObject.setSize(getValue());
+                myListObject.setSize(Integer.parseInt(getValue()));
                 break;
             case STORAGE_CLASS:
                 myListObject.setStorageClass(getValue());
                 break;
             case LAST_MODIFIED:
                 try {
-                    myListObject.setLastUpdated(getValue());
+                    myListObject.setLastUpdated(DateUtils.parse(getValue()));
                 } catch (final ParseException details) {
                     throw new SAXException(details);
                 }
@@ -116,7 +118,7 @@ class S3ObjectListHandler extends DefaultHandler {
      *
      * @return The list of S3 objects
      */
-    public List<S3ObjectList> getList() {
+    public List<S3Object> getList() {
         return myList;
     }
 

@@ -36,5 +36,7 @@
   <entry key="VSS-024">{}'s initialization attempt couldn't get a lock in {} ms -- service should already exist</entry>
   <entry key="VSS-025">MessageCodec successfully registered on EventBus: {}</entry>
   <entry key="VSS-026">Creating test bucket: {}</entry>
+  <entry key="VSS-027">Trying to PUT an object without a key to '{}' bucket</entry>
+  <entry key="VSS-028">Invalid ServiceException error code: {} [Expected: {}]</entry>
 
 </properties>

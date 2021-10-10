@@ -15,7 +15,9 @@ import info.freelibrary.util.Logger;
 import info.freelibrary.util.LoggerFactory;
 import info.freelibrary.util.StringUtils;
 import info.freelibrary.util.XmlUtils;
+
 import info.freelibrary.vertx.s3.util.MessageCodes;
+
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -169,6 +171,7 @@ public class S3Client {
             if (statusCode == HTTP.OK) {
                 return Future.succeededFuture(new S3ClientResponseImpl(response));
             }
+
             return Future.failedFuture(new UnexpectedStatusException(statusCode, response.statusMessage()));
         }));
     }
@@ -224,6 +227,7 @@ public class S3Client {
             if (statusCode == HTTP.OK) {
                 return Future.succeededFuture(new HttpHeaders(response.headers()));
             }
+
             return Future.failedFuture(new UnexpectedStatusException(statusCode, response.statusMessage()));
         }));
     }
@@ -274,11 +278,13 @@ public class S3Client {
     public Future<S3BucketList> list(final String aBucket) {
         return createGetRequest(aBucket, LIST_CMD).compose(request -> request.send().compose(response -> {
             final int statusCode = response.statusCode();
+            final Promise<S3BucketList> promise;
 
             if (statusCode != HTTP.OK) {
                 return Future.failedFuture(new UnexpectedStatusException(statusCode, response.statusMessage()));
             }
-            final Promise<S3BucketList> promise = Promise.promise();
+
+            promise = Promise.promise();
 
             response.body(body -> {
                 if (body.succeeded()) {
