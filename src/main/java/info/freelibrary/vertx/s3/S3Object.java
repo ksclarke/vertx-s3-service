@@ -1,6 +1,7 @@
 
 package info.freelibrary.vertx.s3;
 
+import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.time.Instant;
@@ -87,7 +88,7 @@ public class S3Object {
     /**
      * A list of S3 objects.
      */
-    private int mySize;
+    private long mySize;
 
     /**
      * The S3 storage class.
@@ -252,7 +253,7 @@ public class S3Object {
      * @param aSize A object size
      * @return The list object
      */
-    public S3Object setSize(final int aSize) {
+    public S3Object setSize(final long aSize) {
         mySize = aSize;
         return this;
     }
@@ -262,7 +263,15 @@ public class S3Object {
      *
      * @return The object size
      */
-    public int getSize() {
+    public long getSize() {
+        if (mySize == 0) {
+            if (myType == Type.BUFFER) {
+                mySize = myBuffer.length();
+            } else if (myType == Type.FILE) {
+                mySize = new File(myBuffer.toString()).length();
+            }
+        }
+
         return mySize;
     }
 

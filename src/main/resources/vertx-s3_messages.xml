@@ -38,5 +38,6 @@
   <entry key="VSS-026">Creating test bucket: {}</entry>
   <entry key="VSS-027">Trying to PUT an object without a key to '{}' bucket</entry>
   <entry key="VSS-028">Invalid ServiceException error code: {} [Expected: {}]</entry>
+  <entry key="VSS-029">Unabled to find '{}' in the expected S3 bucket: {}</entry>
 
 </properties>

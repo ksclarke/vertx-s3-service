@@ -61,7 +61,7 @@ public class ListObjectTest {
      */
     @Test
     public final void testSetSize(final TestContext aContext) throws NumberFormatException {
-        final int size = 80;
+        final long size = 80;
         aContext.assertEquals(size, new S3Object().setSize(size).getSize());
     }
 

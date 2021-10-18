@@ -57,8 +57,8 @@ public interface S3ClientService {
      * @throws S3ServiceException If there is trouble creating the service
      */
     @GenIgnore
-    static Future<S3ClientService> create(final Vertx aVertx, final String... aAddress) {
-        return createWithOpts(aVertx, (S3ClientOptions) null, aAddress);
+    static Future<S3ClientService> getProxy(final Vertx aVertx, final String... aAddress) {
+        return getProxyWithOpts(aVertx, (S3ClientOptions) null, aAddress);
     }
 
     /**
@@ -71,7 +71,7 @@ public interface S3ClientService {
      * @return The S3 client service
      */
     @GenIgnore
-    static Future<S3ClientService> createWithOpts(final Vertx aVertx, final S3ClientOptions aConfig,
+    static Future<S3ClientService> getProxyWithOpts(final Vertx aVertx, final S3ClientOptions aConfig,
             final String... aAddress) {
         final long timeout = Long.parseLong(System.getenv().getOrDefault(INIT_TIMEOUT_PROPERTY, DEFAULT_INIT_TIMEOUT));
         final Logger logger = LoggerFactory.getLogger(S3ClientService.class, MessageCodes.BUNDLE);
