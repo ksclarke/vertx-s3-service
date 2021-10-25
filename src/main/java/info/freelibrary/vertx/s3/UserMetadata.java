@@ -11,7 +11,11 @@ import java.util.Objects;
 import info.freelibrary.util.Logger;
 import info.freelibrary.util.LoggerFactory;
 import info.freelibrary.util.StringUtils;
+
 import info.freelibrary.vertx.s3.util.MessageCodes;
+
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 
 /**
  * S3 user metadata.
@@ -77,7 +81,7 @@ public class UserMetadata {
         for (final NameValuePair element : myMetadata) {
             if (element.myName.equals(aName.toLowerCase(DEFAULT_LOCALE))) {
                 final String oldValue = element.getValue();
-                final String newValue = aValue != null ? StringUtils.trimTo(aValue, "") : "";
+                final String newValue = aValue != null ? StringUtils.trimTo(aValue, EMPTY) : EMPTY;
 
                 if (!EMPTY.equals(newValue)) {
                     element.setValue(oldValue + AWS_VALUE_DELIMITER + newValue);
@@ -181,6 +185,17 @@ public class UserMetadata {
         }
 
         return -1;
+    }
+
+    @Override
+    public String toString() {
+        final JsonArray jsonArray = new JsonArray();
+
+        for (final NameValuePair pair : myMetadata) {
+            jsonArray.add(new JsonObject().put(pair.getName(), pair.getValue()));
+        }
+
+        return jsonArray.encodePrettily();
     }
 
     /**

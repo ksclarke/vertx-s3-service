@@ -116,6 +116,7 @@ public class S3Client {
             if (statusCode == HTTP.NO_CONTENT) {
                 return Future.<Void>succeededFuture();
             }
+
             return Future.failedFuture(new UnexpectedStatusException(statusCode, response.statusMessage()));
         }));
     }
@@ -359,11 +360,13 @@ public class S3Client {
         final String prefixedList = PREFIX_LIST_CMD + aPrefix;
         return createGetRequest(aBucket, prefixedList).compose(request -> request.send().compose(response -> {
             final int statusCode = response.statusCode();
+            final Promise<S3BucketList> promise;
 
             if (statusCode != HTTP.OK) {
                 return Future.failedFuture(new UnexpectedStatusException(statusCode, response.statusMessage()));
             }
-            final Promise<S3BucketList> promise = Promise.promise();
+
+            promise = Promise.promise();
 
             response.body(body -> {
                 if (body.succeeded()) {
@@ -443,6 +446,7 @@ public class S3Client {
             if (statusCode == HTTP.OK) {
                 return Future.succeededFuture(new HttpHeaders(response.headers()));
             }
+
             return Future.failedFuture(new UnexpectedStatusException(statusCode, response.statusMessage()));
         }));
     }
@@ -456,7 +460,7 @@ public class S3Client {
      * @param aHandler A response handler
      */
     public void put(final String aBucket, final String aKey, final Buffer aBuffer,
-        final Handler<AsyncResult<HttpHeaders>> aHandler) {
+            final Handler<AsyncResult<HttpHeaders>> aHandler) {
         final Promise<HttpHeaders> promise = Promise.promise();
 
         // Set the supplied handler as the handler for our response promise
@@ -496,7 +500,7 @@ public class S3Client {
      * @return A future indicating when the buffer has been uploaded
      */
     public Future<HttpHeaders> put(final String aBucket, final String aKey, final Buffer aBuffer,
-        final UserMetadata aMetadata) {
+            final UserMetadata aMetadata) {
         final Future<S3ClientRequest> future = createPutRequest(aBucket, aKey);
         return future.compose(request -> request.setUserMetadata(aMetadata).send(aBuffer).compose(response -> {
             final int statusCode = response.statusCode();
@@ -504,6 +508,7 @@ public class S3Client {
             if (statusCode == HTTP.OK) {
                 return Future.succeededFuture(new HttpHeaders(response.headers()));
             }
+
             return Future.failedFuture(new UnexpectedStatusException(statusCode, response.statusMessage()));
         }));
     }
@@ -518,7 +523,7 @@ public class S3Client {
      * @param aHandler An upload response handler
      */
     public void put(final String aBucket, final String aKey, final Buffer aBuffer, final UserMetadata aMetadata,
-        final Handler<AsyncResult<HttpHeaders>> aHandler) {
+            final Handler<AsyncResult<HttpHeaders>> aHandler) {
         final Promise<HttpHeaders> promise = Promise.promise();
 
         // Set the supplied handler as the handler for our response promise
@@ -563,6 +568,7 @@ public class S3Client {
             if (statusCode == HTTP.OK) {
                 return Future.succeededFuture(new HttpHeaders(response.headers()));
             }
+
             // Log more details if we get an unexpected result
             response.body(body -> {
                 if (body.succeeded()) {
@@ -596,7 +602,7 @@ public class S3Client {
      * @param aHandler An upload response handler
      */
     public void put(final String aBucket, final String aKey, final AsyncFile aFile,
-        final Handler<AsyncResult<HttpHeaders>> aHandler) {
+            final Handler<AsyncResult<HttpHeaders>> aHandler) {
         put(aBucket, aKey, aFile, null, aHandler);
     }
 
@@ -610,14 +616,16 @@ public class S3Client {
      * @return A future indicating when the buffer has been uploaded
      */
     public Future<HttpHeaders> put(final String aBucket, final String aKey, final AsyncFile aFile,
-        final UserMetadata aMetadata) {
+            final UserMetadata aMetadata) {
         final Future<S3ClientRequest> futurePut = createPutRequest(aBucket, aKey);
+
         return futurePut.compose(request -> request.setUserMetadata(aMetadata).send(aFile).compose(response -> {
             final int statusCode = response.statusCode();
 
             if (statusCode == HTTP.OK) {
                 return Future.succeededFuture(new HttpHeaders(response.headers()));
             }
+
             final String statusMessage = response.statusMessage();
             return Future.failedFuture(new UnexpectedStatusException(statusCode, statusMessage));
         }));
@@ -633,7 +641,7 @@ public class S3Client {
      * @param aHandler An upload response handler
      */
     public void put(final String aBucket, final String aKey, final AsyncFile aFile, final UserMetadata aMetadata,
-        final Handler<AsyncResult<HttpHeaders>> aHandler) {
+            final Handler<AsyncResult<HttpHeaders>> aHandler) {
         final Promise<HttpHeaders> promise = Promise.promise();
 
         // Set the supplied handler as the handler for our response promise

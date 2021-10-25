@@ -1,12 +1,13 @@
 
 package info.freelibrary.vertx.s3;
 
+import static info.freelibrary.util.Constants.EMPTY;
+
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.time.Instant;
-
-import info.freelibrary.util.Constants;
+import java.util.Optional;
 
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.Future;
@@ -15,6 +16,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.file.OpenOptions;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 /**
@@ -22,31 +24,6 @@ import io.vertx.core.json.JsonObject;
  */
 @DataObject
 public class S3Object {
-
-    /**
-     * The S3 object's storage class property.
-     */
-    private static final String STORAGE_CLASS = "storage_class";
-
-    /**
-     * The S3 object's optional eTag property.
-     */
-    private static final String ETAG = "etag";
-
-    /**
-     * The S3 object's last updated date property.
-     */
-    private static final String LAST_UPDATED = "last_updated";
-
-    /**
-     * The S3 object key property.
-     */
-    private static final String KEY = "key";
-
-    /**
-     * The S3 object size property.
-     */
-    private static final String SIZE = "size";
 
     /**
      * The type of S3Object.
@@ -104,6 +81,11 @@ public class S3Object {
      * The type of S3 object.
      */
     private final Type myType;
+
+    /**
+     * The metadata associated with the object.
+     */
+    private UserMetadata myUserMetadata;
 
     /**
      * Creates an S3Object wrapper for a file.
@@ -176,6 +158,26 @@ public class S3Object {
     S3Object() {
         myType = Type.STORAGE;
         myBuffer = null;
+    }
+
+    /**
+     * Gets the user metadata associated with this object.
+     *
+     * @return The user metadata associated with this object
+     */
+    public Optional<UserMetadata> getMetadata() {
+        return Optional.ofNullable(myUserMetadata);
+    }
+
+    /**
+     * Sets the user metadata associated with this object.
+     *
+     * @param aMetadata User metadata about the object
+     * @return This S3 object
+     */
+    public S3Object setUserMetadata(final UserMetadata aMetadata) {
+        myUserMetadata = aMetadata;
+        return this;
     }
 
     /**
@@ -304,23 +306,27 @@ public class S3Object {
         final JsonObject jsonObject = new JsonObject().put(myType.name(), myBuffer);
 
         if (myStorageClass != null) {
-            jsonObject.put(STORAGE_CLASS, myStorageClass);
+            jsonObject.put(JsonKeys.STORAGE_CLASS, myStorageClass);
         }
 
         if (myETag != null) {
-            jsonObject.put(ETAG, myETag);
+            jsonObject.put(JsonKeys.ETAG, myETag);
         }
 
         if (myKey != null) {
-            jsonObject.put(KEY, myKey);
+            jsonObject.put(JsonKeys.ID, myKey);
         }
 
         if (myLastUpdated != null) {
-            jsonObject.put(LAST_UPDATED, myLastUpdated);
+            jsonObject.put(JsonKeys.LAST_UPDATED, myLastUpdated);
         }
 
         if (mySize > 0) {
-            jsonObject.put(SIZE, mySize);
+            jsonObject.put(JsonKeys.SIZE, mySize);
+        }
+
+        if (myUserMetadata != null) {
+            jsonObject.put(JsonKeys.USER_METADATA, new JsonObject(myUserMetadata.toString()));
         }
 
         return jsonObject;
@@ -382,7 +388,7 @@ public class S3Object {
 
         promise = Promise.promise();
 
-        aFileSystem.createTempFile("s3-upload-", Constants.EMPTY).onComplete(fileCreation -> {
+        aFileSystem.createTempFile("s3-upload-", EMPTY).onComplete(fileCreation -> {
             if (fileCreation.succeeded()) {
                 aFileSystem.open(fileCreation.result(), new OpenOptions().setDeleteOnClose(true), open -> {
                     if (open.succeeded()) {
@@ -414,24 +420,79 @@ public class S3Object {
      * @param aJsonObject A serialized form of the S3Object
      */
     private void addRemainingFields(final JsonObject aJsonObject) {
-        if (aJsonObject.containsKey(KEY)) {
-            myKey = aJsonObject.getString(KEY);
+        if (aJsonObject.containsKey(JsonKeys.ID)) {
+            myKey = aJsonObject.getString(JsonKeys.ID);
         }
 
-        if (aJsonObject.containsKey(ETAG)) {
-            myETag = aJsonObject.getString(ETAG);
+        if (aJsonObject.containsKey(JsonKeys.ETAG)) {
+            myETag = aJsonObject.getString(JsonKeys.ETAG);
         }
 
-        if (aJsonObject.containsKey(LAST_UPDATED)) {
-            myLastUpdated = aJsonObject.getInstant(LAST_UPDATED);
+        if (aJsonObject.containsKey(JsonKeys.LAST_UPDATED)) {
+            myLastUpdated = aJsonObject.getInstant(JsonKeys.LAST_UPDATED);
         }
 
-        if (aJsonObject.containsKey(SIZE)) {
-            mySize = aJsonObject.getInteger(SIZE);
+        if (aJsonObject.containsKey(JsonKeys.SIZE)) {
+            mySize = aJsonObject.getInteger(JsonKeys.SIZE);
         }
 
-        if (aJsonObject.containsKey(STORAGE_CLASS)) {
-            myStorageClass = aJsonObject.getString(STORAGE_CLASS);
+        if (aJsonObject.containsKey(JsonKeys.STORAGE_CLASS)) {
+            myStorageClass = aJsonObject.getString(JsonKeys.STORAGE_CLASS);
         }
+
+        if (aJsonObject.containsKey(JsonKeys.USER_METADATA)) {
+            final JsonArray jsonArray = aJsonObject.getJsonArray(JsonKeys.USER_METADATA);
+
+            if (!jsonArray.isEmpty()) {
+                final UserMetadata userMetadata = new UserMetadata();
+
+                for (int index = 0; index < jsonArray.size(); index++) {
+                    final JsonObject metadataValue = jsonArray.getJsonObject(index);
+
+                    metadataValue.fieldNames().stream().forEach(name -> {
+                        userMetadata.add(name, metadataValue.getString(name));
+                    });
+                }
+
+                myUserMetadata = userMetadata;
+            }
+        }
+    }
+
+    /**
+     * A constants class for the S3 object's serializations keys.
+     */
+    private static final class JsonKeys {
+
+        /**
+         * The S3 object's storage class property.
+         */
+        private static final String STORAGE_CLASS = "storage_class";
+
+        /**
+         * The S3 object's optional eTag property.
+         */
+        private static final String ETAG = "etag";
+
+        /**
+         * The S3 object's last updated date property.
+         */
+        private static final String LAST_UPDATED = "last_updated";
+
+        /**
+         * The S3 object key property.
+         */
+        private static final String ID = "key";
+
+        /**
+         * The S3 object size property.
+         */
+        private static final String SIZE = "size";
+
+        /**
+         * The S3 object user metadata property.
+         */
+        private static final String USER_METADATA = "user_metadata";
+
     }
 }

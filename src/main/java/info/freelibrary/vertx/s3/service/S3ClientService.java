@@ -136,7 +136,7 @@ public interface S3ClientService {
     }
 
     /**
-     * Puts S3DataObject to the S3 bucket.
+     * Puts S3Object to the S3 bucket.
      *
      * @param aBucket An S3 bucket
      * @param aS3Object A object with the data to be uploaded
@@ -145,7 +145,7 @@ public interface S3ClientService {
     Future<Void> put(String aBucket, S3Object aS3Object);
 
     /**
-     * Gets S3DataObject from the S3 client service.
+     * Gets S3Object from the S3 client service.
      *
      * @param aBucket An S3 bucket
      * @param aKey An S3 key

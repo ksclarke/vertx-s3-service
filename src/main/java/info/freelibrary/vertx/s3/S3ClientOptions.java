@@ -25,6 +25,7 @@ public class S3ClientOptions extends HttpClientOptions {
      * Creates a new S3 client options.
      */
     public S3ClientOptions() {
+        super();
         setEndpointPrivately(S3Endpoint.US_EAST_1);
     }
 
@@ -34,6 +35,7 @@ public class S3ClientOptions extends HttpClientOptions {
      * @param aProfile An S3 credentials profile
      */
     public S3ClientOptions(final String aProfile) {
+        super();
         setEndpointPrivately(S3Endpoint.US_EAST_1);
         setProfilePrivately(aProfile);
     }
@@ -44,6 +46,7 @@ public class S3ClientOptions extends HttpClientOptions {
      * @param aEndpoint An S3 endpoint
      */
     public S3ClientOptions(final Endpoint aEndpoint) {
+        super();
         setEndpointPrivately(aEndpoint);
     }
 
@@ -54,6 +57,7 @@ public class S3ClientOptions extends HttpClientOptions {
      * @param aEndpoint An S3 endpoint
      */
     public S3ClientOptions(final String aProfile, final Endpoint aEndpoint) {
+        super();
         setEndpointPrivately(aEndpoint);
         setProfilePrivately(aProfile);
     }
