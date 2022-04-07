@@ -2,13 +2,15 @@
 
 <hr/>
 
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/a39d9efc281a4001b9779964b9fd814c)](https://www.codacy.com/gh/ksclarke/vertx-s3-service/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ksclarke/vertx-s3-service&amp;utm_campaign=Badge_Grade) [![Known Vulnerabilities](https://snyk.io/test/github/ksclarke/vertx-s3-service/badge.svg)](https://snyk.io/test/github/ksclarke/vertx-s3-service) [![Maven](https://img.shields.io/maven-metadata/v/https/repo1.maven.org/maven2/info/freelibrary/vertx-s3-service/maven-metadata.xml.svg?colorB=brightgreen)](https://search.maven.org/artifact/info.freelibrary/vertx-s3-service) [![Javadocs](http://javadoc.io/badge/info.freelibrary/vertx-s3-service.svg)](http://projects.freelibrary.info/vertx-s3-service/javadocs.html)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/a39d9efc281a4001b9779964b9fd814c)](https://www.codacy.com/gh/ksclarke/vertx-s3-service/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ksclarke/vertx-s3-service&amp;utm_campaign=Badge_Grade) [![Known Vulnerabilities](https://snyk.io/test/github/ksclarke/vertx-s3-service/badge.svg)](https://snyk.io/test/github/ksclarke/vertx-s3-service) [![Maven](https://img.shields.io/maven-metadata/v/https/repo1.maven.org/maven2/info/freelibrary/vertx-s3-service/maven-metadata.xml.svg?colorB=brightgreen)](https://search.maven.org/artifact/info.freelibrary/vertx-s3-service) [![Javadocs](http://javadoc.io/badge/info.freelibrary/vertx-s3-service.svg)](https://javadoc.io/doc/info.freelibrary/vertx-s3-service)
 
 ### About the Project
 
-Vertx-S3-Service provides a simple, high-level S3 client and service interface for the [Vert.x](https://vertx.io/) toolkit. It's essentially a shim over the Vert.x HttpClient and, then, a Vert.x Service interface layered on top of that. For convenience, either the S3 client or the Vert.x service interface can be used. The client supports callbacks and futures. The service just supports futures. For working examples of how to use Vertx-S3-Service, take a look at the fledgling [Getting Started](docs/README.md) documentation.
+Vertx-S3-Service provides a simple, high-level S3 client and service interface for the [Vert.x](https://vertx.io/) toolkit. It's essentially a shim over the Vert.x HttpClient and, then, a Vert.x Service interface layered on top of that.
 
-_Historical Note:_ This project's S3 client started as a fork of [SuperS3t](https://github.com/spartango/SuperS3t). But, with the shift to using a Vert.x Service interface, it has grown into something different. The new project is released under the Mozilla Public License (while the old project was released under the MIT License). The original source code from the SuperS3t project is kept, untouched, in the repo's `supers3t` branch and the license for that code can be found in the project's [docs/third_party_licenses](docs/third_party_licenses/supers3t-license.txt) directory. 
+For convenience, either the S3 client or the Vert.x service interface can be used. The client supports callbacks and futures. The service just supports futures. For working examples of how to use Vertx-S3-Service, take a look at the fledgling [Getting Started](docs/README.md) documentation.
+
+_Historical Note:_ This project's S3 client started as a fork of [SuperS3t](https://github.com/spartango/SuperS3t). But, with the shift to using a Vert.x Service interface, it has grown into something different. The original source code from the SuperS3t project is kept, untouched, in the repo's `supers3t` branch and the license for that code can be found in the project's [docs/third_party_licenses](docs/third_party_licenses/supers3t-license.txt) directory. 
 
 ### Building the Project
 
@@ -44,7 +46,7 @@ To add vertx-s3-service as a dependency of your Maven build project, add the fol
 
 There are three types of tests: unit, functional, and integration. By default (when running the `mvn verify` command), only the unit and functional tests are run. The functional tests run against a Dockerized S3-compatible environment.
 
-To run the project's integration tests, a real AWS account and S3 bucket must be used. To see what sort of permissions this account must be granted, check out the sample IAM policy in the `src/test/resources` directory. Your account's credentials will also need to be put into your local `~/.aws/credentials` file (under the profile name `vertx-s3`).
+To run the project's integration tests, a real AWS account and S3 bucket must be used. To see what sort of permissions this account must be granted, check out the sample IAM policy in the `src/test/resources` directory. Your account's credentials will also need to be put into your local `~/.aws/credentials` file and associated with a `vertx-s3` profile.
 
 More detailed instructions for how to set this up can be found in AWS' [documentation](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html). The result should look something like:
 
@@ -73,6 +75,6 @@ That's about it. Of course, you don't need to run the integration tests if you d
 
 ### Contact
 
-If you have questions about vertx-s3-service <a href="mailto:ksclarke@ksclarke.io">feel free to ask</a>; also, if you encounter a problem with the library or have suggestions about how to improve on it, please feel free to [open a ticket](https://github.com/ksclarke/vertx-s3-service/issues "GitHub Issue Queue") in the project's issues queue.
+If you have questions about vertx-s3-service <a href="https://github.com/ksclarke/vertx-s3-service/discussions">feel free to ask</a>; also, if you encounter a problem with the library or have suggestions about how to improve on it, please feel free to [open a ticket](https://github.com/ksclarke/vertx-s3-service/issues "GitHub Issue Queue") in the project's issues queue.
 
 Thanks for your interest in this project.
