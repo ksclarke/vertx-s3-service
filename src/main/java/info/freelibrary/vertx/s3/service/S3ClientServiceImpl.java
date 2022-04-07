@@ -6,6 +6,7 @@ import java.util.Objects;
 import info.freelibrary.util.Logger;
 import info.freelibrary.util.LoggerFactory;
 
+import info.freelibrary.vertx.s3.HttpHeaders;
 import info.freelibrary.vertx.s3.S3Client;
 import info.freelibrary.vertx.s3.S3ClientOptions;
 import info.freelibrary.vertx.s3.S3Object;
@@ -15,7 +16,6 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.MessageConsumer;
-import io.vertx.core.file.FileSystem;
 import io.vertx.core.json.JsonObject;
 import io.vertx.serviceproxy.ServiceBinder;
 
@@ -77,41 +77,32 @@ public class S3ClientServiceImpl implements S3ClientService {
     }
 
     @Override
-    public Future<Void> put(final String aBucket, final S3Object aS3Object) {
-        final FileSystem fileSystem = myS3Client.getVertx().fileSystem();
-        final Promise<Void> promise = Promise.promise();
-        final String key = aS3Object.getKey();
+    public Future<HttpHeaders> put(final String aBucket, final S3Object aS3Object) {
+        final Promise<HttpHeaders> promise = Promise.promise();
+        final String objectKey = aS3Object.getKey();
 
-        if (key != null) {
-            LOGGER.debug(MessageCodes.VSS_018, key, aBucket);
+        if (objectKey != null) {
+            LOGGER.debug(MessageCodes.VSS_018, objectKey, aBucket);
 
             if (aS3Object.getSource() == S3Object.Type.BUFFER) {
-                aS3Object.asBuffer(fileSystem).onComplete(asBuffer -> {
-                    if (asBuffer.succeeded()) {
-                        myS3Client.put(aBucket, key, asBuffer.result(), put -> {
-                            if (put.succeeded()) {
-                                promise.complete();
-                            } else {
-                                promise.fail(put.cause());
-                            }
-                        });
-                    } else {
-                        promise.fail(asBuffer.cause());
-                    }
+                aS3Object.asBuffer(myS3Client.getVertx().fileSystem()).onFailure(promise::fail).onSuccess(buffer -> {
+                    aS3Object.getMetadata().ifPresentOrElse(metadata -> {
+                        myS3Client.put(aBucket, aS3Object.getKey(), buffer, metadata) //
+                                .onFailure(promise::fail).onSuccess(promise::complete);
+                    }, () -> {
+                        myS3Client.put(aBucket, aS3Object.getKey(), buffer) //
+                                .onFailure(promise::fail).onSuccess(promise::complete);
+                    });
                 });
             } else {
-                aS3Object.asFile(fileSystem).onComplete(asFile -> {
-                    if (asFile.succeeded()) {
-                        myS3Client.put(aBucket, key, asFile.result(), put -> {
-                            if (put.succeeded()) {
-                                promise.complete();
-                            } else {
-                                promise.fail(put.cause());
-                            }
-                        });
-                    } else {
-                        promise.fail(asFile.cause());
-                    }
+                aS3Object.asFile(myS3Client.getVertx().fileSystem()).onFailure(promise::fail).onSuccess(file -> {
+                    aS3Object.getMetadata().ifPresentOrElse(metadata -> {
+                        myS3Client.put(aBucket, aS3Object.getKey(), file, metadata) //
+                                .onSuccess(promise::complete).onFailure(promise::fail);
+                    }, () -> {
+                        myS3Client.put(aBucket, aS3Object.getKey(), file) //
+                                .onSuccess(promise::complete).onFailure(promise::fail);
+                    });
                 });
             }
         } else {
@@ -148,5 +139,4 @@ public class S3ClientServiceImpl implements S3ClientService {
 
         return myS3Client.close();
     }
-
 }

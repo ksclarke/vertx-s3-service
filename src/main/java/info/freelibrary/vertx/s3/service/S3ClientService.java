@@ -6,6 +6,7 @@ import info.freelibrary.util.Logger;
 import info.freelibrary.util.LoggerFactory;
 import info.freelibrary.util.Stopwatch;
 
+import info.freelibrary.vertx.s3.HttpHeaders;
 import info.freelibrary.vertx.s3.S3ClientOptions;
 import info.freelibrary.vertx.s3.S3Object;
 import info.freelibrary.vertx.s3.service.MissingKeyException.MissingKeyExceptionMessageCodec;
@@ -142,7 +143,7 @@ public interface S3ClientService {
      * @param aS3Object A object with the data to be uploaded
      * @return The result of the PUT
      */
-    Future<Void> put(String aBucket, S3Object aS3Object);
+    Future<HttpHeaders> put(String aBucket, S3Object aS3Object);
 
     /**
      * Gets S3Object from the S3 client service.

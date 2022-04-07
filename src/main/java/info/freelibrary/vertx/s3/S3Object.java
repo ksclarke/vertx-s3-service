@@ -326,7 +326,7 @@ public class S3Object {
         }
 
         if (myUserMetadata != null) {
-            jsonObject.put(JsonKeys.USER_METADATA, new JsonObject(myUserMetadata.toString()));
+            jsonObject.put(JsonKeys.USER_METADATA, new JsonArray(myUserMetadata.toString()));
         }
 
         return jsonObject;
@@ -373,6 +373,7 @@ public class S3Object {
      * @param aFileSystem A file system reference
      * @return The upload as an AsyncFile
      */
+    @SuppressWarnings("PMD.CognitiveComplexity")
     public Future<AsyncFile> asFile(final FileSystem aFileSystem) {
         final Promise<AsyncFile> promise;
 

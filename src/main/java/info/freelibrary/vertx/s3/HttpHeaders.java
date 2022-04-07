@@ -2,19 +2,25 @@
 package info.freelibrary.vertx.s3;
 
 import static info.freelibrary.util.Constants.COMMA;
+import static info.freelibrary.util.Constants.VERTICAL_BAR;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
+import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.MultiMap;
+import io.vertx.core.json.JsonObject;
 
 /**
  * HTTP headers and methods to support working with them.
  */
+@DataObject
 public class HttpHeaders implements io.vertx.core.http.HttpHeaders {
 
     /**
@@ -35,6 +41,29 @@ public class HttpHeaders implements io.vertx.core.http.HttpHeaders {
      */
     public HttpHeaders() {
         myMultiMap = io.vertx.core.http.HttpHeaders.headers();
+    }
+
+    /**
+     * Creates a new HttpHeaders object from the supplied JsonObject.
+     *
+     * @param aHeadersSerialization A JSON representation of the HttpHeaders object
+     */
+    public HttpHeaders(final JsonObject aHeadersSerialization) {
+        myMultiMap = io.vertx.core.http.HttpHeaders.headers();
+
+        aHeadersSerialization.forEach(entry -> {
+            final String serializedValue = entry.getValue().toString();
+            final String key = entry.getKey();
+
+            // If we have a value with a vertical bar, it has multiple values
+            if (serializedValue.contains(VERTICAL_BAR)) {
+                for (final String value : serializedValue.split(VERTICAL_BAR)) {
+                    myMultiMap.add(key, value);
+                }
+            } else {
+                myMultiMap.add(key, serializedValue);
+            }
+        });
     }
 
     /**
@@ -217,5 +246,30 @@ public class HttpHeaders implements io.vertx.core.http.HttpHeaders {
     @Override
     public String toString() {
         return myMultiMap.toString();
+    }
+
+    /**
+     * Returns a JSON representation of the HttpHeaders.
+     *
+     * @return A JSON representation
+     */
+    public JsonObject toJson() {
+        final Iterator<Entry<String, String>> iterator = myMultiMap.iterator();
+        final JsonObject jsonObject = new JsonObject();
+
+        while (iterator.hasNext()) {
+            final Entry<String, String> entry = iterator.next();
+            final String value = entry.getValue();
+            final String key = entry.getKey();
+
+            // If JsonObject already contains key, append to its value; else, put the value as is
+            if (jsonObject.containsKey(key)) {
+                jsonObject.put(key, jsonObject.getString(key) + VERTICAL_BAR + value);
+            } else {
+                jsonObject.put(key, value);
+            }
+        }
+
+        return jsonObject;
     }
 }

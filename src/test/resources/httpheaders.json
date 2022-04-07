@@ -1,0 +1,15 @@
+{
+  "last-modified": "Fri, 19 Feb 2021 03:16:38 GMT",
+  "access-control-allow-headers": "authorization,content-type,content-length,content-md5,cache-control,x-amz-content-sha256,x-amz-date,x-amz-security-token,x-amz-user-agent,x-amz-target,x-amz-acl,x-amz-version-id,x-localstack-target,x-amz-tagging",
+  "access-control-expose-headers": "x-amz-version-id",
+  "content-type": "text/html; charset=utf-8",
+  "x-amz-id-2": "MzRISOwyjmnup426780B5CBE705517/JypPGXLh0OVFGcJaaO3KW/hRAqKOpIEEp",
+  "x-amz-request-id": "426780B5CBE70551",
+  "date": "Fri, 19 Feb 2021 03:16:38 GMT",
+  "access-control-allow-origin": "*",
+  "content-length": "0",
+  "connection": "close",
+  "server": "hypercorn-h11",
+  "access-control-allow-methods": "HEAD,GET,PUT,POST,DELETE,OPTIONS,PATCH",
+  "etag": "618a996c65e02322bd5b5932c9b05714"
+}

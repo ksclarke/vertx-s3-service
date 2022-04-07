@@ -7,6 +7,7 @@ import java.net.URL;
 import info.freelibrary.util.Constants;
 import info.freelibrary.util.MalformedUrlException;
 import info.freelibrary.util.StringUtils;
+import info.freelibrary.util.warnings.PMD;
 
 /**
  * An S3 endpoint for a LocalStack implementation.
@@ -39,6 +40,7 @@ public class LocalStackEndpoint implements Endpoint {
      * @param aPort An S3 port
      * @throws Runtime MalformedUrlException if the supplied port is invalid
      */
+    @SuppressWarnings({ PMD.PRESERVE_STACK_TRACE, "PMD.PreserveStackTrace" })
     public LocalStackEndpoint(final int aPort) {
         try {
             myEndpoint = new URL(StringUtils.format(ENDPOINT_PATTERN, Constants.INADDR_ANY, aPort));
@@ -54,6 +56,7 @@ public class LocalStackEndpoint implements Endpoint {
      * @param aPort An S3 port
      * @throws Runtime MalformedUrlException if the supplied port or host is invalid
      */
+    @SuppressWarnings({ PMD.PRESERVE_STACK_TRACE, "PMD.PreserveStackTrace" })
     public LocalStackEndpoint(final String aHost, final int aPort) {
         try {
             myEndpoint = new URL(StringUtils.format(ENDPOINT_PATTERN, aHost, aPort));
@@ -68,6 +71,7 @@ public class LocalStackEndpoint implements Endpoint {
      * @param aEndpoint A URL endpoint in string form
      * @throws Runtime MalformedUriException if the supplied endpoint is not a valid URL
      */
+    @SuppressWarnings({ PMD.PRESERVE_STACK_TRACE, "PMD.PreserveStackTrace" })
     public LocalStackEndpoint(final String aEndpoint) {
         try {
             myEndpoint = new URL(aEndpoint);

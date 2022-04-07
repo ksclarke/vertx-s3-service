@@ -22,11 +22,16 @@ public class S3ClientOptions extends HttpClientOptions {
     private AwsProfile myProfile;
 
     /**
+     * An S3 endpoint.
+     */
+    private Endpoint myEndpoint;
+
+    /**
      * Creates a new S3 client options.
      */
     public S3ClientOptions() {
         super();
-        setEndpointPrivately(S3Endpoint.US_EAST_1);
+        setEndpoint(S3Endpoint.US_EAST_1);
     }
 
     /**
@@ -36,8 +41,8 @@ public class S3ClientOptions extends HttpClientOptions {
      */
     public S3ClientOptions(final String aProfile) {
         super();
-        setEndpointPrivately(S3Endpoint.US_EAST_1);
-        setProfilePrivately(aProfile);
+        setEndpoint(S3Endpoint.US_EAST_1);
+        setProfile(aProfile);
     }
 
     /**
@@ -47,7 +52,7 @@ public class S3ClientOptions extends HttpClientOptions {
      */
     public S3ClientOptions(final Endpoint aEndpoint) {
         super();
-        setEndpointPrivately(aEndpoint);
+        setEndpoint(aEndpoint);
     }
 
     /**
@@ -58,8 +63,8 @@ public class S3ClientOptions extends HttpClientOptions {
      */
     public S3ClientOptions(final String aProfile, final Endpoint aEndpoint) {
         super();
-        setEndpointPrivately(aEndpoint);
-        setProfilePrivately(aProfile);
+        setEndpoint(aEndpoint);
+        setProfile(aProfile);
     }
 
     /**
@@ -77,7 +82,7 @@ public class S3ClientOptions extends HttpClientOptions {
      * @param aCredentials An AWS credentials set
      * @return The S3 client options
      */
-    public S3ClientOptions setCredentials(final AwsCredentials aCredentials) {
+    public final S3ClientOptions setCredentials(final AwsCredentials aCredentials) {
         myCredentials = aCredentials;
         return this;
     }
@@ -89,7 +94,7 @@ public class S3ClientOptions extends HttpClientOptions {
      * @param aSecretKey An S3 secret key
      * @return The S3 client options
      */
-    public S3ClientOptions setCredentials(final String aAccessKey, final String aSecretKey) {
+    public final S3ClientOptions setCredentials(final String aAccessKey, final String aSecretKey) {
         myCredentials = new AwsCredentials(aAccessKey, aSecretKey);
         return this;
     }
@@ -99,7 +104,7 @@ public class S3ClientOptions extends HttpClientOptions {
      *
      * @return The AWS credentials
      */
-    public Optional<AwsCredentials> getCredentials() {
+    public final Optional<AwsCredentials> getCredentials() {
         return Optional.ofNullable(myCredentials);
     }
 
@@ -109,7 +114,7 @@ public class S3ClientOptions extends HttpClientOptions {
      * @param aProfile An AWS profile
      * @return The S3 client options
      */
-    public S3ClientOptions setProfile(final AwsProfile aProfile) {
+    public final S3ClientOptions setProfile(final AwsProfile aProfile) {
         myCredentials = aProfile.getCredentials();
         myProfile = aProfile;
         return this;
@@ -121,17 +126,7 @@ public class S3ClientOptions extends HttpClientOptions {
      * @param aProfile An AWS profile name
      * @return The S3 client options
      */
-    public S3ClientOptions setProfile(final String aProfile) {
-        return setProfilePrivately(aProfile);
-    }
-
-    /**
-     * Sets the AWS profile to use from a profile name
-     *
-     * @param aProfile An AWS profile name
-     * @return The S3 client options
-     */
-    private S3ClientOptions setProfilePrivately(final String aProfile) {
+    public final S3ClientOptions setProfile(final String aProfile) {
         final AwsProfile profile = new AwsProfile(aProfile);
 
         myCredentials = profile.getCredentials();
@@ -145,7 +140,7 @@ public class S3ClientOptions extends HttpClientOptions {
      *
      * @return An AWS profile
      */
-    public Optional<AwsProfile> getProfile() {
+    public final Optional<AwsProfile> getProfile() {
         return Optional.ofNullable(myProfile);
     }
 
@@ -155,17 +150,7 @@ public class S3ClientOptions extends HttpClientOptions {
      * @param aEndpoint An S3 endpoint
      * @return The S3 client options
      */
-    public S3ClientOptions setEndpoint(final Endpoint aEndpoint) {
-        return setEndpointPrivately(aEndpoint);
-    }
-
-    /**
-     * Sets the endpoint for the S3 client.
-     *
-     * @param aEndpoint An S3 endpoint
-     * @return The S3 client options
-     */
-    private S3ClientOptions setEndpointPrivately(final Endpoint aEndpoint) {
+    public final S3ClientOptions setEndpoint(final Endpoint aEndpoint) {
         final URI endpointURI = URI.create(aEndpoint.toString());
         final String protocol = endpointURI.getScheme();
         final String host = endpointURI.getHost();
@@ -191,6 +176,17 @@ public class S3ClientOptions extends HttpClientOptions {
             }
         }
 
+        myEndpoint = aEndpoint;
         return this;
     }
+
+    /**
+     * Gets the endpoint for the S3 client.
+     *
+     * @return The client's endpoint
+     */
+    public final Endpoint getEndpoint() {
+        return myEndpoint;
+    }
+
 }

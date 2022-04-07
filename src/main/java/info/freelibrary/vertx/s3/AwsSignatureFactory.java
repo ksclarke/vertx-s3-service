@@ -5,6 +5,7 @@ import java.net.URI;
 import java.util.Optional;
 
 import info.freelibrary.util.I18nRuntimeException;
+
 import info.freelibrary.vertx.s3.util.MessageCodes;
 
 /**
@@ -150,17 +151,15 @@ public final class AwsSignatureFactory {
      * @return The AWS authentication signature
      */
     public AwsSignature getSignature() {
-        final AwsSignature signature;
-
         if (!Version.V4.equals(myVersion)) {
             throw new I18nRuntimeException(MessageCodes.BUNDLE, MessageCodes.VSS_005);
         }
+
         if (!myCredentials.isPresent()) {
             throw new ConfigurationException();
         }
-        signature = new AwsV4Signature(myHost, myCredentials.get());
 
-        return signature;
+        return new AwsV4Signature(myHost, myCredentials.get());
     }
 
 }

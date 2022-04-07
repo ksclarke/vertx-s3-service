@@ -2,8 +2,13 @@
 package info.freelibrary.vertx.s3;
 
 import static info.freelibrary.util.Constants.EMPTY;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.Map;
@@ -13,6 +18,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import info.freelibrary.util.StringUtils;
+
+import io.vertx.core.json.JsonObject;
 
 /**
  * Tests of the HttpHeaders class.
@@ -38,6 +45,8 @@ public class HttpHeadersTest {
 
     private static final String COMMA = ",";
 
+    private static final File HEADERS_TEST_FILE = new File("src/test/resources/httpheaders.json");
+
     private HttpHeaders myHeaders;
 
     /**
@@ -60,6 +69,28 @@ public class HttpHeadersTest {
             new AbstractMap.SimpleEntry<>("date", TIMESTAMP), new AbstractMap.SimpleEntry<>("server", "hypercorn-h11"));
 
         myHeaders = new HttpHeaders(myHeaderMap);
+    }
+
+    /**
+     * Tests JSON serialization of HttpHeaders.
+     *
+     * @throws IOException If the test headers serialization cannot be read
+     */
+    @Test
+    public final void testToJson() throws IOException {
+        final String json = StringUtils.read(HEADERS_TEST_FILE, StandardCharsets.UTF_8);
+        assertEquals(new JsonObject(json), myHeaders.toJson());
+    }
+
+    /**
+     * Tests round-tripping the JSON serialization.
+     *
+     * @throws IOException If the test headers serialization cannot be read
+     */
+    @Test
+    public final void testJsonConstructor() throws IOException {
+        final String json = StringUtils.read(HEADERS_TEST_FILE, StandardCharsets.UTF_8);
+        assertEquals(new JsonObject(json), new HttpHeaders(new JsonObject(json)).toJson());
     }
 
     /**

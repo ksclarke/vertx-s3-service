@@ -99,4 +99,20 @@ public enum S3Endpoint implements Endpoint {
     public String getLabel() {
         return myRegionName;
     }
+
+    /**
+     * Gets an endpoint from the supplied region name.
+     *
+     * @param aRegion The S3 region name
+     * @return An endpoint corresponding to the supplied region name
+     */
+    public static Endpoint fromRegion(final String aRegion) {
+        for (final Endpoint endpoint : values()) {
+            if (endpoint.getRegion().equalsIgnoreCase(aRegion)) {
+                return endpoint;
+            }
+        }
+
+        throw new IllegalArgumentException();
+    }
 }

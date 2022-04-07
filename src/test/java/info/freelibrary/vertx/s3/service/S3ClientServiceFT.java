@@ -1,18 +1,22 @@
 
 package info.freelibrary.vertx.s3.service;
 
+import static info.freelibrary.vertx.s3.TestConstants.ID;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.Optional;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import com.amazonaws.SdkClientException;
+import com.amazonaws.services.s3.model.ObjectMetadata;
 
 import info.freelibrary.util.I18nRuntimeException;
 import info.freelibrary.util.Logger;
@@ -20,8 +24,8 @@ import info.freelibrary.util.LoggerFactory;
 
 import info.freelibrary.vertx.s3.AbstractS3FT;
 import info.freelibrary.vertx.s3.S3Object;
-import info.freelibrary.vertx.s3.TestConstants;
 import info.freelibrary.vertx.s3.TestUtils;
+import info.freelibrary.vertx.s3.UserMetadata;
 import info.freelibrary.vertx.s3.util.MessageCodes;
 
 import io.vertx.core.Future;
@@ -76,12 +80,10 @@ public class S3ClientServiceFT extends AbstractS3FT {
      * @param aContext A test context
      */
     @Test
-    public final void testGetProxyWithOptsGetBuffer(final TestContext aContext) {
+    public final void testGetBuffer(final TestContext aContext) {
         final Async asyncTask = aContext.async();
-        final Future<Void> put = storeTestFile();
 
-        put.onFailure(aContext::fail);
-        put.onSuccess(result -> {
+        storeTestFile().onFailure(aContext::fail).onSuccess(result -> {
             S3ClientService.getProxyWithOpts(myContext.vertx(), getConfig()).onSuccess(service -> {
                 service.get(myBucket, myKey).onFailure(aContext::fail).onSuccess(s3Obj -> {
                     aContext.assertEquals(myExpectedSize, s3Obj.getSize());
@@ -97,14 +99,12 @@ public class S3ClientServiceFT extends AbstractS3FT {
      * @param aContext A test context
      */
     @Test
-    public final void testGetProxyWithOptsPutBuffer(final TestContext aContext) {
+    public final void testPutBuffer(final TestContext aContext) {
         final Async asyncTask = aContext.async();
         final Vertx vertx = myContext.vertx();
 
         S3ClientService.getProxyWithOpts(vertx, getConfig()).onFailure(aContext::fail).onSuccess(service -> {
-            final Buffer buffer = new JsonObject().put(TestConstants.ID, myKey).toBuffer();
-
-            service.put(myBucket, new S3Object(myKey, buffer)).onFailure(aContext::fail).onSuccess(result -> {
+            service.put(myBucket, new S3Object(myKey, getBuffer())).onFailure(aContext::fail).onSuccess(result -> {
                 aContext.assertTrue(myAwsS3Client.doesObjectExist(myBucket, myKey));
 
                 // Write a temporary file from the S3 object and check that its size is the same as ours
@@ -117,12 +117,37 @@ public class S3ClientServiceFT extends AbstractS3FT {
     }
 
     /**
+     * Tests creating a service from AWS credentials and PUTing a JsonObject.
+     *
+     * @param aContext A test context
+     */
+    @Test
+    public final void testPutBufferWithMetadata(final TestContext aContext) {
+        final Async asyncTask = aContext.async();
+        final Vertx vertx = myContext.vertx();
+
+        S3ClientService.getProxyWithOpts(vertx, getConfig()).onFailure(aContext::fail).onSuccess(service -> {
+            final S3Object object = new S3Object(myKey, getBuffer()).setUserMetadata(new UserMetadata(ID, myKey));
+
+            service.put(myBucket, object).onFailure(aContext::fail).onSuccess(result -> {
+                aContext.assertTrue(myAwsS3Client.doesObjectExist(myBucket, myKey));
+
+                getStoredMetadata(aContext).ifPresentOrElse(storedMetadata -> {
+                    aContext.assertEquals(myKey, storedMetadata.getUserMetaDataOf(ID));
+                }, aContext::fail);
+
+                complete(asyncTask);
+            });
+        });
+    }
+
+    /**
      * Tests creating a service from AWS credentials and PUTing a file.
      *
      * @param aContext A test context
      */
     @Test
-    public final void testGetProxyWithOptsPutFile(final TestContext aContext) throws IOException {
+    public final void testPutFile(final TestContext aContext) throws IOException {
         final Async asyncTask = aContext.async();
         final Vertx vertx = myContext.vertx();
 
@@ -137,6 +162,31 @@ public class S3ClientServiceFT extends AbstractS3FT {
                 }).onFailure(aContext::fail);
             });
         });
+    }
+
+    /**
+     * Gets a JSON buffer to use in testing.
+     *
+     * @return A JSON object in buffer form
+     */
+    private Buffer getBuffer() {
+        return new JsonObject().put(ID, myKey).toBuffer();
+    }
+
+    /**
+     * Gets the stored user metadata for the active S3 object.
+     *
+     * @param aContext A test context
+     * @return An optional S3 ObjectMetadata
+     */
+    private Optional<ObjectMetadata> getStoredMetadata(final TestContext aContext) {
+        try {
+            return Optional.ofNullable(myAwsS3Client.getObjectMetadata(myBucket, myKey));
+        } catch (final SdkClientException details) {
+            aContext.fail(details);
+        }
+
+        return Optional.empty();
     }
 
     /**

@@ -278,26 +278,10 @@ public class S3Client {
      */
     public Future<S3BucketList> list(final String aBucket) {
         return createGetRequest(aBucket, LIST_CMD).compose(request -> request.send().compose(response -> {
-            final int statusCode = response.statusCode();
-            final Promise<S3BucketList> promise;
+            final Promise<S3BucketList> promise = Promise.promise();
 
-            if (statusCode != HTTP.OK) {
-                return Future.failedFuture(new UnexpectedStatusException(statusCode, response.statusMessage()));
-            }
-
-            promise = Promise.promise();
-
-            response.body(body -> {
-                if (body.succeeded()) {
-                    try {
-                        promise.complete(new S3BucketList(body.result()));
-                    } catch (final IOException details) {
-                        promise.fail(details);
-                    }
-                } else {
-                    promise.fail(body.cause());
-                }
-            });
+            // Builds an S3BucketList from the response and completes the promise with it
+            buildList(response, promise);
 
             return promise.future();
         }));
@@ -319,24 +303,8 @@ public class S3Client {
             if (getRequest.succeeded()) {
                 getRequest.result().response(send -> {
                     if (send.succeeded()) {
-                        final HttpClientResponse response = send.result();
-                        final int statusCode = response.statusCode();
-
-                        if (statusCode == HTTP.OK) {
-                            response.body(body -> {
-                                if (body.succeeded()) {
-                                    try {
-                                        promise.complete(new S3BucketList(body.result()));
-                                    } catch (final IOException details) {
-                                        promise.fail(details);
-                                    }
-                                } else {
-                                    promise.fail(body.cause());
-                                }
-                            });
-                        } else {
-                            promise.fail(new UnexpectedStatusException(statusCode, response.statusMessage()));
-                        }
+                        // Builds an S3BucketList from the response and completes the promise with it
+                        buildList(send.result(), promise);
                     } else {
                         promise.fail(send.cause());
                     }
@@ -359,26 +327,10 @@ public class S3Client {
     public Future<S3BucketList> list(final String aBucket, final String aPrefix) {
         final String prefixedList = PREFIX_LIST_CMD + aPrefix;
         return createGetRequest(aBucket, prefixedList).compose(request -> request.send().compose(response -> {
-            final int statusCode = response.statusCode();
-            final Promise<S3BucketList> promise;
+            final Promise<S3BucketList> promise = Promise.promise();
 
-            if (statusCode != HTTP.OK) {
-                return Future.failedFuture(new UnexpectedStatusException(statusCode, response.statusMessage()));
-            }
-
-            promise = Promise.promise();
-
-            response.body(body -> {
-                if (body.succeeded()) {
-                    try {
-                        promise.complete(new S3BucketList(body.result()));
-                    } catch (final IOException details) {
-                        promise.fail(details);
-                    }
-                } else {
-                    promise.fail(body.cause());
-                }
-            });
+            // Builds an S3BucketList from the response and completes the promise with it
+            buildList(response, promise);
 
             return promise.future();
         }));
@@ -401,24 +353,8 @@ public class S3Client {
             if (getRequest.succeeded()) {
                 getRequest.result().response(send -> {
                     if (send.succeeded()) {
-                        final HttpClientResponse response = send.result();
-                        final int statusCode = response.statusCode();
-
-                        if (statusCode == HTTP.OK) {
-                            response.body(body -> {
-                                if (body.succeeded()) {
-                                    try {
-                                        promise.complete(new S3BucketList(body.result()));
-                                    } catch (final IOException details) {
-                                        promise.fail(details);
-                                    }
-                                } else {
-                                    promise.fail(body.cause());
-                                }
-                            });
-                        } else {
-                            promise.fail(new UnexpectedStatusException(statusCode, response.statusMessage()));
-                        }
+                        // Builds an S3BucketList from the response and completes the promise with it
+                        buildList(send.result(), promise);
                     } else {
                         promise.fail(send.cause());
                     }
@@ -561,6 +497,7 @@ public class S3Client {
      * @param aFile A file from which to read the buffer
      * @return A future indicating when the buffer has been uploaded
      */
+    @SuppressWarnings("PMD.CognitiveComplexity")
     public Future<HttpHeaders> put(final String aBucket, final String aKey, final AsyncFile aFile) {
         return createPutRequest(aBucket, aKey).compose(request -> request.send(aFile).compose(response -> {
             final int statusCode = response.statusCode();
@@ -640,6 +577,7 @@ public class S3Client {
      * @param aMetadata User metadata to set on the uploaded S3 object
      * @param aHandler An upload response handler
      */
+    @SuppressWarnings("PMD.CognitiveComplexity")
     public void put(final String aBucket, final String aKey, final AsyncFile aFile, final UserMetadata aMetadata,
             final Handler<AsyncResult<HttpHeaders>> aHandler) {
         final Promise<HttpHeaders> promise = Promise.promise();
@@ -704,6 +642,32 @@ public class S3Client {
     S3Client connectionHandler(final Handler<HttpConnection> aHandler) {
         myHttpClient.connectionHandler(aHandler);
         return this;
+    }
+
+    /**
+     * Builds a S3BucketList from an S3 response.
+     *
+     * @param aResponse A response from an HttpClientRequest
+     * @param aPromise A promise of completion
+     */
+    private void buildList(final HttpClientResponse aResponse, final Promise<S3BucketList> aPromise) {
+        final int statusCode = aResponse.statusCode();
+
+        if (statusCode == HTTP.OK) {
+            aResponse.body(body -> {
+                if (body.succeeded()) {
+                    try {
+                        aPromise.complete(new S3BucketList(body.result()));
+                    } catch (final IOException details) {
+                        aPromise.fail(details);
+                    }
+                } else {
+                    aPromise.fail(body.cause());
+                }
+            });
+        } else {
+            aPromise.fail(new UnexpectedStatusException(statusCode, aResponse.statusMessage()));
+        }
     }
 
     /**
