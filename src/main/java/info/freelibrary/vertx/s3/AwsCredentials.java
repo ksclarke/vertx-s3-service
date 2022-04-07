@@ -1,11 +1,16 @@
 
 package info.freelibrary.vertx.s3;
 
+import io.vertx.core.json.JsonObject;
+
 /**
  * An AWS credentials object.
  */
 public class AwsCredentials extends uk.co.lucasweb.aws.v4.signer.credentials.AwsCredentials {
 
+    /**
+     * The AWS credentials sessions token.
+     */
     private String mySessionToken;
 
     /**
@@ -30,16 +35,40 @@ public class AwsCredentials extends uk.co.lucasweb.aws.v4.signer.credentials.Aws
         mySessionToken = aSessionToken;
     }
 
-    @Override
-    public String getAccessKey() {
-        return super.getAccessKey();
+    /**
+     * Creates a new AWS credentials object from the supplied JSON configuration.
+     *
+     * @param aJsonConfig A JSON document that contains AccessKey, SecretKey, and SessionToken properties
+     */
+    public AwsCredentials(final JsonObject aJsonConfig) {
+        super(aJsonConfig.getString(AwsCredentialsProviderChain.ACCESS_KEY_FILE_PROPERTY),
+            aJsonConfig.getString(AwsCredentialsProviderChain.SECRET_KEY_FILE_PROPERTY));
+        mySessionToken = aJsonConfig.getString(AwsCredentialsProviderChain.SESSION_KEY_FILE_PROPERTY);
     }
 
-    @Override
-    public String getSecretKey() {
-        return super.getSecretKey();
+    /**
+     * Gets AWS credentials in the form of a JSON object.
+     *
+     * @return A JSON object representation of the AWS credentials
+     */
+    public JsonObject toJson() {
+        final JsonObject json = new JsonObject();
+
+        json.put(AwsCredentialsProviderChain.ACCESS_KEY_FILE_PROPERTY, getAccessKey());
+        json.put(AwsCredentialsProviderChain.SECRET_KEY_FILE_PROPERTY, getSecretKey());
+
+        if (mySessionToken != null) {
+            json.put(AwsCredentialsProviderChain.SESSION_KEY_FILE_PROPERTY, mySessionToken);
+        }
+
+        return json;
     }
 
+    /**
+     * Indicates whether the credentials are using a session token.
+     *
+     * @return True if credentials are using a session token; else, false
+     */
     public boolean hasSessionToken() {
         return mySessionToken != null;
     }

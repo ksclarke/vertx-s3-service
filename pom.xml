@@ -3,12 +3,12 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>vertx-super-s3</artifactId>
+  <artifactId>vertx-s3-service</artifactId>
   <packaging>jar</packaging>
-  <version>1.3.4-SNAPSHOT</version>
-  <name>Vert.x Super S3</name>
+  <version>${revision}</version>
+  <name>Vert.x S3 Service</name>
   <description>An S3 client library for the Vert.x toolkit</description>
-  <url>http://projects.freelibrary.info/vertx-super-s3</url>
+  <url>http://projects.freelibrary.info/vertx-s3-service</url>
 
   <licenses>
     <license>
@@ -18,14 +18,14 @@
   </licenses>
 
   <scm>
-    <connection>scm:git:git@github.com:ksclarke/vertx-super-s3.git</connection>
-    <developerConnection>scm:git:git@github.com:ksclarke/vertx-super-s3.git</developerConnection>
-    <url>git@github.com:ksclarke/vertx-super-s3.git</url>
+    <connection>scm:git:git@github.com:ksclarke/vertx-s3-service.git</connection>
+    <developerConnection>scm:git:git@github.com:ksclarke/vertx-s3-service.git</developerConnection>
+    <url>git@github.com:ksclarke/vertx-s3-service.git</url>
   </scm>
 
   <issueManagement>
     <system>GitHub</system>
-    <url>https://github.com/ksclarke/vertx-super-s3/issues</url>
+    <url>https://github.com/ksclarke/vertx-s3-service/issues</url>
   </issueManagement>
 
   <developers>
@@ -41,29 +41,42 @@
 
   <properties>
     <!-- Dependency versions -->
-    <freelib.utils.version>1.0.2</freelib.utils.version>
-    <aws.sdk.version>1.11.759</aws.sdk.version>
-    <vertx.version>3.9.1</vertx.version>
-    <jackson.version>2.10.1</jackson.version>
-    <jackson.databind.version>2.10.1</jackson.databind.version>
     <aws.v4.signature.version>1.3</aws.v4.signature.version>
+    <freelib.utils.version>3.0.1</freelib.utils.version>
+    <vertx.version>4.2.6</vertx.version>
+
+    <!-- Security overrides -->
+    <jackson.version>2.13.2</jackson.version>
+    <jackson.databind.version>2.13.2.1</jackson.databind.version>
 
     <!-- Testing versions -->
-    <jaxb.runtime.version>2.4.0-b180830.0438</jaxb.runtime.version>
-    <testcontainers.version>1.12.5</testcontainers.version>
-    <freelib.maven.version>0.0.3</freelib.maven.version>
-    <localstack.version>1.13.0</localstack.version>
-    <mockito.version>3.1.0</mockito.version>
-    <jaxb.version>2.3.0.1</jaxb.version>
+    <aws.sdk.version>1.12.192</aws.sdk.version>
+    <jaxb.version>2.4.0-b180830.0359</jaxb.version>
 
     <!-- Integration test variables -->
     <test.s3.bucket>vertx-pairtree-tests</test.s3.bucket>
     <test.s3.region>us-east-1</test.s3.region>
 
+    <!-- Docker package versions -->
+    <build.image.version>0.0.3</build.image.version>
+    <sfs.version>v1.8.4</sfs.version>
+
     <!-- Plug-in versions -->
-    <docker.maven.plugin.version>0.33.0</docker.maven.plugin.version>
-    <codacy.plugin.version>1.0.2</codacy.plugin.version>
+    <docker.maven.plugin.version>0.39.1</docker.maven.plugin.version>
+    <clean.plugin.version>3.1.0</clean.plugin.version>
   </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>io.vertx</groupId>
+        <artifactId>vertx-stack-depchain</artifactId>
+        <version>${vertx.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
   <dependencies>
     <!-- Project dependencies -->
@@ -73,8 +86,33 @@
       <version>${freelib.utils.version}</version>
     </dependency>
     <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-codegen</artifactId>
+      <classifier>processor</classifier>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-service-proxy</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>uk.co.lucasweb</groupId>
+      <artifactId>aws-v4-signer-java</artifactId>
+      <version>${aws.v4.signature.version}</version>
+    </dependency>
+
+    <!-- Security updates for inherited dependencies -->
+    <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-core</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-annotations</artifactId>
       <version>${jackson.version}</version>
     </dependency>
     <dependency>
@@ -82,16 +120,7 @@
       <artifactId>jackson-databind</artifactId>
       <version>${jackson.databind.version}</version>
     </dependency>
-    <dependency>
-      <groupId>io.vertx</groupId>
-      <artifactId>vertx-core</artifactId>
-      <version>${vertx.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>uk.co.lucasweb</groupId>
-      <artifactId>aws-v4-signer-java</artifactId>
-      <version>${aws.v4.signature.version}</version>
-    </dependency>
+
     <!-- Below dependencies are only used for testing -->
     <dependency>
       <groupId>ch.qos.logback</groupId>
@@ -106,19 +135,6 @@
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-unit</artifactId>
-      <version>${vertx.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.sun.xml.bind</groupId>
-      <artifactId>jaxb-core</artifactId>
-      <version>${jaxb.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.glassfish.jaxb</groupId>
-      <artifactId>jaxb-runtime</artifactId>
-      <version>${jaxb.runtime.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -128,21 +144,72 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.testcontainers</groupId>
-      <artifactId>testcontainers</artifactId>
-      <version>${testcontainers.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.testcontainers</groupId>
-      <artifactId>localstack</artifactId>
-      <version>${localstack.version}</version>
+      <groupId>javax.xml.bind</groupId>
+      <artifactId>jaxb-api</artifactId>
+      <version>${jaxb.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
 
   <build>
     <plugins>
+      <!-- Added to process codegen annotations before project's source code is compiled -->
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <useIncrementalCompilation>false</useIncrementalCompilation>
+          <generatedSourcesDirectory>src/main/generated</generatedSourcesDirectory>
+          <generatedTestSourcesDirectory>src/test/generated</generatedTestSourcesDirectory>
+        </configuration>
+        <executions>
+          <execution>
+            <id>default-compile</id>
+            <configuration>
+              <annotationProcessors>
+                <annotationProcessor>io.vertx.codegen.CodeGenProcessor</annotationProcessor>
+              </annotationProcessors>
+              <compilerArgs>
+                <arg>-Acodegen.output=${project.basedir}/src/main/generated</arg>
+              </compilerArgs>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-clean-plugin</artifactId>
+        <version>${clean.plugin.version}</version>
+        <executions>
+          <execution>
+            <id>default-clean</id>
+            <configuration>
+              <filesets>
+                <fileset>
+                  <directory>${project.basedir}/src/main/generated/info/freelibrary/vertx/s3/service</directory>
+                </fileset>
+              </filesets>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <configuration>
+          <portNames>
+            <portName>sfs.port</portName>
+            <portName>s3.port</portName>
+          </portNames>
+        </configuration>
+        <executions>
+          <execution>
+            <id>reserve-port</id>
+            <phase>initialize</phase>
+            <goals>
+              <goal>reserve-network-port</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>io.fabric8</groupId>
         <artifactId>docker-maven-plugin</artifactId>
@@ -150,13 +217,53 @@
         <configuration>
           <images>
             <image>
+              <name>localstack/localstack</name>
+              <run>
+                <containerNamePattern>vertx-s3-localstack</containerNamePattern>
+                <env>
+                  <SERVICES>s3</SERVICES>
+                </env>
+                <ports>
+                  <port>${s3.port}:4566</port>
+                </ports>
+                <wait>
+                  <log>^Ready\.$</log>
+                  <time>60000</time>
+                </wait>
+              </run>
+            </image>
+            <image>
               <name>${project.artifactId}:%l</name>
               <build>
                 <dockerFile>${project.basedir}/src/main/docker/Dockerfile</dockerFile>
-                <assembly>
-                  <descriptorRef>project</descriptorRef>
-                </assembly>
+                <assemblies>
+                  <assembly>
+                    <name>project-copy</name>
+                    <descriptorRef>project</descriptorRef>
+                    <targetDir>maven</targetDir>
+                  </assembly>
+                  <assembly>
+                    <name>target-copy</name>
+                    <inline>
+                      <fileSet>
+                        <directory>target</directory>
+                        <outputDirectory>target</outputDirectory>
+                      </fileSet>
+                    </inline>
+                  </assembly>
+                </assemblies>
               </build>
+              <run>
+                <containerNamePattern>vertx-s3-service</containerNamePattern>
+                <ports>
+                  <port>${sfs.port}:${sfs.port}</port>
+                </ports>
+                <wait>
+                  <http>
+                    <url>http://localhost:${sfs.port}/</url>
+                  </http>
+                </wait>
+              </run>
             </image>
           </images>
         </configuration>
@@ -166,7 +273,19 @@
             <phase>pre-integration-test</phase>
             <goals>
               <goal>build</goal>
+              <goal>start</goal>
             </goals>
+          </execution>
+          <execution>
+            <id>docker-cleanup</id>
+            <phase>post-integration-test</phase>
+            <goals>
+              <goal>stop</goal>
+            </goals>
+            <configuration>
+              <allContainers>true</allContainers>
+              <stopNamePattern>vertx-s3-*</stopNamePattern>
+            </configuration>
           </execution>
         </executions>
       </plugin>
@@ -174,19 +293,12 @@
       <plugin>
         <groupId>info.freelibrary</groupId>
         <artifactId>freelib-maven-plugins</artifactId>
-        <version>${freelib.maven.version}</version>
         <executions>
           <execution>
             <phase>process-resources</phase>
             <goals>
               <goal>generate-codes</goal>
             </goals>
-            <configuration>
-              <generatedSourcesDirectory>${project.basedir}/src/main/generated</generatedSourcesDirectory>
-              <messageFiles>
-                <messageFile>${project.basedir}/src/main/resources/vertx-s3_messages.xml</messageFile>
-              </messageFiles>
-            </configuration>
           </execution>
         </executions>
       </plugin>
@@ -195,27 +307,10 @@
       </plugin>
       <plugin>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <dependencies>
-          <dependency>
-            <groupId>info.freelibrary</groupId>
-            <artifactId>freelib-resources</artifactId>
-            <version>${freelib.resources.version}</version>
-          </dependency>
-        </dependencies>
         <configuration>
-          <stylesheetfile>javadocs.css</stylesheetfile>
-          <nonavbar>true</nonavbar>
-          <show>public</show>
-          <nosince>true</nosince>
-          <notimestamp>true</notimestamp>
-          <bottom> </bottom>
-          <detectLinks>false</detectLinks>
-          <additionalJOptions>
-            <additionalJOption>-J-Dhttp.agent=maven-javadoc-plugin-${project.name}</additionalJOption>
-          </additionalJOptions>
           <links>
-            <link>https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/</link>
             <link>http://vertx.io/docs/apidocs/</link>
+            <link>https://javadoc.io/doc/info.freelibrary/freelib-utils/apidocs/</link>
           </links>
           <sourcepath>${project.basedir}/src/main/java:${project.basedir}/src/main/generated</sourcepath>
         </configuration>
@@ -238,31 +333,56 @@
       <plugin>
         <artifactId>maven-dependency-plugin</artifactId>
       </plugin>
-      <!-- Makes sure TestContainers doesn't leave unused networks around -->
       <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>docker-network-prune</id>
-            <phase>post-integration-test</phase>
-            <goals>
-              <goal>exec</goal>
-            </goals>
-            <configuration>
-              <executable>docker</executable>
-              <arguments>
-                <argument>network</argument>
-                <argument>prune</argument>
-                <argument>-f</argument>
-              </arguments>
-            </configuration>
-          </execution>
-        </executions>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
       </plugin>
       <plugin>
-        <groupId>org.jbake</groupId>
-        <artifactId>jbake-maven-plugin</artifactId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <skipAfterFailureCount>1</skipAfterFailureCount>
+          <includes>
+            <include>**/*Test.java</include>
+          </includes>
+          <excludes>
+            <exclude>**/*FT.java</exclude>
+            <exclude>**/*IT.java</exclude>
+            <exclude>**/S3ClientProfilesTest.java</exclude>
+          </excludes>
+          <systemPropertyVariables>
+            <test.user>${project.artifactId}</test.user>
+            <vertx.logger-delegate-factory-class-name>io.vertx.core.logging.SLF4JLogDelegateFactory</vertx.logger-delegate-factory-class-name>
+          </systemPropertyVariables>
+          <argLine>${jacoco.agent.arg}</argLine>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <configuration>
+          <forkCount>1</forkCount>
+          <skipAfterFailureCount>1</skipAfterFailureCount>
+          <includes>
+            <include>**/*FT.java</include>
+          </includes>
+          <excludes>
+            <exclude>**/*Test.java</exclude>
+            <exclude>**/*IT.java</exclude>
+          </excludes>
+          <argLine>${jacoco.agent.arg}</argLine>
+          <systemPropertyVariables>
+            <localstack.port>${s3.port}</localstack.port>
+            <maven.port>${sfs.port}</maven.port>
+            <vertx.logger-delegate-factory-class-name>io.vertx.core.logging.SLF4JLogDelegateFactory</vertx.logger-delegate-factory-class-name>
+          </systemPropertyVariables>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>integration-test</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
@@ -270,93 +390,39 @@
   <!-- S3 integration tests can be run if an AWS/S3 access_key and private_key are supplied -->
   <profiles>
     <profile>
-      <id>test</id>
+      <id>snyk-check</id>
       <activation>
         <property>
-          <name>!skipTestProfile</name>
+          <name>env.SNYK_TOKEN</name>
         </property>
       </activation>
       <build>
         <plugins>
           <plugin>
-            <artifactId>maven-surefire-plugin</artifactId>
-            <configuration>
-              <skipAfterFailureCount>1</skipAfterFailureCount>
-              <includes>
-                <include>**/*Test.java</include>
-              </includes>
-              <!-- We run the profiles test inside the Docker container -->
-              <excludes>
-                <exclude>**/*FT.java</exclude>
-                <exclude>**/*IT.java</exclude>
-                <exclude>**/S3ClientProfilesTest.java</exclude>
-              </excludes>
-              <systemPropertyVariables>
-                <test.user>${project.artifactId}</test.user>
-                <vertx.logger-delegate-factory-class-name>io.vertx.core.logging.SLF4JLogDelegateFactory</vertx.logger-delegate-factory-class-name>
-              </systemPropertyVariables>
-              <argLine>${jacoco.agent.arg}</argLine>
-            </configuration>
+            <groupId>io.snyk</groupId>
+            <artifactId>snyk-maven-plugin</artifactId>
+            <!-- Configurations have to be overridden in the executions' configuration elements -->
             <executions>
               <execution>
-                <id>functional-tests</id>
-                <phase>integration-test</phase>
+                <id>snyk-test</id>
                 <goals>
                   <goal>test</goal>
                 </goals>
-                <configuration>
-                  <skipAfterFailureCount>1</skipAfterFailureCount>
-                  <includes>
-                    <include>**/*FT.java</include>
-                  </includes>
-                  <excludes>
-                    <exclude>**/*Test.java</exclude>
-                    <exclude>**/*IT.java</exclude>
-                  </excludes>
-                  <argLine>${jacoco.agent.arg}</argLine>
-                  <systemPropertyVariables>
-                    <test.user>${project.artifactId}</test.user>
-                    <vertx.logger-delegate-factory-class-name>io.vertx.core.logging.SLF4JLogDelegateFactory</vertx.logger-delegate-factory-class-name>
-                    <container.tag.version>${project.version}</container.tag.version>
-                  </systemPropertyVariables>
-                  <forkCount>0</forkCount><!-- Multiple forks result in multiple containers -->
-                  <useSystemClassLoader>false</useSystemClassLoader> <!-- Override parent project setting -->
-                </configuration>
+              </execution>
+              <execution>
+                <id>snyk-monitor</id>
+                <goals>
+                  <goal>monitor</goal>
+                </goals>
               </execution>
             </executions>
           </plugin>
         </plugins>
       </build>
     </profile>
+
     <profile>
-      <id>profileTests</id>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-surefire-plugin</artifactId>
-            <configuration>
-              <skipAfterFailureCount>1</skipAfterFailureCount>
-              <includes>
-                <include>**/S3ClientProfilesTest.java</include>
-              </includes>
-              <excludes>
-                <exclude>**/*FT.java</exclude>
-                <exclude>**/*IT.java</exclude>
-              </excludes>
-              <argLine>${jacoco.agent.arg}</argLine>
-              <systemPropertyVariables>
-                <test.user>${project.artifactId}</test.user>
-                <vertx.logger-delegate-factory-class-name>io.vertx.core.logging.SLF4JLogDelegateFactory</vertx.logger-delegate-factory-class-name>
-              </systemPropertyVariables>
-              <forkCount>0</forkCount><!-- Multiple forks result in multiple containers -->
-              <useSystemClassLoader>false</useSystemClassLoader> <!-- Override parent project setting -->
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>s3it</id>
+      <id>s3_it</id>
       <build>
         <plugins>
           <plugin>
@@ -382,124 +448,13 @@
         </plugins>
       </build>
     </profile>
-    <!-- Runs code coverage upload on Travis -->
-    <profile>
-      <id>code-coverage</id>
-      <activation>
-        <property>
-          <name>env.CODACY_API_TOKEN</name>
-        </property>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.jacoco</groupId>
-            <artifactId>jacoco-maven-plugin</artifactId>
-            <version>${jacoco.maven.plugin.version}</version>
-            <executions>
-              <execution>
-                <id>default-prepare-agent</id>
-                <goals>
-                  <goal>prepare-agent</goal>
-                </goals>
-                <configuration>
-                  <destFile>${jacoco.dataFile}</destFile>
-                  <propertyName>jacoco.agent.arg</propertyName>
-                  <append>true</append>
-                  <excludes>
-                    <exclude>src/test/java/**/*</exclude>
-                  </excludes>
-                </configuration>
-              </execution>
-              <execution>
-                <id>default-prepare-agent-integration</id>
-                <goals>
-                  <goal>prepare-agent-integration</goal>
-                </goals>
-                <configuration>
-                  <destFile>${jacoco.dataFile}</destFile>
-                  <propertyName>jacoco.agent.arg</propertyName>
-                  <append>true</append>
-                  <excludes>
-                    <exclude>src/test/java/**/*</exclude>
-                  </excludes>
-                </configuration>
-              </execution>
-              <execution>
-                <id>default-report</id>
-                <goals>
-                  <goal>report</goal>
-                </goals>
-                <configuration>
-                  <dataFile>${jacoco.dataFile}</dataFile>
-                  <excludes>
-                    <exclude>src/test/java/**/*</exclude>
-                  </excludes>
-                </configuration>
-              </execution>
-              <execution>
-                <id>integration-report</id>
-                <goals>
-                  <goal>report-integration</goal>
-                </goals>
-                <configuration>
-                  <dataFile>${jacoco.dataFile}</dataFile>
-                  <excludes>
-                    <exclude>src/test/java/**/*</exclude>
-                  </excludes>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>com.gavinmogan</groupId>
-            <artifactId>codacy-maven-plugin</artifactId>
-            <version>${codacy.plugin.version}</version>
-            <configuration>
-              <apiToken>${env.CODACY_API_TOKEN}</apiToken>
-              <projectToken>${env.CODACY_PROJECT_TOKEN}</projectToken>
-              <coverageReportFile>${project.basedir}/target/site/jacoco/jacoco.xml</coverageReportFile>
-              <commit>${env.TRAVIS_COMMIT}</commit>
-              <codacyApiBaseUrl>https://api.codacy.com</codacyApiBaseUrl>
-              <failOnMissingReportFile>false</failOnMissingReportFile>
-            </configuration>
-            <executions>
-              <execution>
-                <id>codacy-upload</id>
-                <phase>verify</phase>
-                <goals>
-                  <goal>coverage</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-site-plugin</artifactId>
-            <version>${maven.site.plugin.version}</version>
-            <configuration>
-              <skip>true</skip>
-              <skipDeploy>true</skipDeploy>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
   </profiles>
-
-  <!-- Enables pushing project documentation up to an S3 bucket -->
-  <distributionManagement>
-    <site>
-      <id>s3.site</id>
-      <url>s3://projects.freelibrary.info/vertx-super-s3</url>
-    </site>
-  </distributionManagement>
 
   <!-- Pulls in standard FreeLibrary Project configuration options -->
   <parent>
     <artifactId>freelib-parent</artifactId>
     <groupId>info.freelibrary</groupId>
-    <version>3.8.6</version>
+    <version>7.2.2</version>
   </parent>
 
 </project>

@@ -4,8 +4,8 @@ package info.freelibrary.vertx.s3;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import info.freelibrary.vertx.s3.util.MessageCodes;
 import io.vertx.core.Vertx;
-import io.vertx.core.http.HttpClientOptions;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import uk.co.lucasweb.aws.v4.signer.SigningException;
@@ -29,17 +29,7 @@ public class S3ClientProfilesTest {
      */
     @Test
     public final void testS3ClientVertxProfile(final TestContext aContext) {
-        new S3Client(VERTX, new Profile(PROFILE)).close();
-    }
-
-    /**
-     * Tests the profile + HTTP client options constructor.
-     *
-     * @param aContext A test context
-     */
-    @Test
-    public final void testS3ClientVertxProfileHttpClientOptions(final TestContext aContext) {
-        new S3Client(VERTX, new Profile(PROFILE), new HttpClientOptions()).close();
+        new S3Client(VERTX, new S3ClientOptions().setProfile(PROFILE)).close();
     }
 
     /**
@@ -49,7 +39,8 @@ public class S3ClientProfilesTest {
      */
     @Test
     public final void testS3ClientVertxProfilePlusEndpoint(final TestContext aContext) {
-        new S3Client(VERTX, new Profile(PROFILE), S3Client.DEFAULT_ENDPOINT).close();
+        final S3ClientOptions config = new S3ClientOptions(S3Endpoint.US_EAST_1).setProfile(new AwsProfile(PROFILE));
+        new S3Client(VERTX, config).close();
     }
 
     /**
@@ -59,8 +50,8 @@ public class S3ClientProfilesTest {
      */
     @Test(expected = SigningException.class)
     public final void testS3ClientVertxProfileMissingProfile(final TestContext aContext) {
-        new S3Client(VERTX, new Profile(MISSING)).close();
-        aContext.fail(MessageCodes.VS3_014);
+        new S3Client(VERTX, new S3ClientOptions().setProfile(MISSING)).close();
+        aContext.fail(MessageCodes.VSS_014);
     }
 
     /**
@@ -70,8 +61,8 @@ public class S3ClientProfilesTest {
      */
     @Test(expected = SigningException.class)
     public final void testS3ClientVertxProfileHttpClientOptionsMissingProfile(final TestContext aContext) {
-        new S3Client(VERTX, new Profile(MISSING), new HttpClientOptions()).close();
-        aContext.fail(MessageCodes.VS3_014);
+        new S3Client(VERTX, new S3ClientOptions().setProfile(new AwsProfile(MISSING))).close();
+        aContext.fail(MessageCodes.VSS_014);
     }
 
     /**
@@ -81,7 +72,8 @@ public class S3ClientProfilesTest {
      */
     @Test(expected = SigningException.class)
     public final void testS3ClientVertxProfilePlusEndpointMissingProfile(final TestContext aContext) {
-        new S3Client(VERTX, new Profile(MISSING), S3Client.DEFAULT_ENDPOINT).close();
-        aContext.fail(MessageCodes.VS3_014);
+        new S3Client(VERTX, new S3ClientOptions(S3Endpoint.US_EAST_1).setProfile(new AwsProfile(MISSING))).close();
+        aContext.fail(MessageCodes.VSS_014);
     }
+
 }

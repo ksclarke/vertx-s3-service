@@ -4,15 +4,15 @@
 
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
-      <pattern>[%level] %logger{45} | %msg%n</pattern>
+      <pattern>[%level] %logger{45}:%X{line} | %msg%n</pattern>
     </encoder>
   </appender>
 
   <appender name="FILE" class="ch.qos.logback.core.FileAppender">
-    <file>target/vertx-s3-${byDay}.log</file>
+    <file>target/vertx-s3-service-${byDay}.log</file>
     <append>false</append>
     <encoder>
-      <pattern>[%level] %logger{45} | %msg%n</pattern>
+      <pattern>[%level] %logger{45}:%X{line} | %msg%n</pattern>
     </encoder>
   </appender>
 
@@ -23,30 +23,28 @@
     <appender-ref ref="STDOUT" />
   </logger>
   <logger name="io.vertx" level="OFF" additivity="false">
-    <appender-ref ref="STDOUT"/>
+    <appender-ref ref="STDOUT" />
   </logger>
 
   <!-- Loggers for the testcontainers.org tool -->
-  <logger name="org.testcontainers.utility.RegistryAuthLocator" level="ERROR">
+  <logger name="org.testcontainers" level="ERROR">
     <appender-ref ref="STDOUT" />
   </logger>
-  <logger name="org.testcontainers.dockerclient.DockerClientProviderStrategy" level="WARN">
+  <logger name="com.github.dockerjava" level="ERROR">
     <appender-ref ref="STDOUT" />
   </logger>
-  <logger name="org.testcontainers.dockerclient.EnvironmentAndSystemPropertyClientProviderStrategy" level="WARN">
+  <lgger name="localstack/localstack:0.10.8" level="INFO">
     <appender-ref ref="STDOUT" />
-  </logger>
-  <logger name="org.testcontainers.utility.ResourceReaper" level="ERROR">
+  </lgger>
+  <logger name="vertx-s3-service:latest" level="INFO">
     <appender-ref ref="STDOUT" />
   </logger>
 
-<!--
   <logger name="info.freelibrary.vertx.s3" level="DEBUG" additivity="false">
     <appender-ref ref="STDOUT" />
   </logger>
--->
 
-  <root level="INFO">
+  <root level="DEBUG">
     <appender-ref ref="STDOUT" />
   </root>
 

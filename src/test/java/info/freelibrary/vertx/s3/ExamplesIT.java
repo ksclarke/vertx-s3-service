@@ -1,78 +1,124 @@
 
 package info.freelibrary.vertx.s3;
 
-import java.io.File;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import info.freelibrary.util.Logger;
 import info.freelibrary.util.LoggerFactory;
-
-import io.vertx.core.Promise;
+import info.freelibrary.vertx.s3.util.MessageCodes;
 import io.vertx.core.Vertx;
+import io.vertx.core.file.FileSystem;
+import io.vertx.core.file.OpenOptions;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
+import io.vertx.ext.unit.junit.RunTestOnContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 
 /**
  * Tests of examples that are used in the project's documentation.
  */
 @RunWith(VertxUnitRunner.class)
+@SuppressWarnings("MultipleStringLiterals") // There are code snippets from the documentation
 public class ExamplesIT {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ExamplesIT.class, Constants.BUNDLE_NAME);
+    /**
+     * The logger for the example tests.
+     */
+    private static final Logger LOGGER = LoggerFactory.getLogger(ExamplesIT.class, MessageCodes.BUNDLE);
 
     /**
-     * A simple (somewhat contrived) GET example.
+     * Rule that creates the test context.
+     */
+    @Rule
+    public RunTestOnContext myContext = new RunTestOnContext();
+
+    /**
+     * Test the first example from the documentation.
      *
      * @param aContext A test context
      */
     @Test
-    @SuppressWarnings("checkstyle:indentation")
+    public void testExample0(final TestContext aContext) {
+        final Async asyncTask = aContext.async(); // Remove this from the documentation
+        final S3Client s3Client = new S3Client(myContext.vertx(), new S3ClientOptions().setProfile("vertx-s3"));
+        final FileSystem fileSystem = myContext.vertx().fileSystem();
+        final OpenOptions opts = new OpenOptions();
+
+        fileSystem.createTempFile("ucla-library-logo", ".png").compose(path -> fileSystem.open(path, opts))
+            .compose(file -> s3Client.get("presentation-materials", "ucla-library-logo.png")
+                .compose(response -> response.pipeTo(file)))
+            .onComplete(download -> {
+                if (download.succeeded()) {
+                    asyncTask.complete();
+                } else {
+                    aContext.fail(download.cause());
+                }
+            });
+    }
+
+    /**
+     * Test the second example from the documentation.
+     *
+     * @param aContext A test context
+     */
+    @Test
     public void testExample1(final TestContext aContext) {
-        final Async asyncTask = aContext.async(); // Remove this from the docs
-        final Vertx vertx = Vertx.vertx();
-        final S3Client s3Client = new S3Client(vertx, new Profile("vertx-s3"));
+        final Async asyncTask = aContext.async(); // Remove this from the documentation
+        final S3Client s3Client = new S3Client(vertx(), new S3ClientOptions("vertx-s3"));
         final String fileName = "ucla-library-logo.png";
-        final Promise<File> promise = Promise.promise();
 
-        // Do something with the result of our S3 download
-        promise.future().onComplete(handler -> {
-            if (handler.succeeded()) {
-                LOGGER.info("Successfully downloaded: {}", handler.result());
-            } else {
-                LOGGER.error("Download failed: {}", handler.cause().getMessage());
-            }
-
-            asyncTask.complete(); // Remove this; it's just needed here because we're in a test
-        });
-
-        // Do our S3 download
         s3Client.get("presentation-materials", fileName, get -> {
-            final int statusCode = get.statusCode();
+            if (get.succeeded()) {
+                final String path = Paths.get("/tmp", fileName).toString();
+                final OpenOptions opts = new OpenOptions();
 
-            if (statusCode == HTTP.OK) {
-                get.bodyHandler(body -> {
-                    final Path path = Paths.get(System.getProperty("java.io.tmpdir"), fileName);
-
-                    // Write our S3 file to our local file system
-                    vertx.fileSystem().writeFile(path.toString(), body, write -> {
-                        if (write.succeeded()) {
-                            promise.complete(path.toFile());
-                        } else {
-                            promise.fail(write.cause());
-                        }
-                    });
-                });
+                vertx().fileSystem().open(path, opts).compose(file -> get.result().pipeTo(file).onSuccess(result -> {
+                    LOGGER.info("Successfully downloaded S3 object to: {}", path);
+                    asyncTask.complete(); // remove for examples documentation
+                }).onFailure(error -> {
+                    LOGGER.error(error, error.getMessage());
+                    aContext.fail(error); // remove for examples documentation
+                }));
             } else {
-                promise.fail(LOGGER.getMessage("Unexpected status code: {} [{}]", statusCode, get.statusMessage()));
+                LOGGER.error(get.cause(), get.cause().getMessage());
+                aContext.fail(get.cause()); // remove for examples documentation
             }
-        }, error -> {
-            promise.fail(error);
         });
     }
 
+    /**
+     * Test the third example from the documentation.
+     *
+     * @param aContext A test context
+     */
+    @Test
+    public void testExampleWithFutures(final TestContext aContext) {
+        final Async asyncTask = aContext.async(); // Remove this from the documentation
+        final S3Client s3Client = new S3Client(vertx(), new S3ClientOptions("vertx-s3"));
+        final String fileName = "ucla-library-logo.png";
+        final String path = Paths.get(System.getProperty("java.io.tmpdir"), fileName).toString();
+
+        // Downloading an S3 object using only futures...
+        s3Client.get("presentation-materials", fileName).compose(response -> vertx().fileSystem()
+            .open(path, new OpenOptions()).compose(file -> response.pipeTo(file).onSuccess(result -> {
+                LOGGER.info("Successfully downloaded S3 object to: {}", path);
+                asyncTask.complete(); // remove for examples documentation
+            }).onFailure(error -> {
+                LOGGER.error(error, error.getMessage());
+                aContext.fail(error); // remove for examples documentation
+            })));
+    }
+
+    /**
+     * A convenience method to make the test code look more like it would in a non-test environment.
+     *
+     * @return A Vert.x instance
+     */
+    private Vertx vertx() {
+        return myContext.vertx();
+    }
 }

@@ -24,9 +24,12 @@ import io.vertx.core.buffer.Buffer;
 /**
  * A listing of objects in an S3 bucket.
  */
-public class BucketList implements Iterable<ListObject> {
+public class S3BucketList implements Iterable<S3Object> {
 
-    private List<ListObject> myList;
+    /**
+     * The S3 object list.
+     */
+    private List<S3Object> myList;
 
     /**
      * Creates a new listing of S3 objects.
@@ -34,7 +37,7 @@ public class BucketList implements Iterable<ListObject> {
      * @param aBuffer The XML response from an S3 list request
      * @throws IOException If there is trouble reading the XML response
      */
-    public BucketList(final Buffer aBuffer) throws IOException {
+    public S3BucketList(final Buffer aBuffer) throws IOException {
         this(aBuffer.toString(StandardCharsets.UTF_8));
     }
 
@@ -44,7 +47,7 @@ public class BucketList implements Iterable<ListObject> {
      * @param aString The XML response from an S3 list request
      * @throws IOException If there is trouble reading the XML response
      */
-    public BucketList(final String aString) throws IOException {
+    public S3BucketList(final String aString) throws IOException {
         final SAXParserFactory saxParserFactory = SAXParserFactory.newInstance();
 
         saxParserFactory.setNamespaceAware(true);
@@ -52,12 +55,12 @@ public class BucketList implements Iterable<ListObject> {
         try {
             final SAXParser saxParser = saxParserFactory.newSAXParser();
             final XMLReader xmlReader = saxParser.getXMLReader();
-            final ObjectListHandler s3ListHandler = new ObjectListHandler();
+            final S3BucketListHandler s3BucketListHandler = new S3BucketListHandler();
 
-            xmlReader.setContentHandler(s3ListHandler);
+            xmlReader.setContentHandler(s3BucketListHandler);
             xmlReader.parse(new InputSource(new StringReader(aString)));
 
-            myList = Collections.unmodifiableList(s3ListHandler.getList());
+            myList = Collections.unmodifiableList(s3BucketListHandler.getList());
         } catch (final ParserConfigurationException | SAXException details) {
             throw new IOException(details);
         }
@@ -71,7 +74,7 @@ public class BucketList implements Iterable<ListObject> {
      */
     public boolean containsKey(final String aKey) {
         Objects.requireNonNull(aKey);
-        return indexOfKey(aKey) != -1 ? true : false;
+        return indexOfKey(aKey) != -1;
     }
 
     /**
@@ -80,7 +83,7 @@ public class BucketList implements Iterable<ListObject> {
      * @param aIndex A position in the list
      * @return The list object at the supplied index position
      */
-    public ListObject get(final int aIndex) {
+    public S3Object get(final int aIndex) {
         return myList.get(aIndex);
     }
 
@@ -112,17 +115,17 @@ public class BucketList implements Iterable<ListObject> {
     }
 
     @Override
-    public Iterator<ListObject> iterator() {
+    public Iterator<S3Object> iterator() {
         return myList.iterator();
     }
 
     @Override
-    public Spliterator<ListObject> spliterator() {
+    public Spliterator<S3Object> spliterator() {
         return myList.spliterator();
     }
 
     @Override
-    public void forEach(final Consumer<? super ListObject> aEvent) {
+    public void forEach(final Consumer<? super S3Object> aEvent) {
         myList.forEach(aEvent);
     }
 
@@ -136,12 +139,12 @@ public class BucketList implements Iterable<ListObject> {
     }
 
     /**
-     * Converts the bucket list into an array of {@link ListObject}s.
+     * Converts the bucket list into an array of {@link S3Object}s.
      *
      * @param aArray An array in which to put the bucket list's objects
-     * @return The array of {@link ListObject}s
+     * @return The array of {@link S3Object}s
      */
-    public ListObject[] toArray(final ListObject[] aArray) {
+    public S3Object[] toArray(final S3Object... aArray) {
         return myList.toArray(aArray);
     }
 

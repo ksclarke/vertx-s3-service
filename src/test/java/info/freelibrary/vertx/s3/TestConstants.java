@@ -4,9 +4,9 @@ package info.freelibrary.vertx.s3;
 /**
  * A class of constants to use in the tests.
  */
-final class TestConstants {
+public final class TestConstants {
 
-    static final String TEST_PROFILE = "vertx-s3";
+    public static final String ID = "id";
 
     static final String TEST_KEY_PREFIX = "green-";
 
@@ -30,19 +30,10 @@ final class TestConstants {
 
     static final String FOUR = "four";
 
-    //
-
-    static final String S3_SERVICE = "s3";
-
-    static final String S3_BUCKET = "test.s3.bucket";
-
-    static final String S3_REGION = "test.s3.region";
-
     /**
-     * The version of the test container's tag.
+     * Creates a new test constants class.
      */
-    static final String TAG_VERSION = "container.tag.version";
-
     private TestConstants() {
+        // This is intentionally left empty.
     }
 }

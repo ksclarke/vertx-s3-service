@@ -1,10 +1,7 @@
 
 package info.freelibrary.vertx.s3;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.UUID;
 
@@ -24,6 +21,9 @@ public class UserMetadataTest {
 
     private String myValue2;
 
+    /**
+     * Sets up the testing environment.
+     */
     @Before
     public void setUp() {
         myName1 = UUID.randomUUID().toString();
@@ -68,6 +68,9 @@ public class UserMetadataTest {
         assertEquals(myValue1, metadata.getValue(myName1));
     }
 
+    /**
+     * Tests trying to get a metadata value that hasn't been set.
+     */
     @Test
     public final void testGetValueStringNull() {
         assertNull(new UserMetadata().add(myName1, myValue1).getValue("nothing"));

@@ -1,81 +1,106 @@
 
 package info.freelibrary.vertx.s3;
 
-import static info.freelibrary.vertx.s3.Constants.PATH_SEP;
+import static info.freelibrary.util.Constants.SLASH;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.util.UUID;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import io.vertx.core.Vertx;
-import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
+import io.vertx.ext.unit.junit.RunTestOnContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 
+/**
+ * Tests the S3ClientRequest.
+ */
 @RunWith(VertxUnitRunner.class)
-public class S3ClientRequestIT {
+public class S3ClientRequestIT extends AbstractS3IT {
 
-    private static final String METHOD = "DELETE";
+    /**
+     * A test rule to run the tests on the Vert.x context.
+     */
+    @Rule
+    public final RunTestOnContext myContext = new RunTestOnContext();
 
-    private String myAccessKey;
+    /**
+     * A bucket and S3 object key URI path.
+     */
+    private String myURI;
 
-    private String mySecretKey;
-
-    private String mySessionToken;
-
-    private String myKey;
-
-    private String myBucket;
-
-    private Vertx myVertx;
-
+    /**
+     * Sets up the testing environment.
+     */
     @Before
     public void setUp() {
-        myAccessKey = UUID.randomUUID().toString();
-        mySecretKey = UUID.randomUUID().toString();
-        mySessionToken = UUID.randomUUID().toString();
-        myKey = UUID.randomUUID().toString();
-        myBucket = UUID.randomUUID().toString();
-        myVertx = Vertx.vertx();
+        myURI = String.join(SLASH, UUID.randomUUID().toString(), UUID.randomUUID().toString());
     }
 
+    /**
+     * Tests the anonymous constructor.
+     *
+     * @param aContext A test context
+     */
     @Test
     public final void testConstructorAnon(final TestContext aContext) {
-        final HttpClientRequest httpRequest = myVertx.createHttpClient().delete(myBucket + PATH_SEP + myKey);
-        final S3ClientRequest request = new S3ClientRequest(METHOD, myBucket, myKey, httpRequest);
+        final String host = S3Endpoint.US_EAST_1.getHost();
+        final Async asyncTask = aContext.async();
 
-        assertTrue(request.getCredentials().isEmpty());
+        myContext.vertx().createHttpClient().request(HttpMethod.DELETE, host, myURI).onComplete(request -> {
+            if (request.succeeded()) {
+                assertTrue(new S3ClientRequest(request.result()).getCredentials().isEmpty());
+                complete(asyncTask);
+            } else {
+                aContext.fail(request.cause());
+            }
+        });
     }
 
+    /**
+     * Tests the credentials constructor.
+     *
+     * @param aContext A test context
+     */
     @Test
-    public final void testConstructorWithCreds() {
-        final HttpClientRequest httpRequest = myVertx.createHttpClient().delete(myBucket + PATH_SEP + myKey);
-        final S3ClientRequest request = new S3ClientRequest(METHOD, myBucket, myKey, httpRequest, myAccessKey,
-                mySecretKey, mySessionToken);
+    public final void testConstructorWithCreds(final TestContext aContext) {
+        final AwsCredentials creds = new AwsCredentials(TestUtils.AWS_ACCESS_KEY, TestUtils.AWS_SECRET_KEY);
+        final String host = S3Endpoint.US_EAST_1.getHost();
+        final Async asyncTask = aContext.async();
 
-        assertTrue(request.getCredentials().isPresent());
+        myContext.vertx().createHttpClient().request(HttpMethod.DELETE, host, myURI).onComplete(request -> {
+            if (request.succeeded()) {
+                assertTrue(new S3ClientRequest(request.result(), creds).getCredentials().isPresent());
+                complete(asyncTask);
+            } else {
+                aContext.fail(request.cause());
+            }
+        });
     }
 
+    /**
+     * Tests the S3ClientRequestIT's method method.
+     *
+     * @param aContext A test context
+     */
     @Test
-    public final void testConstructorWithCredsEmpty() {
-        final HttpClientRequest httpRequest = myVertx.createHttpClient().delete(myBucket + PATH_SEP + myKey);
-        final S3ClientRequest request = new S3ClientRequest(METHOD, myBucket, myKey, httpRequest, myAccessKey, null,
-                mySessionToken);
+    public final void testGetMethod(final TestContext aContext) {
+        final String host = S3Endpoint.US_EAST_1.getHost();
+        final Async asyncTask = aContext.async();
 
-        assertTrue(request.getCredentials().isEmpty());
+        myContext.vertx().createHttpClient().request(HttpMethod.DELETE, host, myURI).onComplete(request -> {
+            if (request.succeeded()) {
+                assertEquals(HttpMethod.DELETE, new S3ClientRequest(request.result()).getMethod());
+                complete(asyncTask);
+            } else {
+                aContext.fail(request.cause());
+            }
+        });
     }
-
-    @Test
-    public final void testGetMethod() {
-        final HttpClientRequest httpRequest = myVertx.createHttpClient().delete(myBucket + PATH_SEP + myKey);
-        final S3ClientRequest request = new S3ClientRequest(METHOD, myBucket, myKey, httpRequest, myAccessKey, null,
-                mySessionToken);
-
-        assertEquals(METHOD, request.getMethod());
-    }
-
 }

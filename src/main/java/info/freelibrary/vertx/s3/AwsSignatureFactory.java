@@ -5,29 +5,41 @@ import java.net.URI;
 import java.util.Optional;
 
 import info.freelibrary.util.I18nRuntimeException;
-import info.freelibrary.util.Logger;
-import info.freelibrary.util.LoggerFactory;
+
+import info.freelibrary.vertx.s3.util.MessageCodes;
 
 /**
  * An AWS signature factory from which S3 authentication signatures can be created.
  */
 public final class AwsSignatureFactory {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AwsSignatureFactory.class, Constants.BUNDLE_NAME);
-
     /**
      * The different signature options supported by this factory.
      */
     public enum Version {
-        V2, V4
+        V4
     }
 
+    /**
+     * The version of the signatures to be generated.
+     */
     private final Version myVersion;
 
+    /**
+     * The signature host.
+     */
     private URI myHost;
 
+    /**
+     * The AWS credentials.
+     */
     private Optional<AwsCredentials> myCredentials;
 
+    /**
+     * Creates a new AWS signature factory.
+     *
+     * @param aVersion A signature version
+     */
     private AwsSignatureFactory(final Version aVersion) {
         myVersion = aVersion;
     }
@@ -77,7 +89,7 @@ public final class AwsSignatureFactory {
      * @return The credentials used by the AWS signature
      */
     public Optional<AwsCredentials> getCredentials() {
-        return myCredentials;
+        return myCredentials == null ? Optional.empty() : myCredentials;
     }
 
     /**
@@ -87,7 +99,7 @@ public final class AwsSignatureFactory {
      * @return The signature factory
      * @throws ConfigurationException If authentication credentials are missing or invalid
      */
-    public AwsSignatureFactory setCredentials(final AwsCredentials aCredentials) throws ConfigurationException {
+    public AwsSignatureFactory setCredentials(final AwsCredentials aCredentials) {
         if (aCredentials == null || !aCredentials.isValid()) {
             throw new ConfigurationException();
         }
@@ -104,8 +116,7 @@ public final class AwsSignatureFactory {
      * @return The signature factory
      * @throws ConfigurationException If authentication credentials are missing or invalid
      */
-    public AwsSignatureFactory setCredentials(final String aAccessKey, final String aSecretKey)
-            throws ConfigurationException {
+    public AwsSignatureFactory setCredentials(final String aAccessKey, final String aSecretKey) {
         if (aAccessKey != null && aSecretKey != null) {
             myCredentials = Optional.of(new AwsCredentials(aAccessKey, aSecretKey));
         } else {
@@ -124,7 +135,7 @@ public final class AwsSignatureFactory {
      * @return The signature factory
      */
     public AwsSignatureFactory setCredentials(final String aAccessKey, final String aSecretKey,
-            final String aSessionToken) {
+        final String aSessionToken) {
         if (aAccessKey != null && aSecretKey != null && aSessionToken != null) {
             myCredentials = Optional.of(new AwsCredentials(aAccessKey, aSecretKey, aSessionToken));
         } else {
@@ -140,17 +151,15 @@ public final class AwsSignatureFactory {
      * @return The AWS authentication signature
      */
     public AwsSignature getSignature() {
-        final AwsSignature signature;
-
-        if (myVersion.equals(Version.V2)) {
-            signature = new AwsV2Signature(myCredentials.get());
-        } else if (myVersion.equals(Version.V4)) {
-            signature = new AwsV4Signature(myHost, myCredentials.get());
-        } else {
-            throw new I18nRuntimeException(Constants.BUNDLE_NAME, MessageCodes.VS3_005);
+        if (!Version.V4.equals(myVersion)) {
+            throw new I18nRuntimeException(MessageCodes.BUNDLE, MessageCodes.VSS_005);
         }
 
-        return signature;
+        if (!myCredentials.isPresent()) {
+            throw new ConfigurationException();
+        }
+
+        return new AwsV4Signature(myHost, myCredentials.get());
     }
 
 }

@@ -4,6 +4,7 @@ package info.freelibrary.vertx.s3;
 import static org.junit.Assert.assertEquals;
 
 import java.net.URI;
+import java.util.UUID;
 
 import org.junit.Test;
 
@@ -14,9 +15,9 @@ import info.freelibrary.vertx.s3.AwsSignatureFactory.Version;
  */
 public final class AwsSignatureFactoryTest {
 
-    private static final String S3_ACCESS_KEY = "asdf";
+    private static final String S3_ACCESS_KEY = UUID.randomUUID().toString();
 
-    private static final String S3_SECRET_KEY = "fdsa";
+    private static final String S3_SECRET_KEY = UUID.randomUUID().toString();
 
     private static final URI DEFAULT_ENDPOINT = URI.create("s3.amazon.com");
 
@@ -25,8 +26,8 @@ public final class AwsSignatureFactoryTest {
      */
     @Test
     public void testGetDefaultSignature() {
-        final AwsSignature signature = AwsSignatureFactory.getFactory().setHost(DEFAULT_ENDPOINT).setCredentials(
-                new AwsCredentials(S3_ACCESS_KEY, S3_SECRET_KEY)).getSignature();
+        final AwsSignature signature = AwsSignatureFactory.getFactory().setHost(DEFAULT_ENDPOINT)
+            .setCredentials(new AwsCredentials(S3_ACCESS_KEY, S3_SECRET_KEY)).getSignature();
 
         assertEquals(AwsV4Signature.class.getName(), signature.getClass().getName());
     }
@@ -37,20 +38,9 @@ public final class AwsSignatureFactoryTest {
     @Test
     public void testGetV4Signature() {
         final AwsSignature signature = AwsSignatureFactory.getFactory(Version.V4).setHost(DEFAULT_ENDPOINT)
-                .setCredentials(S3_ACCESS_KEY, S3_SECRET_KEY).getSignature();
+            .setCredentials(S3_ACCESS_KEY, S3_SECRET_KEY).getSignature();
 
         assertEquals(AwsV4Signature.class.getName(), signature.getClass().getName());
-    }
-
-    /**
-     * Gets v.2 signature.
-     */
-    @Test
-    public void testGetV2Signature() {
-        final AwsSignature signature = AwsSignatureFactory.getFactory(Version.V2).setCredentials(S3_ACCESS_KEY,
-                S3_SECRET_KEY).getSignature();
-
-        assertEquals(AwsV2Signature.class.getName(), signature.getClass().getName());
     }
 
 }
