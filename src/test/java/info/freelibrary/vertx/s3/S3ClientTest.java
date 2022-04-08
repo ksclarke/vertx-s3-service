@@ -1,8 +1,6 @@
 
 package info.freelibrary.vertx.s3;
 
-import java.util.UUID;
-
 import org.junit.Test;
 
 import io.vertx.core.Vertx;
@@ -28,9 +26,6 @@ public class S3ClientTest {
      */
     @Test
     public final void testS3ClientVertxHttpClientOptions() {
-        final String username = UUID.randomUUID().toString();
-        final String password = UUID.randomUUID().toString();
-
-        new S3Client(VERTX, new S3ClientOptions().setCredentials(username, password)).close();
+        new S3Client(VERTX, new S3ClientOptions()).close();
     }
 }
