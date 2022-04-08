@@ -234,6 +234,7 @@ public class S3Object {
      *
      * @param aLastUpdated A last updated date
      * @return The list object
+     * @throws ParseException If the date cannot be parsed
      */
     public S3Object setLastUpdated(final Instant aLastUpdated) throws ParseException {
         myLastUpdated = aLastUpdated;
