@@ -69,7 +69,7 @@ public class LocalStackEndpoint implements Endpoint {
      * Creates a new LocalStack endpoint for testing.
      *
      * @param aEndpoint A URL endpoint in string form
-     * @throws MalformedUriException if the supplied endpoint is not a valid URL
+     * @throws MalformedUrlException if the supplied endpoint is not a valid URL
      */
     @SuppressWarnings({ PMD.PRESERVE_STACK_TRACE, "PMD.PreserveStackTrace" })
     public LocalStackEndpoint(final String aEndpoint) {

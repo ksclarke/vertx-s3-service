@@ -308,22 +308,13 @@
         <artifactId>maven-javadoc-plugin</artifactId>
         <configuration>
           <additionalJOptions>
-            <additionalJOption>-J-Dhttp.agent=maven-javadoc-plugin-${project.name}</additionalJOption>
+            <additionalJOption>-J-Dhttp.agent=maven-javadoc-plugin-${project.artifactId}</additionalJOption>
           </additionalJOptions>
           <links>
             <link>http://vertx.io/docs/apidocs/</link>
             <link>https://javadoc.io/doc/info.freelibrary/freelib-utils/apidocs/</link>
           </links>
         </configuration>
-        <executions>
-          <execution>
-            <id>site-javadocs</id>
-            <phase>site</phase>
-            <goals>
-              <goal>javadoc</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
       <plugin>
         <artifactId>maven-checkstyle-plugin</artifactId>
