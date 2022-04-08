@@ -53,8 +53,8 @@ public class UserMetadata {
      * Creates new user metadata using the supplied metadata name and value. AWS canonical metadata rules requires that
      * the supplied name is lower-cased (so this is done automatically).
      *
-     * @param aName
-     * @param aValue
+     * @param aName A metadata property name
+     * @param aValue A metadata property value
      */
     public UserMetadata(final String aName, final String aValue) {
         Objects.requireNonNull(aName, LOGGER.getMessage(MessageCodes.VSS_003));

@@ -38,7 +38,7 @@ public class LocalStackEndpoint implements Endpoint {
      * Creates a new LocalStack endpoint for testing.
      *
      * @param aPort An S3 port
-     * @throws Runtime MalformedUrlException if the supplied port is invalid
+     * @throws MalformedUrlException if the supplied port is invalid
      */
     @SuppressWarnings({ PMD.PRESERVE_STACK_TRACE, "PMD.PreserveStackTrace" })
     public LocalStackEndpoint(final int aPort) {
@@ -54,7 +54,7 @@ public class LocalStackEndpoint implements Endpoint {
      *
      * @param aHost An S3 host
      * @param aPort An S3 port
-     * @throws Runtime MalformedUrlException if the supplied port or host is invalid
+     * @throws MalformedUrlException if the supplied port or host is invalid
      */
     @SuppressWarnings({ PMD.PRESERVE_STACK_TRACE, "PMD.PreserveStackTrace" })
     public LocalStackEndpoint(final String aHost, final int aPort) {
@@ -69,7 +69,7 @@ public class LocalStackEndpoint implements Endpoint {
      * Creates a new LocalStack endpoint for testing.
      *
      * @param aEndpoint A URL endpoint in string form
-     * @throws Runtime MalformedUriException if the supplied endpoint is not a valid URL
+     * @throws MalformedUriException if the supplied endpoint is not a valid URL
      */
     @SuppressWarnings({ PMD.PRESERVE_STACK_TRACE, "PMD.PreserveStackTrace" })
     public LocalStackEndpoint(final String aEndpoint) {

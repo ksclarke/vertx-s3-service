@@ -13,8 +13,6 @@ import io.vertx.core.streams.WriteStream;
 
 /**
  * A successful S3 response that provides a way to access headers and the response body.
- *
- * @param <Buffer> A buffer returned by the response
  */
 public interface S3ClientResponse extends ReadStream<Buffer> {
 
