@@ -349,6 +349,10 @@
             <exclude>**/*IT.java</exclude>
             <exclude>**/S3ClientProfilesTest.java</exclude>
           </excludes>
+          <environmentVariables>
+            <AWS_ACCESS_KEY>PLACEHOLDER_ACCESS_KEY</AWS_ACCESS_KEY>
+            <AWS_SECRET_KEY>PLACEHOLDER_SECRET_KEY</AWS_SECRET_KEY>
+          </environmentVariables>
           <systemPropertyVariables>
             <test.user>${project.artifactId}</test.user>
             <vertx.logger-delegate-factory-class-name>io.vertx.core.logging.SLF4JLogDelegateFactory</vertx.logger-delegate-factory-class-name>
