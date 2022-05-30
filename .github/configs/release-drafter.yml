@@ -10,6 +10,9 @@ categories:
   - title: '🐛 Bug Fixes'
     labels:
       - 'bugfix'
+  - title: '🔒 Security Fixes'
+    labels:
+      - 'security'
   - title: '🧰 Breaking Changes'
     label: 'breaking'
 version-resolver:
@@ -23,6 +26,7 @@ version-resolver:
   patch:
     labels:
       - 'bugfix'
+      - 'security'
       - 'documentation'
   default: patch
 tag-template: '$RESOLVED_VERSION'
