@@ -7,13 +7,16 @@ categories:
   - title: '🌈 Documentation Updates'
     labels:
       - 'documentation'
+  - title: '✨ Refactored code'
+    labels:
+      - 'refactor'
   - title: '🐛 Bug Fixes'
     labels:
       - 'bugfix'
   - title: '🔒 Security Fixes'
     labels:
       - 'security'
-  - title: '🧰 Breaking Changes'
+  - title: '💥 Breaking Changes'
     label: 'breaking'
 version-resolver:
   major:
@@ -27,6 +30,7 @@ version-resolver:
     labels:
       - 'bugfix'
       - 'security'
+      - 'refactor'
       - 'documentation'
   default: patch
 tag-template: '$RESOLVED_VERSION'
